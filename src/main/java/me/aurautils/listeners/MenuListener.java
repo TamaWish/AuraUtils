@@ -55,12 +55,7 @@ public class MenuListener implements Listener {
                 player.closeInventory();
                 player.performCommand("back");
             }
-            case "toggle_light" -> {
-                plugin.getLightManager().toggle(player);
-                player.sendMessage(plugin.prefix(plugin.getLightManager().isEnabled(player.getUniqueId())
-                        ? "&aDynamic light enabled." : "&cDynamic light disabled."));
-                plugin.getMenuManager().openMainMenu(player);
-            }
+            
             case "refresh_menu" -> plugin.getMenuManager().openMainMenu(player);
             case "page_next" -> openNextPage(holder, player);
             case "page_prev" -> openPreviousPage(holder, player);

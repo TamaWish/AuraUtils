@@ -4,7 +4,7 @@ All notable changes for AuraUtils.
 
 ## [1.0.0] - 2026-05-20
 ### Added
-- Player utility commands: `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/damage`, `/light`, `/menu`, `/rtp`, `/aura`
+ - Player utility commands: `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/damage`, `/menu`, `/rtp`, `/aura`
 - Random safe teleport command `/rtp` with bounded retries and surface safety checks.
 - Granular permission nodes (see `plugin.yml`) including `aura.admin` umbrella node.
 - Basic per-player persistence (load on join, save on quit).

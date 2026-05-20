@@ -16,6 +16,8 @@ damage-multiplier-max: 10.0
 rtp:
   # Search radius around world spawn in blocks
   radius: 2000
+  # Minimum horizontal distance from your current position
+  minDistance: 250
   # Number of random attempts before giving up
   attempts: 30
   # Number of attempts to try per server tick (spreads load)

@@ -33,8 +33,7 @@ public class MenuManager {
         inventory.setItem(11, menuItem(Material.RED_BED, "&dHomes", "open_homes", "Open your homes."));
         inventory.setItem(12, menuItem(Material.PAPER, "&eTPA", "open_tpa", "Review pending TPA requests."));
         inventory.setItem(14, menuItem(Material.ENDER_EYE, "&6Back", "open_back", "Return to your last teleport location."));
-        inventory.setItem(15, menuItem(Material.GLOWSTONE, "&fDynamic Light", "toggle_light", "Toggle a moving light source."));
-        inventory.setItem(16, menuItem(Material.COMPASS, "&aRefresh", "refresh_menu", "Refresh the menu."));
+        inventory.setItem(15, menuItem(Material.COMPASS, "&aRefresh", "refresh_menu", "Refresh the menu."));
 
         player.openInventory(inventory);
     }

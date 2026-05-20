@@ -51,8 +51,14 @@ public class RtpCommand implements CommandExecutor {
 
         World world = player.getWorld();
         int radius = Math.max(1, plugin.getConfig().getInt("rtp.radius", 2000));
+        int minDistance = Math.max(0, plugin.getConfig().getInt("rtp.minDistance", 250));
+        if (minDistance > radius) {
+            minDistance = radius;
+        }
         int attempts = Math.max(1, plugin.getConfig().getInt("rtp.attempts", 30));
         int attemptsPerTick = Math.max(1, plugin.getConfig().getInt("rtp.attemptsPerTick", 5));
+        Location from = player.getLocation().clone();
+        long minDistanceSquared = (long) minDistance * minDistance;
 
         player.sendMessage(plugin.prefix("&eSearching for a safe location..."));
 
@@ -70,6 +76,12 @@ public class RtpCommand implements CommandExecutor {
                 for (int k = 0; k < attemptsPerTick && tried < attempts; k++, tried++) {
                     int x = world.getSpawnLocation().getBlockX() + random.nextInt(-radius, radius + 1);
                     int z = world.getSpawnLocation().getBlockZ() + random.nextInt(-radius, radius + 1);
+
+                    long dx = x - from.getBlockX();
+                    long dz = z - from.getBlockZ();
+                    if (minDistanceSquared > 0 && (dx * dx + dz * dz) < minDistanceSquared) {
+                        continue;
+                    }
 
                     Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
                     if (border != null && !border.isInside(borderCheck)) {
@@ -102,29 +114,6 @@ public class RtpCommand implements CommandExecutor {
         }.runTaskTimer(plugin, 0L, 1L);
 
         return true;
-    }
-
-    private Location findSafeLocation(World world, Location center, int radius, int attempts) {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        WorldBorder border = world.getWorldBorder();
-
-        for (int i = 0; i < attempts; i++) {
-            int x = center.getBlockX() + random.nextInt(-radius, radius + 1);
-            int z = center.getBlockZ() + random.nextInt(-radius, radius + 1);
-
-            Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
-            if (border != null && !border.isInside(borderCheck)) {
-                continue;
-            }
-
-            Block surface = world.getHighestBlockAt(x, z);
-            Location teleportLocation = buildSafeLocation(surface);
-            if (teleportLocation != null) {
-                return teleportLocation;
-            }
-        }
-
-        return null;
     }
 
     private Location buildSafeLocation(Block surface) {

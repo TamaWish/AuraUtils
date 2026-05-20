@@ -14,8 +14,7 @@ public class PlayerSessionListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        // No persisted state — all toggles start fresh. Nothing to restore.
-        // If you add persistence later, restore states here.
+        plugin.getPlayerDataManager().applyTo(event.getPlayer());
     }
 
     @EventHandler
@@ -27,8 +26,5 @@ public class PlayerSessionListener implements Listener {
             p.setAllowFlight(false);
             p.setFlying(false);
         }
-
-        // Clear in-memory data
-        plugin.getPlayerDataManager().remove(p.getUniqueId());
     }
 }

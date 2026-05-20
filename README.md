@@ -6,7 +6,7 @@ A Spigot utility plugin for Minecraft **1.21+** (API 26.1+).
 
 The following features are implemented and ready to use:
 
-- **Player utility commands:** `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/damage`, `/light`, `/menu`, `/rtp`, `/aura`
+- **Player utility commands:** `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/damage`, `/menu`, `/rtp`, `/aura`
 - **Permissions:** Granular permissions are available (e.g. `aura.fly.others`, `aura.god.others`). See `plugin.yml` for exact nodes.
 - **Player persistence:** Basic per-player data storage and load on join/quit.
 - **Listeners:** Various listeners (back location tracking, damage multiplier handling, menu interactions, and more) are registered and active.
@@ -31,7 +31,6 @@ The following features are implemented and ready to use:
 | `/nofall [player]` | Toggle fall damage for yourself or another player |
 | `/nohunger [player]` | Toggle hunger depletion for yourself or another player |
 | `/damage <multiplier>` | Set your weapon damage multiplier |
-| `/light` | Toggle personal light source |
 | `/menu` | Open the Aura utilities menu |
 | `/rtp` | Randomly teleport to a safe location |
 | `/aura` | Show plugin info and your current status |
@@ -82,7 +81,6 @@ Common permission nodes used by AuraUtils (defined in `plugin.yml`):
 |---|---:|---|
 | `aura.use` | `true` | Basic access to plugin info |
 | `aura.menu` | `true` | Open the utility menu |
-| `aura.light` | `true` | Toggle personal light |
 | `aura.back` | `true` | Use `/back` |
 | `aura.warp` | `true` | Use warp commands |
 | `aura.warp.set` | `op` | Create/update warps |

@@ -26,7 +26,7 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &e/home &8[<name>|list] &7- Teleport to a home or open GUI"));
         sender.sendMessage(AuraUtils.colorize("  &e/sethome &8<name> &7- Set a home"));
         sender.sendMessage(AuraUtils.colorize("  &e/back &7- Return to your last teleport"));
-        sender.sendMessage(AuraUtils.colorize("  &e/light &7- Toggle dynamic light"));
+        
         sender.sendMessage(AuraUtils.colorize("  &e/menu &7- Open the utility GUI"));
         sender.sendMessage(AuraUtils.colorize("  &e/god &8[player]   &7- Toggle god mode"));
         sender.sendMessage(AuraUtils.colorize("  &e/fly &8[player]   &7- Toggle fly"));
