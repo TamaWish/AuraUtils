@@ -7,8 +7,13 @@ import me.aurautils.managers.PlayerDataManager;
 import me.aurautils.managers.TeleportStoreManager;
 import me.aurautils.managers.TpaManager;
 import me.aurautils.menus.MenuManager;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class AuraUtils extends JavaPlugin {
 
@@ -17,6 +22,7 @@ public final class AuraUtils extends JavaPlugin {
     private TpaManager tpaManager;
     private TeleportStoreManager teleportStoreManager;
     private BackManager backManager;
+    private Set<Material> damageWeapons = new HashSet<>();
     
     private MenuManager menuManager;
 
@@ -33,6 +39,7 @@ public final class AuraUtils extends JavaPlugin {
         teleportStoreManager.load();
         backManager = new BackManager();
         menuManager = new MenuManager(this);
+        loadDamageWeapons();
 
         // Commands
         getCommand("tpa").setExecutor(new TpaCommand(this));
@@ -87,6 +94,48 @@ public final class AuraUtils extends JavaPlugin {
     public BackManager getBackManager() { return backManager; }
     
     public MenuManager getMenuManager() { return menuManager; }
+
+    public void reloadPluginConfig() {
+        reloadConfig();
+        loadDamageWeapons();
+    }
+
+    public boolean isDamageWeapon(Material material) {
+        return material != null && damageWeapons.contains(material);
+    }
+
+    private void loadDamageWeapons() {
+        damageWeapons.clear();
+
+        List<String> configuredWeapons = getConfig().getStringList("damage-weapons");
+        if (configuredWeapons != null && !configuredWeapons.isEmpty()) {
+            for (String materialName : configuredWeapons) {
+                try {
+                    damageWeapons.add(Material.valueOf(materialName));
+                } catch (IllegalArgumentException exception) {
+                    getLogger().warning("Ignoring invalid damage weapon material: " + materialName);
+                }
+            }
+        }
+
+        if (damageWeapons.isEmpty()) {
+            damageWeapons.add(Material.WOODEN_SWORD);
+            damageWeapons.add(Material.STONE_SWORD);
+            damageWeapons.add(Material.IRON_SWORD);
+            damageWeapons.add(Material.GOLDEN_SWORD);
+            damageWeapons.add(Material.DIAMOND_SWORD);
+            damageWeapons.add(Material.NETHERITE_SWORD);
+            damageWeapons.add(Material.WOODEN_AXE);
+            damageWeapons.add(Material.STONE_AXE);
+            damageWeapons.add(Material.IRON_AXE);
+            damageWeapons.add(Material.GOLDEN_AXE);
+            damageWeapons.add(Material.DIAMOND_AXE);
+            damageWeapons.add(Material.NETHERITE_AXE);
+            damageWeapons.add(Material.BOW);
+            damageWeapons.add(Material.CROSSBOW);
+            damageWeapons.add(Material.TRIDENT);
+        }
+    }
 
     /** Colorize a message using the config prefix. */
     public String prefix(String msg) {

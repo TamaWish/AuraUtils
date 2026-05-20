@@ -12,6 +12,25 @@ damage-multiplier-default: 1.0
 # Max allowed damage multiplier a player can set
 damage-multiplier-max: 10.0
 
+# Materials treated as weapons for the damage multiplier.
+# Use enum names from org.bukkit.Material, e.g. DIAMOND_SWORD, IRON_AXE, TRIDENT, BOW, CROSSBOW
+damage-weapons:
+  - DIAMOND_SWORD
+  - IRON_SWORD
+  - GOLDEN_SWORD
+  - STONE_SWORD
+  - WOODEN_SWORD
+  - NETHERITE_SWORD
+  - DIAMOND_AXE
+  - IRON_AXE
+  - GOLDEN_AXE
+  - STONE_AXE
+  - WOODEN_AXE
+  - NETHERITE_AXE
+  - TRIDENT
+  - BOW
+  - CROSSBOW
+
 # Random teleport settings
 rtp:
   # Search radius around world spawn in blocks

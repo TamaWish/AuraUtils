@@ -14,6 +14,17 @@ public class AuraCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission("aura.admin")) {
+                sender.sendMessage(AuraUtils.colorize("&cNo permission."));
+                return true;
+            }
+
+            plugin.reloadPluginConfig();
+            sender.sendMessage(AuraUtils.colorize("&aAuraUtils configuration reloaded, including damage weapons."));
+            return true;
+        }
+
         sender.sendMessage(AuraUtils.colorize("&8&m------------------------------------"));
         sender.sendMessage(AuraUtils.colorize("  &bAura&fUtils &7v" + plugin.getDescription().getVersion()));
         sender.sendMessage(AuraUtils.colorize("&7  Your utility bundle for Minecraft."));
@@ -33,6 +44,7 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &e/nofall &8[p]     &7- Toggle fall damage"));
         sender.sendMessage(AuraUtils.colorize("  &e/nohunger &8[p]   &7- Toggle hunger"));
         sender.sendMessage(AuraUtils.colorize("  &e/damage &8<mult>  &7- Set damage multiplier"));
+        sender.sendMessage(AuraUtils.colorize("  &e/aura reload    &7- Reload config and weapon list"));
         sender.sendMessage(AuraUtils.colorize("  &e/rtp &7- Random safe teleport"));
 
         if (sender instanceof Player p) {
