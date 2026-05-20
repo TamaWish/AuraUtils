@@ -105,11 +105,6 @@ For the complete and authoritative list, see [plugin.yml](src/main/resources/plu
 
 ## Development (VSCode)
 
-Recommended extensions for Java development:
-
-- Extension Pack for Java (Microsoft)
-- Maven for Java (Microsoft)
-
 Open the `AuraUtils` folder in VSCode — the Maven project will be detected automatically.
 
 ## Contributing
