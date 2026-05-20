@@ -1,0 +1,31 @@
+# AuraUtils Configuration
+
+# TPA settings
+tpa:
+  # How long (seconds) a TPA request stays pending before expiring
+  timeout: 60
+
+# Default damage multiplier applied to weapon hits (1.0 = normal)
+# Players can override this with /damage <multiplier> if they have permission
+damage-multiplier-default: 1.0
+
+# Max allowed damage multiplier a player can set
+damage-multiplier-max: 10.0
+
+# Random teleport settings
+rtp:
+  # Search radius around world spawn in blocks
+  radius: 2000
+  # Number of random attempts before giving up
+  attempts: 30
+  # Number of attempts to try per server tick (spreads load)
+  attemptsPerTick: 5
+  # Countdown (seconds) before executing the teleport; 0 = immediate
+  countdown: 5
+
+# Global teleport countdown used by warp/home/back/tpa (seconds)
+teleport:
+  countdown: 5
+
+# Messages prefix
+prefix: "&8[&bAura&8] &r"

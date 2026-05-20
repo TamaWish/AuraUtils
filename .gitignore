@@ -1,0 +1,27 @@
+# Build outputs
+/target/
+
+# Local tools
+/tools/
+
+# IDEs and editors
+/.idea/
+*.iml
+*.ipr
+*.iws
+/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Maven wrapper and metadata
+/mvnw
+/mvnw.cmd
+/.mvn/
+
+# Ignore packaged jars (keep if you want to track releases separately)
+*.jar
