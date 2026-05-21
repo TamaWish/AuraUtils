@@ -176,7 +176,11 @@ public class PlayerDataManager {
     }
 
     public double getDamageMultiplier(UUID id) {
-        return dmgMult.getOrDefault(id, 1.0);
+        return dmgMult.getOrDefault(id, plugin.getConfig().getDouble("damage-multiplier-default", 1.0));
+    }
+
+    public boolean hasCustomDamageMultiplier(UUID id) {
+        return dmgMult.containsKey(id);
     }
 
     public void setDamageMultiplier(UUID id, double mult) {

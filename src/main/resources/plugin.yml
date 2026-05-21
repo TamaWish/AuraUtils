@@ -73,6 +73,10 @@ commands:
     description: Set your weapon damage multiplier
     usage: /damage <multiplier>
     permission: aura.damage
+  weapondamage:
+    description: Manage per-weapon default damage multipliers
+    usage: /weapondamage <list|set|remove>
+    permission: aura.damage.weapon
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
@@ -139,6 +143,9 @@ permissions:
     default: op
   aura.damage:
     description: Set weapon damage multiplier
+    default: op
+  aura.damage.weapon:
+    description: Manage per-weapon damage multipliers
     default: op
   aura.rtp:
     description: Use random teleport

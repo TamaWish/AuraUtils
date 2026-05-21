@@ -65,6 +65,7 @@ public class MenuManager {
         inventory.setItem(11, menuItem(Material.LIME_WOOL, "&aAccept", "tpa_accept", "Accept the pending request."));
         inventory.setItem(15, menuItem(Material.RED_WOOL, "&cDeny", "tpa_deny", "Deny the pending request."));
         inventory.setItem(13, playerHead(requesterName, requesterId, "&e" + requesterName, "&7Pending TPA requester."));
+        inventory.setItem(26, menuItem(Material.BOOK, "&bMain Menu", "open_main", "Return to the main menu."));
         player.openInventory(inventory);
     }
 
@@ -103,6 +104,7 @@ public class MenuManager {
             }
         }
 
+        inventory.setItem(48, menuItem(Material.BOOK, "&bMain Menu", "open_main", "Return to the main menu."));
         inventory.setItem(49, menuItem(Material.BARRIER, "&cClose", "close_menu", "Close this menu."));
         player.openInventory(inventory);
     }

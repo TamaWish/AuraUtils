@@ -9,6 +9,18 @@ tpa:
 # Players can override this with /damage <multiplier> if they have permission
 damage-multiplier-default: 1.0
 
+# Per-weapon default multipliers. If present, these values are used as the
+# default damage multiplier for the specified material for all players.
+# Example:
+# damage-multipliers:
+#   DIAMOND_SWORD: 2.0
+#   BOW: 1.5
+# When this section exists it takes precedence over the simple
+# `damage-weapons` list below.
+damage-multipliers:
+  #DIAMOND_SWORD: 1.0
+  #BOW: 1.0
+
 # Max allowed damage multiplier a player can set
 damage-multiplier-max: 10.0
 

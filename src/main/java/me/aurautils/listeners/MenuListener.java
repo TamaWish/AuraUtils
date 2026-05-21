@@ -55,6 +55,7 @@ public class MenuListener implements Listener {
                 player.closeInventory();
                 player.performCommand("back");
             }
+            case "open_main" -> plugin.getMenuManager().openMainMenu(player);
             
             case "refresh_menu" -> plugin.getMenuManager().openMainMenu(player);
             case "page_next" -> openNextPage(holder, player);

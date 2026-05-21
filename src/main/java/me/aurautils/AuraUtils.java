@@ -13,7 +13,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
+import org.bukkit.configuration.ConfigurationSection;
 
 public final class AuraUtils extends JavaPlugin {
 
@@ -23,6 +26,7 @@ public final class AuraUtils extends JavaPlugin {
     private TeleportStoreManager teleportStoreManager;
     private BackManager backManager;
     private Set<Material> damageWeapons = new HashSet<>();
+    private final Map<Material, Double> damageWeaponMultipliers = new HashMap<>();
     
     private MenuManager menuManager;
 
@@ -58,6 +62,7 @@ public final class AuraUtils extends JavaPlugin {
         getCommand("nofall").setExecutor(new NoFallCommand(this));
         getCommand("nohunger").setExecutor(new NoHungerCommand(this));
         getCommand("damage").setExecutor(new DamageCommand(this));
+        getCommand("weapondamage").setExecutor(new me.aurautils.commands.WeaponDamageCommand(this));
         getCommand("rtp").setExecutor(new RtpCommand(this));
         getCommand("aura").setExecutor(new AuraCommand(this));
 
@@ -100,13 +105,45 @@ public final class AuraUtils extends JavaPlugin {
         loadDamageWeapons();
     }
 
+    public Set<Material> getDamageWeapons() { return damageWeapons; }
+
+    public void setWeaponDamageMultiplier(Material material, Double multiplier) {
+        if (material == null) return;
+        if (multiplier == null) {
+            // remove
+            getConfig().set("damage-multipliers." + material.name(), null);
+        } else {
+            getConfig().set("damage-multipliers." + material.name(), multiplier);
+        }
+        saveConfig();
+        loadDamageWeapons();
+    }
+
     public boolean isDamageWeapon(Material material) {
         return material != null && damageWeapons.contains(material);
     }
 
     private void loadDamageWeapons() {
         damageWeapons.clear();
+        damageWeaponMultipliers.clear();
 
+        // New: load per-weapon multipliers from config if present.
+        ConfigurationSection multSection = getConfig().getConfigurationSection("damage-multipliers");
+        if (multSection != null && !multSection.getKeys(false).isEmpty()) {
+            for (String materialName : multSection.getKeys(false)) {
+                try {
+                    Material mat = Material.valueOf(materialName);
+                    double val = multSection.getDouble(materialName, getConfig().getDouble("damage-multiplier-default", 1.0));
+                    damageWeaponMultipliers.put(mat, val);
+                    damageWeapons.add(mat);
+                } catch (IllegalArgumentException exception) {
+                    getLogger().warning("Ignoring invalid damage weapon material in damage-multipliers: " + materialName);
+                }
+            }
+            return; // we loaded multipliers explicitly, done.
+        }
+
+        // Backwards-compatible: load list of weapons (no per-weapon multiplier)
         List<String> configuredWeapons = getConfig().getStringList("damage-weapons");
         if (configuredWeapons != null && !configuredWeapons.isEmpty()) {
             for (String materialName : configuredWeapons) {
@@ -135,6 +172,10 @@ public final class AuraUtils extends JavaPlugin {
             damageWeapons.add(Material.CROSSBOW);
             damageWeapons.add(Material.TRIDENT);
         }
+    }
+
+    public Double getWeaponDamageMultiplier(Material material) {
+        return damageWeaponMultipliers.get(material);
     }
 
     /** Colorize a message using the config prefix. */

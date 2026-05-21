@@ -39,9 +39,20 @@ public class DamageMultiplierListener implements Listener {
 
         if (rangedAttack && mat != Material.BOW && mat != Material.CROSSBOW && mat != Material.TRIDENT) return;
 
-        double mult = plugin.getPlayerDataManager().getDamageMultiplier(attacker.getUniqueId());
-        if (mult == 1.0) return; // no change needed
+        // Decide multiplier: player-specific override wins; otherwise per-weapon config; otherwise global default
+        double finalMult;
+        if (plugin.getPlayerDataManager().hasCustomDamageMultiplier(attacker.getUniqueId())) {
+            finalMult = plugin.getPlayerDataManager().getDamageMultiplier(attacker.getUniqueId());
+        } else {
+            Double weaponMult = plugin.getWeaponDamageMultiplier(mat);
+            if (weaponMult != null) {
+                finalMult = weaponMult;
+            } else {
+                finalMult = plugin.getConfig().getDouble("damage-multiplier-default", 1.0);
+            }
+        }
 
-        event.setDamage(event.getDamage() * mult);
+        if (finalMult == 1.0) return; // no change needed
+        event.setDamage(event.getDamage() * finalMult);
     }
 }

@@ -1,8 +1,16 @@
 # AuraUtils
 
-A Spigot utility plugin for Minecraft **1.21+** (API 26.1+).
+AuraUtils is a lightweight, configurable Spigot/Paper plugin that provides a curated set of essential player utilities and admin tools for Minecraft servers (recommended for 1.21+).
 
-## Completed Features
+Designed for stability and ease-of-use, AuraUtils adds familiar quality-of-life features — warps and homes, teleport requests, random safe teleport (RTP), flight and god toggles, damage adjustment, and a simple in-game menu — all driven by `config.yml` and permissions.
+
+## Quick Start
+
+- Drop the built `.jar` into your server's `plugins/` folder and start the server.
+- Adjust `plugins/AuraUtils/config.yml` to tune behaviour (RT P radius, TPA timeout, prefixes, etc.).
+- In-game, run `/aura` or `/menu` to explore available utilities.
+
+## Features
 
 The following features are implemented and ready to use:
 
