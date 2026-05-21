@@ -3,6 +3,7 @@ package me.aurautils.managers;
 import me.aurautils.AuraUtils;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -193,9 +194,30 @@ public class PlayerDataManager {
     }
 
     public void applyTo(Player player) {
-        if (isFly(player.getUniqueId())) {
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> player.setAllowFlight(true), 1L);
-        }
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
+
+            UUID playerId = player.getUniqueId();
+
+            boolean flyEnabled = isFly(playerId);
+            if (flyEnabled) {
+                player.setAllowFlight(true);
+            } else if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
+                player.setAllowFlight(false);
+                player.setFlying(false);
+            }
+
+            if (isNoHunger(playerId)) {
+                player.setFoodLevel(20);
+                player.setSaturation(20.0F);
+            }
+
+            if (isGod(playerId)) {
+                player.setFireTicks(0);
+            }
+        }, 1L);
     }
 
     private void updateBoolean(Map<UUID, Boolean> state, UUID id, boolean value) {

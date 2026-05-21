@@ -1,7 +1,6 @@
 package me.aurautils.listeners;
 
 import me.aurautils.AuraUtils;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -19,12 +18,6 @@ public class PlayerSessionListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        Player p = event.getPlayer();
-
-        // Make sure fly is revoked so they don't reconnect flying if data is wiped
-        if (plugin.getPlayerDataManager().isFly(p.getUniqueId())) {
-            p.setAllowFlight(false);
-            p.setFlying(false);
-        }
+        plugin.getPlayerDataManager().save();
     }
 }
