@@ -6,6 +6,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
+import java.util.UUID;
+
 public class BackListener implements Listener {
 
     private final AuraUtils plugin;
@@ -16,7 +18,11 @@ public class BackListener implements Listener {
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
-        plugin.getBackManager().record(event.getPlayer().getUniqueId(), event.getFrom());
+        UUID playerId = event.getPlayer().getUniqueId();
+        if (plugin.getBackManager().consumeSkip(playerId)) {
+            return;
+        }
+        plugin.getBackManager().record(playerId, event.getFrom());
     }
 
     @EventHandler

@@ -1,108 +1,141 @@
 # AuraUtils
 
-AuraUtils is a lightweight, configurable Spigot/Paper plugin that provides a curated set of essential player utilities and admin tools for Minecraft servers (recommended for 1.21+).
+**Version 1.0.0** (released)
 
-Designed for stability and ease-of-use, AuraUtils adds familiar quality-of-life features — warps and homes, teleport requests, random safe teleport (RTP), flight and god toggles, and a simple in-game menu — all driven by `config.yml` and permissions.
+AuraUtils is a lightweight, configurable Spigot/Paper plugin that bundles essential player utilities and admin tools for Minecraft servers (recommended for **1.21+**).
+
+It provides warps and homes, teleport requests (including TPA Here), random safe teleport, flight and god toggles, `/back`, and a simple in-game menu — all driven by `config.yml` and permissions.
+
+### Why AuraUtils?
+
+AuraUtils is a good fit if you want a lean, modern, self-contained plugin you can read, configure, and extend without wading through a massive codebase. It is not trying to replace [EssentialsX](https://github.com/EssentialsX/Essentials) feature-for-feature — it is a focused alternative for servers that want the usual utilities without bundling everything under the sun.
 
 ## Quick Start
 
-- Drop the built `.jar` into your server's `plugins/` folder and start the server.
-- Adjust `plugins/AuraUtils/config.yml` to tune behaviour (RT P radius, TPA timeout, prefixes, etc.).
-- In-game, run `/aura` or `/menu` to explore available utilities.
+1. Build or download the plugin JAR and place it in your server's `plugins/` folder.
+2. Start or restart the server.
+3. Edit `plugins/AuraUtils/config.yml` (TPA timeout, RTP radius/cooldown, teleport countdown, home limits, prefix).
+4. In-game, run `/aura` or `/menu` to explore utilities.
 
 ## Features
 
-The following features are implemented and ready to use:
+- **Warps & homes** — Set, delete, and teleport via command or GUI; tab completion for names.
+- **TPA & TPA Here** — Request to teleport to a player (`/tpa`) or ask them to come to you (`/tpahere`); accept/deny with `/tpaccept` and `/tpadeny`.
+- **Random teleport** — `/rtp` finds a safe surface near world spawn with configurable radius, distance, retries, countdown, and cooldown.
+- **Back** — `/back` returns players to their last teleport destination.
+- **Player toggles** — `/fly`, `/god`, `/nofall`, `/nohunger` (self or others with `.others` permissions).
+- **Utility menu** — `/menu` GUI for warps, homes, pending TPA, and back.
+- **Per-warp permissions** — Restrict individual warps with nodes like `aura.warp.spawn`.
+- **Teleport countdown** — Shared delay for warp, home, back, and TPA (configurable; RTP has its own countdown).
+- **Persistence** — Warps, homes, and per-player toggle state saved to disk.
 
-- **Player utility commands:** `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/menu`, `/rtp`, `/aura`
-- **Permissions:** Granular permissions are available (e.g. `aura.fly.others`, `aura.god.others`). See `plugin.yml` for exact nodes.
-- **Player persistence:** Basic per-player data storage and load on join/quit.
-- **Listeners:** Various listeners (back location tracking, menu interactions, and more) are registered and active.
-- **Config-driven:** Many defaults and behaviours configurable via `config.yml`.
+## Commands
 
-### Commands (at-a-glance)
+| Command | Usage | Description |
+|---|---|---|
+| `/back` | — | Return to your last teleport location |
+| `/home` | `[name\|list]` | Teleport to a home, open the home GUI, or go directly when you have only one home |
+| `/sethome` | `<name>` | Set a home at your location |
+| `/delhome` | `<name>` | Delete a home |
+| `/warp` | `[name\|list]` | Teleport to a warp, open the warp GUI, or list warps |
+| `/setwarp` | `<name>` | Create or update a warp |
+| `/delwarp` | `<name>` | Delete a warp |
+| `/tpa` | `<player>\|list` | Request to teleport to a player, or open the TPA GUI |
+| `/tpahere` | `<player>` | Ask a player to teleport to you |
+| `/tpaccept` | — | Accept a pending TPA / TPA Here request |
+| `/tpadeny` | — | Deny a pending request |
+| `/rtp` | — | Random safe teleport (respects cooldown) |
+| `/fly` | `[player]` | Toggle flight |
+| `/god` | `[player]` | Toggle invincibility |
+| `/nofall` | `[player]` | Toggle fall damage |
+| `/nohunger` | `[player]` | Toggle hunger depletion |
+| `/menu` | — | Open the utility GUI |
+| `/aura` | `[reload]` | Plugin info, your toggle status, reload config (`aura.admin`) |
 
-| Command | Purpose |
-|---|---|
-| `/back` | Return to your last location |
-| `/home` | Teleport to your home |
-| `/sethome` | Set your current location as home |
-| `/delhome` | Delete your home |
-| `/warp <name>` | Teleport to a named warp |
-| `/setwarp <name>` | Create or update a warp at your location |
-| `/delwarp <name>` | Remove a named warp |
-| `/tpa <player>` | Request to teleport to a player |
-| `/tpaccept` | Accept a TPA request |
-| `/tpadeny` | Deny a TPA request |
-| `/fly [player]` | Toggle flight for yourself or another player |
-| `/god [player]` | Toggle invincibility for yourself or another player |
-| `/nofall [player]` | Toggle fall damage for yourself or another player |
-| `/nohunger [player]` | Toggle hunger depletion for yourself or another player |
-| `/menu` | Open the Aura utilities menu |
-| `/rtp` | Randomly teleport to a safe location |
-| `/aura` | Show plugin info and your current status |
+**Aliases:** `homelist` → `/home list`, `warplist` → `/warp list`, `tplist` → `/tpa list`
 
 ## Requirements
 
-- Java 21+
-- Spigot / Paper **1.21+**
+- **Java 21+**
+- **Spigot / Paper 1.21+**
 
 ## Building
 
 ```bash
-# Requires Maven and Java 21+
 mvn clean package
 ```
 
-The compiled `.jar` will be in `target/` (artifact name depends on your Maven coordinates).
+The compiled JAR is written to `target/` (e.g. `AuraUtils-1.0.0.jar`).
 
-## Installation
+## Configuration
 
-1. Drop the built `.jar` into your server's `plugins/` folder.
-2. Start or restart the server.
-3. Configure `plugins/AuraUtils/config.yml` as needed.
-
-## Configuration (`config.yml`)
-
-Key configuration options (see `resources/config.yml` for full details):
+See `plugins/AuraUtils/config.yml` after first run. Main options:
 
 ```yaml
 tpa:
-  timeout: 60               # Seconds before a TPA request expires
-rtp:
-  radius: 2000                    # Search radius around world spawn
-  attempts: 30                    # Number of random location attempts
+  timeout: 60                    # Seconds before a request expires
 
-prefix: "&8[&bAura&8] &r"        # Chat prefix (supports & color codes)
+rtp:
+  radius: 2000                   # Search radius around world spawn (blocks)
+  minDistance: 250               # Minimum horizontal distance from current position
+  attempts: 30                   # Random location attempts before giving up
+  attemptsPerTick: 5             # Attempts per tick (spreads server load)
+  countdown: 5                   # Delay before RTP executes (0 = instant)
+  cooldown: 60                   # Seconds between successful RTP uses (0 = disabled)
+
+teleport:
+  countdown: 5                   # Delay for warp, home, back, and TPA (0 = instant)
+
+homes:
+  max-per-player: 5              # Home limit per player (-1 = unlimited)
+
+prefix: "&8[&bAura&8] &r"        # Chat prefix (& color codes)
 ```
 
 ## Permissions
 
-Common permission nodes used by AuraUtils (defined in `plugin.yml`):
-
 | Permission | Default | Description |
 |---|---:|---|
-| `aura.use` | `true` | Basic access to plugin info |
+| `aura.use` | `true` | Basic access (`/aura`, `/menu`) |
 | `aura.menu` | `true` | Open the utility menu |
 | `aura.back` | `true` | Use `/back` |
-| `aura.warp` | `true` | Use warp commands |
+| `aura.warp` | `true` | Use all warps (see per-warp nodes below) |
+| `aura.warp.<name>` | — | Use a specific warp (e.g. `aura.warp.spawn`) |
+| `aura.warp.*` | `op` | All per-warp nodes |
 | `aura.warp.set` | `op` | Create/update warps |
 | `aura.warp.delete` | `op` | Delete warps |
 | `aura.home` | `true` | Use home commands |
 | `aura.home.set` | `true` | Set homes |
 | `aura.home.delete` | `true` | Delete homes |
-| `aura.tpa` | `true` | Use tpa/tpaccept/tpadeny |
-| `aura.god` | `op` | Toggle god mode for self |
+| `aura.tpa` | `true` | `/tpa`, `/tpahere`, `/tpaccept`, `/tpadeny` |
+| `aura.god` | `op` | Toggle god mode (self) |
 | `aura.god.others` | `op` | Toggle god mode on others |
-| `aura.fly` | `op` | Toggle fly for self |
-| `aura.fly.others` | `op` | Toggle fly for others |
-| `aura.nofall` | `op` | Toggle fall damage for self |
-| `aura.nofall.others` | `op` | Toggle fall damage for others |
-| `aura.nohunger` | `op` | Toggle hunger for self |
-| `aura.nohunger.others` | `op` | Toggle hunger for others |
-| `aura.rtp` | `true` | Use random safe teleport |
-| `aura.admin` | `op` | All AuraUtils permissions (children in `plugin.yml`) |
+| `aura.fly` | `op` | Toggle fly (self) |
+| `aura.fly.others` | `op` | Toggle fly on others |
+| `aura.nofall` | `op` | Toggle fall damage (self) |
+| `aura.nofall.others` | `op` | Toggle fall damage on others |
+| `aura.nohunger` | `op` | Toggle hunger (self) |
+| `aura.nohunger.others` | `op` | Toggle hunger on others |
+| `aura.rtp` | `true` | Use `/rtp` |
+| `aura.admin` | `op` | All AuraUtils permissions |
 
-For the complete and authoritative list, see [plugin.yml](src/main/resources/plugin.yml).
+### Per-warp access
 
-For questions or help, open an issue in the project repository.
+Players can use a warp if they have **any** of:
+
+- `aura.admin`
+- `aura.warp.<warpname>` (lowercase name, e.g. `aura.warp.spawn`)
+- `aura.warp.*`
+- `aura.warp` (grants every warp)
+
+For restricted servers, omit `aura.warp` and grant only the nodes you need, for example `aura.warp.spawn` and `aura.warp.shop`.
+
+The authoritative list is in [plugin.yml](src/main/resources/plugin.yml).
+
+## License
+
+See repository license file (if present).
+
+## Support
+
+Open an issue in the project repository for bugs or feature requests.

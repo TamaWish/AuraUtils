@@ -14,7 +14,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import me.aurautils.managers.TeleportHelper;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RtpCommand implements CommandExecutor {
@@ -33,6 +36,7 @@ public class RtpCommand implements CommandExecutor {
     );
 
     private final AuraUtils plugin;
+    private final Map<UUID, Long> lastUseMillis = new HashMap<>();
 
     public RtpCommand(AuraUtils plugin) {
         this.plugin = plugin;
@@ -47,6 +51,19 @@ public class RtpCommand implements CommandExecutor {
         if (!player.hasPermission("aura.rtp")) {
             player.sendMessage(plugin.prefix("&cNo permission."));
             return true;
+        }
+
+        int cooldownSeconds = Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
+        if (cooldownSeconds > 0) {
+            Long lastUse = lastUseMillis.get(player.getUniqueId());
+            if (lastUse != null) {
+                long elapsed = (System.currentTimeMillis() - lastUse) / 1000L;
+                if (elapsed < cooldownSeconds) {
+                    long remaining = cooldownSeconds - elapsed;
+                    player.sendMessage(plugin.prefix("&cRTP is on cooldown. Try again in &e" + remaining + "s&c."));
+                    return true;
+                }
+            }
         }
 
         World world = player.getWorld();
@@ -92,9 +109,13 @@ public class RtpCommand implements CommandExecutor {
                     Location teleportLocation = buildSafeLocation(surface);
                     if (teleportLocation != null) {
                         if (player.isOnline()) {
+                            if (cooldownSeconds > 0) {
+                                lastUseMillis.put(player.getUniqueId(), System.currentTimeMillis());
+                            }
                             if (rtpCountdown > 0) {
                                 teleportHelper.scheduleTeleport(player, teleportLocation, rtpCountdown);
                             } else {
+                                plugin.getBackManager().skipNextRecord(player.getUniqueId());
                                 player.teleport(teleportLocation);
                                 player.sendMessage(plugin.prefix("&aTeleported to a random safe location."));
                             }

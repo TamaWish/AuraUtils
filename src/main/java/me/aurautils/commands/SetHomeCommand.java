@@ -1,12 +1,17 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.CommandUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public class SetHomeCommand implements CommandExecutor {
+import java.util.Collections;
+import java.util.List;
+
+public class SetHomeCommand implements CommandExecutor, TabCompleter {
 
     private final AuraUtils plugin;
 
@@ -29,9 +34,23 @@ public class SetHomeCommand implements CommandExecutor {
             return true;
         }
 
-        plugin.getTeleportStoreManager().setHome(player.getUniqueId(), args[0], player.getLocation());
-        plugin.getTeleportStoreManager().save();
+        if (!plugin.getHomeManager().canSetHome(player.getUniqueId(), args[0])) {
+            int max = plugin.getHomeManager().getMaxHomesPerPlayer();
+            player.sendMessage(plugin.prefix("&cYou have reached the home limit (&e" + max + "&c). Delete a home first."));
+            return true;
+        }
+
+        plugin.getHomeManager().setHome(player.getUniqueId(), args[0], player.getLocation());
+        plugin.getHomeManager().save();
         player.sendMessage(plugin.prefix("&aSet home &e" + args[0] + "&a."));
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length != 1 || !(sender instanceof Player player) || !sender.hasPermission("aura.home.set")) {
+            return Collections.emptyList();
+        }
+        return CommandUtil.filterPrefix(args[0], plugin.getHomeManager().getHomeNames(player.getUniqueId()));
     }
 }

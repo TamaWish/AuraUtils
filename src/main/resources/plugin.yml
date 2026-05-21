@@ -45,6 +45,10 @@ commands:
     usage: /tpa <player>|list
     aliases: [tplist]
     permission: aura.tpa
+  tpahere:
+    description: Ask a player to teleport to you
+    usage: /tpahere <player>
+    permission: aura.tpa
   tpaccept:
     description: Accept a pending TPA request
     usage: /tpaccept
@@ -69,8 +73,6 @@ commands:
     description: Toggle hunger depletion
     usage: /nohunger [player]
     permission: aura.nohunger
-  damage:
-  # damage commands removed
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
@@ -91,8 +93,11 @@ permissions:
     description: Return to last teleport location
     default: true
   aura.warp:
-    description: Use warp commands
+    description: Use all warps (or grant aura.warp.<name> per warp instead)
     default: true
+  aura.warp.*:
+    description: Use any warp via per-warp permission nodes
+    default: op
   aura.warp.set:
     description: Set warps
     default: op
@@ -155,6 +160,7 @@ permissions:
       aura.menu: true
       aura.back: true
       aura.warp: true
+      aura.warp.*: true
       aura.warp.set: true
       aura.warp.delete: true
       aura.home: true

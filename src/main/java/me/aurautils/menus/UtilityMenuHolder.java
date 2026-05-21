@@ -7,10 +7,15 @@ public class UtilityMenuHolder implements InventoryHolder {
 
     private final MenuType type;
     private final int page;
+    private Inventory inventory;
 
     public UtilityMenuHolder(MenuType type, int page) {
         this.type = type;
         this.page = page;
+    }
+
+    void bind(Inventory inventory) {
+        this.inventory = inventory;
     }
 
     public MenuType getType() {
@@ -23,6 +28,6 @@ public class UtilityMenuHolder implements InventoryHolder {
 
     @Override
     public Inventory getInventory() {
-        return null;
+        return inventory;
     }
 }

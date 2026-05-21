@@ -29,8 +29,8 @@ public class SetWarpCommand implements CommandExecutor {
             return true;
         }
 
-        plugin.getTeleportStoreManager().setWarp(args[0], player.getLocation());
-        plugin.getTeleportStoreManager().save();
+        plugin.getWarpManager().setWarp(args[0], player.getLocation());
+        plugin.getWarpManager().save();
         player.sendMessage(plugin.prefix("&aSet warp &e" + args[0] + "&a."));
         return true;
     }

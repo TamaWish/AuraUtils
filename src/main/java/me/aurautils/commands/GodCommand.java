@@ -1,32 +1,48 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.CommandUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public class GodCommand implements CommandExecutor {
+import java.util.Collections;
+import java.util.List;
+
+public class GodCommand implements CommandExecutor, TabCompleter {
 
     private final AuraUtils plugin;
-    public GodCommand(AuraUtils plugin) { this.plugin = plugin; }
+
+    public GodCommand(AuraUtils plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!sender.hasPermission("aura.god")) {
-            sender.sendMessage(plugin.prefix("&cNo permission.")); return true;
+            sender.sendMessage(plugin.prefix("&cNo permission."));
+            return true;
         }
 
         Player target;
         if (args.length >= 1) {
             if (!sender.hasPermission("aura.god.others")) {
-                sender.sendMessage(plugin.prefix("&cYou can't toggle god mode on others.")); return true;
+                sender.sendMessage(plugin.prefix("&cYou can't toggle god mode on others."));
+                return true;
             }
             target = plugin.getServer().getPlayer(args[0]);
-            if (target == null) { sender.sendMessage(plugin.prefix("&cPlayer not found.")); return true; }
+            if (target == null) {
+                sender.sendMessage(plugin.prefix("&cPlayer not found."));
+                return true;
+            }
         } else {
-            if (!(sender instanceof Player p)) { sender.sendMessage("Console must specify a player."); return true; }
-            target = p;
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Console must specify a player.");
+                return true;
+            }
+            target = player;
         }
 
         boolean now = plugin.getPlayerDataManager().toggleGod(target.getUniqueId());
@@ -37,5 +53,13 @@ public class GodCommand implements CommandExecutor {
             sender.sendMessage(plugin.prefix("God mode " + state + " &rfor &e" + target.getName() + "&r."));
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length != 1) {
+            return Collections.emptyList();
+        }
+        return CommandUtil.onlinePlayerNames(sender, args[0], "aura.god.others");
     }
 }

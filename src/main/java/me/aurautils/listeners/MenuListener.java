@@ -1,10 +1,10 @@
 package me.aurautils.listeners;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.managers.BackService;
+import me.aurautils.util.WarpPermissions;
 import me.aurautils.menus.MenuType;
 import me.aurautils.menus.UtilityMenuHolder;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -53,7 +53,7 @@ public class MenuListener implements Listener {
             case "open_tpa" -> plugin.getMenuManager().openTpaMenu(player);
             case "open_back" -> {
                 player.closeInventory();
-                player.performCommand("back");
+                BackService.teleportBack(plugin, player);
             }
             case "open_main" -> plugin.getMenuManager().openMainMenu(player);
             
@@ -103,12 +103,17 @@ public class MenuListener implements Listener {
         if (name == null) {
             return;
         }
-        var location = plugin.getTeleportStoreManager().getWarp(name);
+        if (!WarpPermissions.canUse(player, name)) {
+            player.sendMessage(plugin.prefix("&cYou don't have permission to use warp &e" + name + "&c."));
+            return;
+        }
+        var location = plugin.getWarpManager().getWarp(name);
         if (location == null) {
             player.sendMessage(plugin.prefix("&cWarp &e" + name + " &cwas not found."));
             return;
         }
         player.closeInventory();
+        plugin.getBackManager().skipNextRecord(player.getUniqueId());
         player.teleport(location);
         player.sendMessage(plugin.prefix("&aTeleported to warp &e" + name + "&a."));
     }
@@ -117,12 +122,13 @@ public class MenuListener implements Listener {
         if (name == null) {
             return;
         }
-        var location = plugin.getTeleportStoreManager().getHome(player.getUniqueId(), name);
+        var location = plugin.getHomeManager().getHome(player.getUniqueId(), name);
         if (location == null) {
             player.sendMessage(plugin.prefix("&cHome &e" + name + " &cwas not found."));
             return;
         }
         player.closeInventory();
+        plugin.getBackManager().skipNextRecord(player.getUniqueId());
         player.teleport(location);
         player.sendMessage(plugin.prefix("&aTeleported to home &e" + name + "&a."));
     }

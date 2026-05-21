@@ -17,10 +17,16 @@ rtp:
   attemptsPerTick: 5
   # Countdown (seconds) before executing the teleport; 0 = immediate
   countdown: 5
+  # Cooldown (seconds) between successful RTP uses; 0 = disabled
+  cooldown: 60
 
 # Global teleport countdown used by warp/home/back/tpa (seconds)
 teleport:
   countdown: 5
+
+# Per-player home limits (-1 = unlimited)
+homes:
+  max-per-player: 5
 
 # Messages prefix
 prefix: "&8[&bAura&8] &r"

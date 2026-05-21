@@ -29,6 +29,7 @@ public class TeleportHelper {
                 }
 
                 if (remaining <= 0) {
+                    plugin.getBackManager().skipNextRecord(player.getUniqueId());
                     player.teleport(destination);
                     player.sendMessage(plugin.prefix("&aTeleported."));
                     cancel();
@@ -52,6 +53,6 @@ public class TeleportHelper {
                 player.sendMessage(plugin.prefix("&eTeleporting in &6" + remaining + "&e... Do not move."));
                 remaining--;
             }
-        }.runTaskTimer(plugin, 0L, 20L);
+        }.runTaskTimer(plugin, 20L, 20L);
     }
 }

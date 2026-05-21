@@ -1,10 +1,11 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import org.bukkit.GameMode;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,20 +14,34 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Persistent store for all per-player toggles and settings.
+ * Disk writes are serialized through a single async queue and file lock.
  */
 public class PlayerDataManager {
 
+    private static final long SAVE_DEBOUNCE_TICKS = 40L;
+    private static final long FLUSH_AWAIT_SECONDS = 10L;
+
     private final AuraUtils plugin;
     private final File dataFile;
+    private final ReentrantLock fileLock = new ReentrantLock();
 
     private final Map<UUID, Boolean> godMode = new HashMap<>();
     private final Map<UUID, Boolean> flyMode = new HashMap<>();
     private final Map<UUID, Boolean> noFall = new HashMap<>();
     private final Map<UUID, Boolean> noHunger = new HashMap<>();
-    
+
+    private final Set<UUID> pendingPlayerSaves = ConcurrentHashMap.newKeySet();
+    private volatile boolean pendingFullSave;
+    private volatile boolean saveWorkerActive;
+
+    private BukkitTask debounceTask;
 
     public PlayerDataManager(AuraUtils plugin) {
         this.plugin = plugin;
@@ -34,82 +49,212 @@ public class PlayerDataManager {
     }
 
     public void load() {
-        plugin.getDataFolder().mkdirs();
-        godMode.clear();
-        flyMode.clear();
-        noFall.clear();
-        noHunger.clear();
+        fileLock.lock();
+        try {
+            plugin.getDataFolder().mkdirs();
+            godMode.clear();
+            flyMode.clear();
+            noFall.clear();
+            noHunger.clear();
 
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
-        ConfigurationSection playersSection = config.getConfigurationSection("players");
-        if (playersSection == null) {
-            return;
-        }
-
-        for (String playerKey : playersSection.getKeys(false)) {
-            UUID playerId;
-            try {
-                playerId = UUID.fromString(playerKey);
-            } catch (IllegalArgumentException ignored) {
-                continue;
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            ConfigurationSection playersSection = config.getConfigurationSection("players");
+            if (playersSection == null) {
+                return;
             }
 
-            ConfigurationSection playerSection = playersSection.getConfigurationSection(playerKey);
-            if (playerSection == null) {
-                continue;
-            }
+            for (String playerKey : playersSection.getKeys(false)) {
+                UUID playerId;
+                try {
+                    playerId = UUID.fromString(playerKey);
+                } catch (IllegalArgumentException ignored) {
+                    continue;
+                }
 
-            if (playerSection.contains("god")) {
-                godMode.put(playerId, playerSection.getBoolean("god"));
+                ConfigurationSection playerSection = playersSection.getConfigurationSection(playerKey);
+                if (playerSection == null) {
+                    continue;
+                }
+
+                if (playerSection.contains("god")) {
+                    godMode.put(playerId, playerSection.getBoolean("god"));
+                }
+                if (playerSection.contains("fly")) {
+                    flyMode.put(playerId, playerSection.getBoolean("fly"));
+                }
+                if (playerSection.contains("nofall")) {
+                    noFall.put(playerId, playerSection.getBoolean("nofall"));
+                }
+                if (playerSection.contains("nohunger")) {
+                    noHunger.put(playerId, playerSection.getBoolean("nohunger"));
+                }
             }
-            if (playerSection.contains("fly")) {
-                flyMode.put(playerId, playerSection.getBoolean("fly"));
-            }
-            if (playerSection.contains("nofall")) {
-                noFall.put(playerId, playerSection.getBoolean("nofall"));
-            }
-            if (playerSection.contains("nohunger")) {
-                noHunger.put(playerId, playerSection.getBoolean("nohunger"));
-            }
-            // damage-multiplier removed
+        } finally {
+            fileLock.unlock();
         }
     }
 
-    public void save() {
-        plugin.getDataFolder().mkdirs();
+    public void scheduleSave() {
+        pendingFullSave = true;
+        if (debounceTask != null) {
+            debounceTask.cancel();
+        }
+        debounceTask = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            debounceTask = null;
+            requestSaveDrain();
+        }, SAVE_DEBOUNCE_TICKS);
+    }
 
-        YamlConfiguration config = new YamlConfiguration();
-        ConfigurationSection playersSection = config.createSection("players");
+    public void flushSave() {
+        if (debounceTask != null) {
+            debounceTask.cancel();
+            debounceTask = null;
+        }
+        pendingFullSave = false;
+        pendingPlayerSaves.clear();
+        awaitDiskWrite(this::persistAllToDisk);
+    }
+
+    /** Queues a single-player persist (e.g. on quit). */
+    public void savePlayer(UUID playerId) {
+        pendingPlayerSaves.add(playerId);
+        requestSaveDrain();
+    }
+
+    private void requestSaveDrain() {
+        if (saveWorkerActive) {
+            return;
+        }
+        saveWorkerActive = true;
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::runSaveDrain);
+    }
+
+    private void runSaveDrain() {
+        try {
+            while (plugin.isEnabled() && hasPendingWrites()) {
+                boolean fullSave = pendingFullSave;
+                pendingFullSave = false;
+
+                Set<UUID> playerIds = Set.copyOf(pendingPlayerSaves);
+                pendingPlayerSaves.clear();
+
+                if (fullSave) {
+                    persistAllToDisk();
+                    continue;
+                }
+
+                for (UUID playerId : playerIds) {
+                    persistPlayerToDisk(playerId);
+                }
+            }
+
+            if (!plugin.isEnabled() && hasPendingWrites()) {
+                boolean fullSave = pendingFullSave;
+                pendingFullSave = false;
+                Set<UUID> playerIds = Set.copyOf(pendingPlayerSaves);
+                pendingPlayerSaves.clear();
+
+                if (fullSave) {
+                    persistAllToDisk();
+                } else {
+                    for (UUID playerId : playerIds) {
+                        persistPlayerToDisk(playerId);
+                    }
+                }
+            }
+        } finally {
+            saveWorkerActive = false;
+            if (hasPendingWrites()) {
+                requestSaveDrain();
+            }
+        }
+    }
+
+    private void awaitDiskWrite(Runnable writeTask) {
+        CountDownLatch latch = new CountDownLatch(1);
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                writeTask.run();
+            } finally {
+                latch.countDown();
+            }
+        });
+        try {
+            if (!latch.await(FLUSH_AWAIT_SECONDS, TimeUnit.SECONDS)) {
+                plugin.getLogger().warning("Timed out waiting for player-states.yml to save.");
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().warning("Interrupted while waiting for player-states.yml to save.");
+        }
+    }
+
+    private boolean hasPendingWrites() {
+        return pendingFullSave || !pendingPlayerSaves.isEmpty();
+    }
+
+    private void persistAllToDisk() {
+        fileLock.lock();
+        try {
+            plugin.getDataFolder().mkdirs();
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            ConfigurationSection playersSection = config.getConfigurationSection("players");
+            if (playersSection == null) {
+                playersSection = config.createSection("players");
+            }
+
+            for (UUID playerId : collectKnownPlayerIds()) {
+                writePlayerSection(playersSection, playerId);
+            }
+
+            config.save(dataFile);
+        } catch (IOException exception) {
+            plugin.getLogger().severe("Failed to save player-states.yml: " + exception.getMessage());
+        } finally {
+            fileLock.unlock();
+        }
+    }
+
+    private void persistPlayerToDisk(UUID playerId) {
+        fileLock.lock();
+        try {
+            plugin.getDataFolder().mkdirs();
+            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            ConfigurationSection playersSection = config.getConfigurationSection("players");
+            if (playersSection == null) {
+                playersSection = config.createSection("players");
+            }
+
+            writePlayerSection(playersSection, playerId);
+            config.save(dataFile);
+        } catch (IOException exception) {
+            plugin.getLogger().severe("Failed to save player-states.yml for " + playerId + ": " + exception.getMessage());
+        } finally {
+            fileLock.unlock();
+        }
+    }
+
+    private void writePlayerSection(ConfigurationSection playersSection, UUID playerId) {
+        String playerKey = playerId.toString();
+        if (!hasStoredToggles(playerId)) {
+            playersSection.set(playerKey, null);
+            return;
+        }
+
+        ConfigurationSection playerSection = playersSection.createSection(playerKey);
+        playerSection.set("god", isGod(playerId));
+        playerSection.set("fly", isFly(playerId));
+        playerSection.set("nofall", isNoFall(playerId));
+        playerSection.set("nohunger", isNoHunger(playerId));
+    }
+
+    private Set<UUID> collectKnownPlayerIds() {
         Set<UUID> playerIds = new HashSet<>();
         playerIds.addAll(godMode.keySet());
         playerIds.addAll(flyMode.keySet());
         playerIds.addAll(noFall.keySet());
         playerIds.addAll(noHunger.keySet());
-        
-
-        for (UUID playerId : playerIds) {
-            boolean god = godMode.getOrDefault(playerId, false);
-            boolean fly = flyMode.getOrDefault(playerId, false);
-            boolean noFallEnabled = noFall.getOrDefault(playerId, false);
-            boolean noHungerEnabled = noHunger.getOrDefault(playerId, false);
-
-            if (!god && !fly && !noFallEnabled && !noHungerEnabled) {
-                continue;
-            }
-
-            ConfigurationSection playerSection = playersSection.createSection(playerId.toString());
-            playerSection.set("god", god);
-            playerSection.set("fly", fly);
-            playerSection.set("nofall", noFallEnabled);
-            playerSection.set("nohunger", noHungerEnabled);
-            // damage-multiplier removed
-        }
-
-        try {
-            config.save(dataFile);
-        } catch (IOException exception) {
-            plugin.getLogger().severe("Failed to save player-states.yml: " + exception.getMessage());
-        }
+        return playerIds;
     }
 
     public boolean isGod(UUID id) {
@@ -124,7 +269,7 @@ public class PlayerDataManager {
 
     public void setGod(UUID id, boolean value) {
         updateBoolean(godMode, id, value);
-        save();
+        scheduleSave();
     }
 
     public boolean isFly(UUID id) {
@@ -139,7 +284,7 @@ public class PlayerDataManager {
 
     public void setFly(UUID id, boolean value) {
         updateBoolean(flyMode, id, value);
-        save();
+        scheduleSave();
     }
 
     public boolean isNoFall(UUID id) {
@@ -154,7 +299,7 @@ public class PlayerDataManager {
 
     public void setNoFall(UUID id, boolean value) {
         updateBoolean(noFall, id, value);
-        save();
+        scheduleSave();
     }
 
     public boolean isNoHunger(UUID id) {
@@ -169,7 +314,7 @@ public class PlayerDataManager {
 
     public void setNoHunger(UUID id, boolean value) {
         updateBoolean(noHunger, id, value);
-        save();
+        scheduleSave();
     }
 
     public void applyTo(Player player) {
@@ -197,6 +342,10 @@ public class PlayerDataManager {
                 player.setFireTicks(0);
             }
         }, 1L);
+    }
+
+    private boolean hasStoredToggles(UUID playerId) {
+        return isGod(playerId) || isFly(playerId) || isNoFall(playerId) || isNoHunger(playerId);
     }
 
     private void updateBoolean(Map<UUID, Boolean> state, UUID id, boolean value) {

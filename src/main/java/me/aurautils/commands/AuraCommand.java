@@ -29,7 +29,8 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &bAura&fUtils &7v" + plugin.getDescription().getVersion()));
         sender.sendMessage(AuraUtils.colorize("&7  Your utility bundle for Minecraft."));
         sender.sendMessage(AuraUtils.colorize(""));
-        sender.sendMessage(AuraUtils.colorize("  &e/tpa &8<player>    &7- Request teleport"));
+        sender.sendMessage(AuraUtils.colorize("  &e/tpa &8<player>    &7- Request teleport to a player"));
+        sender.sendMessage(AuraUtils.colorize("  &e/tpahere &8<player> &7- Ask a player to teleport to you"));
         sender.sendMessage(AuraUtils.colorize("  &e/tpaccept        &7- Accept TPA"));
         sender.sendMessage(AuraUtils.colorize("  &e/tpadeny         &7- Deny TPA"));
         sender.sendMessage(AuraUtils.colorize("  &e/warp &8[<name>|list] &7- Teleport to a warp or open GUI"));

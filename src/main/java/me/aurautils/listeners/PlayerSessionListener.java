@@ -18,6 +18,6 @@ public class PlayerSessionListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        plugin.getPlayerDataManager().save();
+        plugin.getPlayerDataManager().savePlayer(event.getPlayer().getUniqueId());
     }
 }
