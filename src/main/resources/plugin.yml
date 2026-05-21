@@ -70,9 +70,7 @@ commands:
     usage: /nohunger [player]
     permission: aura.nohunger
   damage:
-    # removed
-  weapondamage:
-    # removed
+  # damage commands removed
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
@@ -137,12 +135,7 @@ permissions:
   aura.nohunger.others:
     description: Toggle hunger on others
     default: op
-  aura.damage:
-    # removed
-    default: op
-  aura.damage.weapon:
-    # removed
-    default: op
+  # aura.damage permissions removed
   aura.rtp:
     description: Use random teleport
     default: true
@@ -158,7 +151,7 @@ permissions:
       aura.nofall.others: true
       aura.nohunger: true
       aura.nohunger.others: true
-      # aura.damage removed
+      
       aura.tpa: true
       aura.menu: true
       aura.back: true

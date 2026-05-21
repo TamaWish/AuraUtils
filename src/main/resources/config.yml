@@ -5,25 +5,7 @@ tpa:
   # How long (seconds) a TPA request stays pending before expiring
   timeout: 60
 
-# Default damage multiplier applied to weapon hits (1.0 = normal)
-# Players can override this with /damage <multiplier> if they have permission
-
-# Per-weapon default multipliers. If present, these values are used as the
-# default damage multiplier for the specified material for all players.
-# Example:
-# damage-multipliers:
-#   DIAMOND_SWORD: 2.0
-#   BOW: 1.5
-# When this section exists it takes precedence over the simple
-# `damage-weapons` list below.
-  #DIAMOND_SWORD: 1.0
-  #BOW: 1.0
-
-# Max allowed damage multiplier a player can set
-
-# Materials treated as weapons for the damage multiplier.
-# Use enum names from org.bukkit.Material, e.g. DIAMOND_SWORD, IRON_AXE, TRIDENT, BOW, CROSSBOW
-
+# Damage multiplier settings removed
 # Random teleport settings
 rtp:
   # Search radius around world spawn in blocks
