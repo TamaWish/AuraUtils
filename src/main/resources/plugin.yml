@@ -135,7 +135,6 @@ permissions:
   aura.nohunger.others:
     description: Toggle hunger on others
     default: op
-  # aura.damage permissions removed
   aura.rtp:
     description: Use random teleport
     default: true

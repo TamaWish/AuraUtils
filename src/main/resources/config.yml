@@ -5,7 +5,6 @@ tpa:
   # How long (seconds) a TPA request stays pending before expiring
   timeout: 60
 
-# Damage multiplier settings removed
 # Random teleport settings
 rtp:
   # Search radius around world spawn in blocks
