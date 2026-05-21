@@ -69,10 +69,6 @@ Key configuration options (see `resources/config.yml` for full details):
 ```yaml
 tpa:
   timeout: 60               # Seconds before a TPA request expires
-
-damage-multiplier-default: 1.0   # Default multiplier (no change)
-damage-multiplier-max: 10.0      # Max a player can set via /damage
-
 rtp:
   radius: 2000                    # Search radius around world spawn
   attempts: 30                    # Number of random location attempts
@@ -104,7 +100,6 @@ Common permission nodes used by AuraUtils (defined in `plugin.yml`):
 | `aura.nofall.others` | `op` | Toggle fall damage for others |
 | `aura.nohunger` | `op` | Toggle hunger for self |
 | `aura.nohunger.others` | `op` | Toggle hunger for others |
-| `aura.damage` | `op` | Set weapon damage multiplier |
 | `aura.rtp` | `true` | Use random safe teleport |
 | `aura.admin` | `op` | All AuraUtils permissions (children in `plugin.yml`) |
 
