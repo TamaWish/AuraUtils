@@ -26,7 +26,7 @@ public class PlayerDataManager {
     private final Map<UUID, Boolean> flyMode = new HashMap<>();
     private final Map<UUID, Boolean> noFall = new HashMap<>();
     private final Map<UUID, Boolean> noHunger = new HashMap<>();
-    private final Map<UUID, Double> dmgMult = new HashMap<>();
+    
 
     public PlayerDataManager(AuraUtils plugin) {
         this.plugin = plugin;
@@ -39,7 +39,6 @@ public class PlayerDataManager {
         flyMode.clear();
         noFall.clear();
         noHunger.clear();
-        dmgMult.clear();
 
         YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
         ConfigurationSection playersSection = config.getConfigurationSection("players");
@@ -72,9 +71,7 @@ public class PlayerDataManager {
             if (playerSection.contains("nohunger")) {
                 noHunger.put(playerId, playerSection.getBoolean("nohunger"));
             }
-            if (playerSection.contains("damage-multiplier")) {
-                dmgMult.put(playerId, playerSection.getDouble("damage-multiplier", 1.0));
-            }
+            // damage-multiplier removed
         }
     }
 
@@ -88,16 +85,15 @@ public class PlayerDataManager {
         playerIds.addAll(flyMode.keySet());
         playerIds.addAll(noFall.keySet());
         playerIds.addAll(noHunger.keySet());
-        playerIds.addAll(dmgMult.keySet());
+        
 
         for (UUID playerId : playerIds) {
             boolean god = godMode.getOrDefault(playerId, false);
             boolean fly = flyMode.getOrDefault(playerId, false);
             boolean noFallEnabled = noFall.getOrDefault(playerId, false);
             boolean noHungerEnabled = noHunger.getOrDefault(playerId, false);
-            double damageMultiplier = dmgMult.getOrDefault(playerId, 1.0);
 
-            if (!god && !fly && !noFallEnabled && !noHungerEnabled && damageMultiplier == 1.0) {
+            if (!god && !fly && !noFallEnabled && !noHungerEnabled) {
                 continue;
             }
 
@@ -106,7 +102,7 @@ public class PlayerDataManager {
             playerSection.set("fly", fly);
             playerSection.set("nofall", noFallEnabled);
             playerSection.set("nohunger", noHungerEnabled);
-            playerSection.set("damage-multiplier", damageMultiplier);
+            // damage-multiplier removed
         }
 
         try {
@@ -173,23 +169,6 @@ public class PlayerDataManager {
 
     public void setNoHunger(UUID id, boolean value) {
         updateBoolean(noHunger, id, value);
-        save();
-    }
-
-    public double getDamageMultiplier(UUID id) {
-        return dmgMult.getOrDefault(id, plugin.getConfig().getDouble("damage-multiplier-default", 1.0));
-    }
-
-    public boolean hasCustomDamageMultiplier(UUID id) {
-        return dmgMult.containsKey(id);
-    }
-
-    public void setDamageMultiplier(UUID id, double mult) {
-        if (mult == 1.0) {
-            dmgMult.remove(id);
-        } else {
-            dmgMult.put(id, mult);
-        }
         save();
     }
 
