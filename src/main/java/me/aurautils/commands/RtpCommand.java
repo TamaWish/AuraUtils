@@ -1,6 +1,7 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.managers.TeleportHelper;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -12,7 +13,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import me.aurautils.managers.TeleportHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,13 +68,20 @@ public class RtpCommand implements CommandExecutor {
 
         World world = player.getWorld();
         int radius = Math.max(1, plugin.getConfig().getInt("rtp.radius", 2000));
+        radius = clampRadiusToBorder(world, radius);
         int minDistance = Math.max(0, plugin.getConfig().getInt("rtp.minDistance", 250));
         if (minDistance > radius) {
             minDistance = radius;
         }
+        final int searchRadius = radius;
         int attempts = Math.max(1, plugin.getConfig().getInt("rtp.attempts", 30));
         int attemptsPerTick = Math.max(1, plugin.getConfig().getInt("rtp.attemptsPerTick", 5));
+        boolean centerOnPlayer = plugin.getConfig().getBoolean("rtp.center-on-player", true);
+
         Location from = player.getLocation().clone();
+        Location center = centerOnPlayer ? from : world.getSpawnLocation();
+        int centerX = center.getBlockX();
+        int centerZ = center.getBlockZ();
         long minDistanceSquared = (long) minDistance * minDistance;
 
         player.sendMessage(plugin.prefix("&eSearching for a safe location..."));
@@ -91,8 +98,8 @@ public class RtpCommand implements CommandExecutor {
             @Override
             public void run() {
                 for (int k = 0; k < attemptsPerTick && tried < attempts; k++, tried++) {
-                    int x = world.getSpawnLocation().getBlockX() + random.nextInt(-radius, radius + 1);
-                    int z = world.getSpawnLocation().getBlockZ() + random.nextInt(-radius, radius + 1);
+                    int x = centerX + random.nextInt(-searchRadius, searchRadius + 1);
+                    int z = centerZ + random.nextInt(-searchRadius, searchRadius + 1);
 
                     long dx = x - from.getBlockX();
                     long dz = z - from.getBlockZ();
@@ -100,9 +107,12 @@ public class RtpCommand implements CommandExecutor {
                         continue;
                     }
 
-                    Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
-                    if (border != null && !border.isInside(borderCheck)) {
+                    if (!isInsideBorder(border, world, x, z, from.getY())) {
                         continue;
+                    }
+
+                    if (!world.isChunkLoaded(x >> 4, z >> 4)) {
+                        world.getChunkAt(x >> 4, z >> 4).load();
                     }
 
                     Block surface = world.getHighestBlockAt(x, z);
@@ -113,8 +123,18 @@ public class RtpCommand implements CommandExecutor {
                                 lastUseMillis.put(player.getUniqueId(), System.currentTimeMillis());
                             }
                             if (rtpCountdown > 0) {
-                                teleportHelper.scheduleTeleport(player, teleportLocation, rtpCountdown);
+                                int blocksAway = (int) Math.sqrt(
+                                        teleportLocation.distanceSquared(from));
+                                player.sendMessage(plugin.prefix(
+                                        "&aFound a spot &e" + blocksAway + " &ablocks away. Stand still!"));
+                                teleportHelper.scheduleTeleport(
+                                        player,
+                                        teleportLocation,
+                                        rtpCountdown,
+                                        true,
+                                        "&aTeleported to a random safe location.");
                             } else {
+                                TeleportHelper.ensureChunkLoaded(teleportLocation);
                                 plugin.getBackManager().skipNextRecord(player.getUniqueId());
                                 player.teleport(teleportLocation);
                                 player.sendMessage(plugin.prefix("&aTeleported to a random safe location."));
@@ -127,7 +147,9 @@ public class RtpCommand implements CommandExecutor {
 
                 if (tried >= attempts) {
                     if (player.isOnline()) {
-                        player.sendMessage(plugin.prefix("&cCould not find a safe teleport location. Try again."));
+                        player.sendMessage(plugin.prefix(
+                                "&cCould not find a safe location nearby. "
+                                        + "Try again, move to another biome, or lower &ertp.minDistance&c."));
                     }
                     this.cancel();
                 }
@@ -135,6 +157,26 @@ public class RtpCommand implements CommandExecutor {
         }.runTaskTimer(plugin, 0L, 1L);
 
         return true;
+    }
+
+    private static int clampRadiusToBorder(World world, int radius) {
+        WorldBorder border = world.getWorldBorder();
+        if (border == null) {
+            return radius;
+        }
+        double halfSize = border.getSize() / 2.0;
+        if (halfSize <= 0) {
+            return radius;
+        }
+        int borderLimit = (int) Math.max(1, Math.floor(halfSize) - 2);
+        return Math.min(radius, borderLimit);
+    }
+
+    private static boolean isInsideBorder(WorldBorder border, World world, int x, int z, double y) {
+        if (border == null) {
+            return true;
+        }
+        return border.isInside(new Location(world, x + 0.5, y, z + 0.5));
     }
 
     private Location buildSafeLocation(Block surface) {
@@ -153,6 +195,11 @@ public class RtpCommand implements CommandExecutor {
         Block feet = surface.getRelative(BlockFace.UP);
         Block head = feet.getRelative(BlockFace.UP);
         if (!feet.isPassable() || !head.isPassable()) {
+            return null;
+        }
+
+        Block below = surface.getRelative(BlockFace.DOWN);
+        if (!below.getType().isSolid() || below.isLiquid()) {
             return null;
         }
 

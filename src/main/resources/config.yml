@@ -7,7 +7,9 @@ tpa:
 
 # Random teleport settings
 rtp:
-  # Search radius around world spawn in blocks
+  # When true, pick random coordinates around your current position; when false, around world spawn
+  center-on-player: true
+  # Search radius in blocks (clamped to the world border when present)
   radius: 2000
   # Minimum horizontal distance from your current position
   minDistance: 250
