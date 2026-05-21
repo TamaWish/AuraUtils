@@ -21,7 +21,7 @@ public class AuraCommand implements CommandExecutor {
             }
 
             plugin.reloadPluginConfig();
-            sender.sendMessage(AuraUtils.colorize("&aAuraUtils configuration reloaded, including damage weapons."));
+            sender.sendMessage(AuraUtils.colorize("&aAuraUtils configuration reloaded."));
             return true;
         }
 
@@ -43,7 +43,6 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &e/fly &8[player]   &7- Toggle fly"));
         sender.sendMessage(AuraUtils.colorize("  &e/nofall &8[p]     &7- Toggle fall damage"));
         sender.sendMessage(AuraUtils.colorize("  &e/nohunger &8[p]   &7- Toggle hunger"));
-        sender.sendMessage(AuraUtils.colorize("  &e/damage &8<mult>  &7- Set damage multiplier"));
         sender.sendMessage(AuraUtils.colorize("  &e/aura reload    &7- Reload config and weapon list"));
         sender.sendMessage(AuraUtils.colorize("  &e/rtp &7- Random safe teleport"));
 
@@ -54,7 +53,7 @@ public class AuraCommand implements CommandExecutor {
             sender.sendMessage(AuraUtils.colorize("  &7Your status:"));
             sender.sendMessage(AuraUtils.colorize("  God: "   + toggle(mgr.isGod(id))     + "  Fly: "      + toggle(mgr.isFly(id))));
             sender.sendMessage(AuraUtils.colorize("  NoFall: "+ toggle(mgr.isNoFall(id))  + "  NoHunger: " + toggle(mgr.isNoHunger(id))));
-            sender.sendMessage(AuraUtils.colorize("  Damage mult: &b" + mgr.getDamageMultiplier(id) + "x"));
+            // Damage multiplier feature removed
         }
         sender.sendMessage(AuraUtils.colorize("&8&m------------------------------------"));
         return true;

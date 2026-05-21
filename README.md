@@ -2,7 +2,7 @@
 
 AuraUtils is a lightweight, configurable Spigot/Paper plugin that provides a curated set of essential player utilities and admin tools for Minecraft servers (recommended for 1.21+).
 
-Designed for stability and ease-of-use, AuraUtils adds familiar quality-of-life features — warps and homes, teleport requests, random safe teleport (RTP), flight and god toggles, damage adjustment, and a simple in-game menu — all driven by `config.yml` and permissions.
+Designed for stability and ease-of-use, AuraUtils adds familiar quality-of-life features — warps and homes, teleport requests, random safe teleport (RTP), flight and god toggles, and a simple in-game menu — all driven by `config.yml` and permissions.
 
 ## Quick Start
 
@@ -14,10 +14,10 @@ Designed for stability and ease-of-use, AuraUtils adds familiar quality-of-life 
 
 The following features are implemented and ready to use:
 
-- **Player utility commands:** `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/damage`, `/menu`, `/rtp`, `/aura`
+- **Player utility commands:** `/back`, `/home`, `/sethome`, `/delhome`, `/warp`, `/setwarp`, `/delwarp`, `/tpa`, `/tpaccept`, `/tpadeny`, `/fly`, `/god`, `/nofall`, `/nohunger`, `/menu`, `/rtp`, `/aura`
 - **Permissions:** Granular permissions are available (e.g. `aura.fly.others`, `aura.god.others`). See `plugin.yml` for exact nodes.
 - **Player persistence:** Basic per-player data storage and load on join/quit.
-- **Listeners:** Various listeners (back location tracking, damage multiplier handling, menu interactions, and more) are registered and active.
+- **Listeners:** Various listeners (back location tracking, menu interactions, and more) are registered and active.
 - **Config-driven:** Many defaults and behaviours configurable via `config.yml`.
 
 ### Commands (at-a-glance)
@@ -38,7 +38,6 @@ The following features are implemented and ready to use:
 | `/god [player]` | Toggle invincibility for yourself or another player |
 | `/nofall [player]` | Toggle fall damage for yourself or another player |
 | `/nohunger [player]` | Toggle hunger depletion for yourself or another player |
-| `/damage <multiplier>` | Set your weapon damage multiplier |
 | `/menu` | Open the Aura utilities menu |
 | `/rtp` | Randomly teleport to a safe location |
 | `/aura` | Show plugin info and your current status |
@@ -110,18 +109,5 @@ Common permission nodes used by AuraUtils (defined in `plugin.yml`):
 | `aura.admin` | `op` | All AuraUtils permissions (children in `plugin.yml`) |
 
 For the complete and authoritative list, see [plugin.yml](src/main/resources/plugin.yml).
-
-## Development (VSCode)
-
-Open the `AuraUtils` folder in VSCode — the Maven project will be detected automatically.
-
-## Contributing
-
-Contributions welcome. To add features:
-
-- Add the command class to `src/main/java/me/aurautils/commands/`.
-- Register listeners in `AuraUtils.java` and add config options if needed.
-- Update `plugin.yml` and `config.yml` with new permissions and settings.
-- If the feature is player-facing, add it to the command list and permissions tables in the README.
 
 For questions or help, open an issue in the project repository.

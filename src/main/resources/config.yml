@@ -7,7 +7,6 @@ tpa:
 
 # Default damage multiplier applied to weapon hits (1.0 = normal)
 # Players can override this with /damage <multiplier> if they have permission
-damage-multiplier-default: 1.0
 
 # Per-weapon default multipliers. If present, these values are used as the
 # default damage multiplier for the specified material for all players.
@@ -17,31 +16,13 @@ damage-multiplier-default: 1.0
 #   BOW: 1.5
 # When this section exists it takes precedence over the simple
 # `damage-weapons` list below.
-damage-multipliers:
   #DIAMOND_SWORD: 1.0
   #BOW: 1.0
 
 # Max allowed damage multiplier a player can set
-damage-multiplier-max: 10.0
 
 # Materials treated as weapons for the damage multiplier.
 # Use enum names from org.bukkit.Material, e.g. DIAMOND_SWORD, IRON_AXE, TRIDENT, BOW, CROSSBOW
-damage-weapons:
-  - DIAMOND_SWORD
-  - IRON_SWORD
-  - GOLDEN_SWORD
-  - STONE_SWORD
-  - WOODEN_SWORD
-  - NETHERITE_SWORD
-  - DIAMOND_AXE
-  - IRON_AXE
-  - GOLDEN_AXE
-  - STONE_AXE
-  - WOODEN_AXE
-  - NETHERITE_AXE
-  - TRIDENT
-  - BOW
-  - CROSSBOW
 
 # Random teleport settings
 rtp:

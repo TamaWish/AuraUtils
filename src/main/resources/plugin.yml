@@ -70,13 +70,9 @@ commands:
     usage: /nohunger [player]
     permission: aura.nohunger
   damage:
-    description: Set your weapon damage multiplier
-    usage: /damage <multiplier>
-    permission: aura.damage
+    # removed
   weapondamage:
-    description: Manage per-weapon default damage multipliers
-    usage: /weapondamage <list|set|remove>
-    permission: aura.damage.weapon
+    # removed
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
@@ -142,10 +138,10 @@ permissions:
     description: Toggle hunger on others
     default: op
   aura.damage:
-    description: Set weapon damage multiplier
+    # removed
     default: op
   aura.damage.weapon:
-    description: Manage per-weapon damage multipliers
+    # removed
     default: op
   aura.rtp:
     description: Use random teleport
@@ -162,7 +158,7 @@ permissions:
       aura.nofall.others: true
       aura.nohunger: true
       aura.nohunger.others: true
-      aura.damage: true
+      # aura.damage removed
       aura.tpa: true
       aura.menu: true
       aura.back: true
