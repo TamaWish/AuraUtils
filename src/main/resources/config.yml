@@ -12,13 +12,13 @@ rtp:
   # Search radius in blocks (clamped to the world border when present)
   radius: 2000
   # Minimum horizontal distance from your current position
-  minDistance: 250
+  minDistance: 100
   # Number of random attempts before giving up
-  attempts: 30
+  attempts: 80
   # Number of attempts to try per server tick (spreads load)
-  attemptsPerTick: 5
+  attemptsPerTick: 10
   # Countdown (seconds) before executing the teleport; 0 = immediate
-  countdown: 5
+  countdown: 0
   # Cooldown (seconds) between successful RTP uses; 0 = disabled
   cooldown: 60
 

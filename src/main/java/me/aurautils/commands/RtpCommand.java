@@ -2,6 +2,7 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.TeleportHelper;
+import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -12,6 +13,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
@@ -22,7 +24,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class RtpCommand implements CommandExecutor {
 
-    private static final Set<Material> UNSAFE_SURFACES = Set.of(
+    private static final Set<Material> UNSAFE_FLOOR = Set.of(
             Material.LAVA,
             Material.MAGMA_BLOCK,
             Material.CACTUS,
@@ -32,8 +34,11 @@ public class RtpCommand implements CommandExecutor {
             Material.SOUL_CAMPFIRE,
             Material.POWDER_SNOW,
             Material.SWEET_BERRY_BUSH,
-            Material.WITHER_ROSE
+            Material.WITHER_ROSE,
+            Material.BEDROCK
     );
+
+    private static final int SURFACE_SCAN_DEPTH = 24;
 
     private final AuraUtils plugin;
     private final Map<UUID, Long> lastUseMillis = new HashMap<>();
@@ -69,24 +74,24 @@ public class RtpCommand implements CommandExecutor {
         World world = player.getWorld();
         int radius = Math.max(1, plugin.getConfig().getInt("rtp.radius", 2000));
         radius = clampRadiusToBorder(world, radius);
-        int minDistance = Math.max(0, plugin.getConfig().getInt("rtp.minDistance", 250));
+        int minDistance = Math.max(0, plugin.getConfig().getInt("rtp.minDistance", 100));
         if (minDistance > radius) {
             minDistance = radius;
         }
         final int searchRadius = radius;
-        int attempts = Math.max(1, plugin.getConfig().getInt("rtp.attempts", 30));
-        int attemptsPerTick = Math.max(1, plugin.getConfig().getInt("rtp.attemptsPerTick", 5));
+        final int minDist = minDistance;
+        int attempts = Math.max(1, plugin.getConfig().getInt("rtp.attempts", 80));
+        int attemptsPerTick = Math.max(1, plugin.getConfig().getInt("rtp.attemptsPerTick", 10));
         boolean centerOnPlayer = plugin.getConfig().getBoolean("rtp.center-on-player", true);
 
         Location from = player.getLocation().clone();
         Location center = centerOnPlayer ? from : world.getSpawnLocation();
         int centerX = center.getBlockX();
         int centerZ = center.getBlockZ();
-        long minDistanceSquared = (long) minDistance * minDistance;
 
         player.sendMessage(plugin.prefix("&eSearching for a safe location..."));
 
-        int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", plugin.getConfig().getInt("teleport.countdown", 5)));
+        int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", 0));
 
         TeleportHelper teleportHelper = new TeleportHelper(plugin);
 
@@ -98,65 +103,73 @@ public class RtpCommand implements CommandExecutor {
             @Override
             public void run() {
                 for (int k = 0; k < attemptsPerTick && tried < attempts; k++, tried++) {
-                    int x = centerX + random.nextInt(-searchRadius, searchRadius + 1);
-                    int z = centerZ + random.nextInt(-searchRadius, searchRadius + 1);
-
-                    long dx = x - from.getBlockX();
-                    long dz = z - from.getBlockZ();
-                    if (minDistanceSquared > 0 && (dx * dx + dz * dz) < minDistanceSquared) {
-                        continue;
+                    int x;
+                    int z;
+                    if (minDist > 0 && minDist < searchRadius) {
+                        double angle = random.nextDouble() * Math.PI * 2.0;
+                        double distance = minDist + random.nextDouble() * (searchRadius - minDist);
+                        x = centerX + (int) Math.round(Math.cos(angle) * distance);
+                        z = centerZ + (int) Math.round(Math.sin(angle) * distance);
+                    } else {
+                        x = centerX + random.nextInt(-searchRadius, searchRadius + 1);
+                        z = centerZ + random.nextInt(-searchRadius, searchRadius + 1);
                     }
 
                     if (!isInsideBorder(border, world, x, z, from.getY())) {
                         continue;
                     }
 
-                    if (!world.isChunkLoaded(x >> 4, z >> 4)) {
-                        world.getChunkAt(x >> 4, z >> 4).load();
+                    Location teleportLocation = findSafeLocation(world, x, z, from.getYaw(), from.getPitch());
+                    if (teleportLocation == null) {
+                        continue;
                     }
 
-                    Block surface = world.getHighestBlockAt(x, z);
-                    Location teleportLocation = buildSafeLocation(surface);
-                    if (teleportLocation != null) {
-                        if (player.isOnline()) {
-                            if (cooldownSeconds > 0) {
-                                lastUseMillis.put(player.getUniqueId(), System.currentTimeMillis());
-                            }
-                            if (rtpCountdown > 0) {
-                                int blocksAway = (int) Math.sqrt(
-                                        teleportLocation.distanceSquared(from));
-                                player.sendMessage(plugin.prefix(
-                                        "&aFound a spot &e" + blocksAway + " &ablocks away. Stand still!"));
-                                teleportHelper.scheduleTeleport(
-                                        player,
-                                        teleportLocation,
-                                        rtpCountdown,
-                                        true,
-                                        "&aTeleported to a random safe location.");
-                            } else {
-                                TeleportHelper.ensureChunkLoaded(teleportLocation);
-                                plugin.getBackManager().skipNextRecord(player.getUniqueId());
-                                player.teleport(teleportLocation);
-                                player.sendMessage(plugin.prefix("&aTeleported to a random safe location."));
-                            }
-                        }
-                        this.cancel();
+                    if (!player.isOnline()) {
+                        cancel();
                         return;
                     }
+
+                    if (cooldownSeconds > 0) {
+                        lastUseMillis.put(player.getUniqueId(), System.currentTimeMillis());
+                    }
+
+                    int blocksAway = (int) Math.round(teleportLocation.distance(from));
+                    if (rtpCountdown > 0) {
+                        player.sendMessage(plugin.prefix(
+                                "&aFound a spot &e" + blocksAway + " &ablocks away. Stand still!"));
+                        teleportHelper.scheduleTeleport(
+                                player,
+                                teleportLocation,
+                                rtpCountdown,
+                                true,
+                                "&aTeleported to a random safe location.");
+                    } else {
+                        executeTeleport(player, teleportLocation);
+                        player.sendMessage(plugin.prefix(
+                                "&aTeleported &e" + blocksAway + " &ablocks to a random safe location."));
+                    }
+                    cancel();
+                    return;
                 }
 
                 if (tried >= attempts) {
                     if (player.isOnline()) {
                         player.sendMessage(plugin.prefix(
-                                "&cCould not find a safe location nearby. "
-                                        + "Try again, move to another biome, or lower &ertp.minDistance&c."));
+                                "&cCould not find a safe location. "
+                                        + "Lower &ertp.minDistance&c or increase &ertp.attempts&c."));
                     }
-                    this.cancel();
+                    cancel();
                 }
             }
         }.runTaskTimer(plugin, 0L, 1L);
 
         return true;
+    }
+
+    private void executeTeleport(Player player, Location destination) {
+        TeleportHelper.ensureChunkLoaded(destination);
+        plugin.getBackManager().skipNextRecord(player.getUniqueId());
+        player.teleport(destination, PlayerTeleportEvent.TeleportCause.COMMAND);
     }
 
     private static int clampRadiusToBorder(World world, int radius) {
@@ -179,30 +192,57 @@ public class RtpCommand implements CommandExecutor {
         return border.isInside(new Location(world, x + 0.5, y, z + 0.5));
     }
 
-    private Location buildSafeLocation(Block surface) {
-        if (surface == null) {
-            return null;
+    /**
+     * Finds a standable spot at x/z by scanning down from the surface heightmap.
+     */
+    private static Location findSafeLocation(World world, int x, int z, float yaw, float pitch) {
+        int chunkX = x >> 4;
+        int chunkZ = z >> 4;
+        if (!world.isChunkLoaded(chunkX, chunkZ)) {
+            world.getChunkAt(chunkX, chunkZ).load(true);
         }
 
-        Material surfaceType = surface.getType();
-        if (surfaceType == Material.BEDROCK || UNSAFE_SURFACES.contains(surfaceType)) {
-            return null;
-        }
-        if (surfaceType.isAir() || surface.isLiquid() || !surfaceType.isSolid()) {
-            return null;
-        }
+        int topY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        int minY = world.getMinHeight();
 
-        Block feet = surface.getRelative(BlockFace.UP);
-        Block head = feet.getRelative(BlockFace.UP);
-        if (!feet.isPassable() || !head.isPassable()) {
-            return null;
-        }
+        for (int y = topY; y >= Math.max(minY, topY - SURFACE_SCAN_DEPTH); y--) {
+            Block floor = world.getBlockAt(x, y, z);
+            if (!isStandableFloor(floor)) {
+                continue;
+            }
 
-        Block below = surface.getRelative(BlockFace.DOWN);
-        if (!below.getType().isSolid() || below.isLiquid()) {
-            return null;
-        }
+            Block feet = floor.getRelative(BlockFace.UP);
+            Block head = feet.getRelative(BlockFace.UP);
+            if (!hasStandingSpace(feet, head)) {
+                continue;
+            }
 
-        return feet.getLocation().add(0.5, 0.0, 0.5);
+            return new Location(
+                    world,
+                    x + 0.5,
+                    floor.getY() + 1.0,
+                    z + 0.5,
+                    yaw,
+                    pitch
+            );
+        }
+        return null;
+    }
+
+    /** Floor must be a solid block players stand on (not air, fluid, or pass-through plants). */
+    private static boolean isStandableFloor(Block block) {
+        if (block.isEmpty() || block.isLiquid()) {
+            return false;
+        }
+        Material type = block.getType();
+        if (UNSAFE_FLOOR.contains(type)) {
+            return false;
+        }
+        // Passable blocks (flowers, tall grass, etc.) are not valid floors.
+        return !block.isPassable();
+    }
+
+    private static boolean hasStandingSpace(Block feet, Block head) {
+        return feet.isEmpty() && head.isEmpty();
     }
 }

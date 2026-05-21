@@ -29,6 +29,27 @@ AuraUtils is a good fit if you want a lean, modern, self-contained plugin you ca
 - **Teleport countdown** — Shared delay for warp, home, back, and TPA (configurable; RTP has its own countdown).
 - **Persistence** — Warps, homes, and per-player toggle state saved to disk.
 
+## Compatibility with ResourceWorldResetter
+
+AuraUtils is designed to work alongside [**ResourceWorldResetter (RWR)**](https://github.com/TamaWish/ResourceWorldResetter). RWR handles resource-world resets and world selection; AuraUtils supplies player teleport utilities (including RTP and `/back`).
+
+| Plugin | Role |
+|---|---|
+| **RWR** | Scheduled resets, admin GUI, **`/rwr tp`** — GUI to pick and enter the resource world |
+| **AuraUtils** | **`/rtp`**, **`/back`**, homes, warps, TPA, and related teleports on any world (including the resource world) |
+
+RWR does not provide `/rwr tp random` or `/rwr back`; use AuraUtils (or another RTP/back plugin) for those. There are no overlapping commands between the two plugins.
+
+| AuraUtils command | With RWR |
+|---|---|
+| `/rtp` | Use for random teleport, including in the resource world |
+| `/back` | Last teleport location (AuraUtils only) |
+| `/home`, `/warp`, `/tpa` | Works in all worlds; safe alongside RWR |
+
+**During a reset:** RWR moves players out of the resource world before deleting it. An AuraUtils teleport countdown in that world may cancel if the player is sent to another world first — that is expected.
+
+Install both JARs in `plugins/`, configure RWR’s `worldName` and `teleport.defaultWorld`, and use **`/rwr tp`** to open the world GUI when entering the resource world. No extra AuraUtils config is required.
+
 ## Commands
 
 | Command | Usage | Description |

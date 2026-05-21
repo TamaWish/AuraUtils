@@ -5,6 +5,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class TeleportHelper {
@@ -45,7 +46,7 @@ public class TeleportHelper {
                 if (remaining <= 0) {
                     ensureChunkLoaded(dest);
                     plugin.getBackManager().skipNextRecord(player.getUniqueId());
-                    player.teleport(dest);
+                    player.teleport(dest, PlayerTeleportEvent.TeleportCause.COMMAND);
                     player.sendMessage(plugin.prefix(successMessage));
                     cancel();
                     return;
