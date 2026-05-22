@@ -1,17 +1,13 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
-import me.aurautils.util.CommandUtil;
+import me.aurautils.util.MessagePlaceholders;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.Collections;
-import java.util.List;
-
-public class DelHomeCommand implements CommandExecutor, TabCompleter {
+public class DelHomeCommand implements CommandExecutor {
 
     private final AuraUtils plugin;
 
@@ -26,30 +22,21 @@ public class DelHomeCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (!player.hasPermission("aura.home.delete")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(plugin.prefix("&eUsage: /delhome <name>"));
+            plugin.send(player, "home.usage-del");
             return true;
         }
 
-        boolean removed = plugin.getHomeManager().deleteHome(player.getUniqueId(), args[0]);
-        if (!removed) {
-            player.sendMessage(plugin.prefix("&cHome &e" + args[0] + " &cwas not found."));
+        if (!plugin.getHomeManager().deleteHome(player.getUniqueId(), args[0])) {
+            plugin.send(player, "home.not-found", MessagePlaceholders.of("name", args[0]));
             return true;
         }
 
         plugin.getHomeManager().save();
-        player.sendMessage(plugin.prefix("&aDeleted home &e" + args[0] + "&a."));
+        plugin.send(player, "home.deleted", MessagePlaceholders.of("name", args[0]));
         return true;
-    }
-
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length != 1 || !(sender instanceof Player player) || !sender.hasPermission("aura.home.delete")) {
-            return Collections.emptyList();
-        }
-        return CommandUtil.filterPrefix(args[0], plugin.getHomeManager().getHomeNames(player.getUniqueId()));
     }
 }

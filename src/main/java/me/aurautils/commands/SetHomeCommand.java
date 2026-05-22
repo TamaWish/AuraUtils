@@ -2,6 +2,7 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.util.CommandUtil;
+import me.aurautils.util.MessagePlaceholders;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,23 +27,23 @@ public class SetHomeCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (!player.hasPermission("aura.home.set")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(plugin.prefix("&eUsage: /sethome <name>"));
+            plugin.send(player, "home.usage-set");
             return true;
         }
 
         if (!plugin.getHomeManager().canSetHome(player.getUniqueId(), args[0])) {
             int max = plugin.getHomeManager().getMaxHomesPerPlayer();
-            player.sendMessage(plugin.prefix("&cYou have reached the home limit (&e" + max + "&c). Delete a home first."));
+            plugin.send(player, "home.limit", MessagePlaceholders.of("max", String.valueOf(max)));
             return true;
         }
 
         plugin.getHomeManager().setHome(player.getUniqueId(), args[0], player.getLocation());
         plugin.getHomeManager().save();
-        player.sendMessage(plugin.prefix("&aSet home &e" + args[0] + "&a."));
+        plugin.send(player, "home.set", MessagePlaceholders.of("name", args[0]));
         return true;
     }
 

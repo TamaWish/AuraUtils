@@ -2,6 +2,8 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.util.CommandUtil;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,19 +24,19 @@ public class FlyCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!sender.hasPermission("aura.fly")) {
-            sender.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(sender, "general.no-permission");
             return true;
         }
 
         Player target;
         if (args.length >= 1) {
             if (!sender.hasPermission("aura.fly.others")) {
-                sender.sendMessage(plugin.prefix("&cYou can't toggle fly on others."));
+                plugin.send(sender, "fly.others-denied");
                 return true;
             }
             target = plugin.getServer().getPlayer(args[0]);
             if (target == null) {
-                sender.sendMessage(plugin.prefix("&cPlayer not found."));
+                plugin.send(sender, "general.player-not-found");
                 return true;
             }
         } else {
@@ -45,16 +47,18 @@ public class FlyCommand implements CommandExecutor, TabCompleter {
             target = player;
         }
 
-        boolean now = plugin.getPlayerDataManager().toggleFly(target.getUniqueId());
-        target.setAllowFlight(now);
-        if (!now) {
+        boolean enabled = plugin.getPlayerDataManager().toggleFly(target.getUniqueId());
+        target.setAllowFlight(enabled);
+        if (!enabled) {
             target.setFlying(false);
         }
 
-        String state = now ? "&aENABLED" : "&cDISABLED";
-        target.sendMessage(plugin.prefix("Fly " + state + "&r."));
+        plugin.sendToggle(target, "fly.toggled-self", enabled);
         if (!target.equals(sender)) {
-            sender.sendMessage(plugin.prefix("Fly " + state + " &rfor &e" + target.getName() + "&r."));
+            plugin.send(sender, "fly.toggled-other", TagResolver.builder()
+                    .resolver(Placeholder.parsed("player", target.getName()))
+                    .resolver(Placeholder.component("state", plugin.getMessages().stateComponent(sender, enabled)))
+                    .build());
         }
         return true;
     }

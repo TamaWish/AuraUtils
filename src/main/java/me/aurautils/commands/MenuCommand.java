@@ -21,7 +21,7 @@ public class MenuCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("aura.use")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return true;
         }
 

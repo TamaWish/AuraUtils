@@ -32,6 +32,8 @@ public class PlayerDataManager {
     private final Map<UUID, Boolean> flyMode = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> noFall = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> noHunger = new ConcurrentHashMap<>();
+    /** Optional per-player message locale override (e.g. en, es). */
+    private final Map<UUID, String> localeOverrides = new ConcurrentHashMap<>();
 
     private final Set<UUID> pendingPlayerSaves = ConcurrentHashMap.newKeySet();
     private volatile boolean pendingFullSave;
@@ -52,6 +54,7 @@ public class PlayerDataManager {
             flyMode.clear();
             noFall.clear();
             noHunger.clear();
+            localeOverrides.clear();
 
             YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
             ConfigurationSection playersSection = config.getConfigurationSection("players");
@@ -83,6 +86,12 @@ public class PlayerDataManager {
                 }
                 if (playerSection.contains("nohunger")) {
                     noHunger.put(playerId, playerSection.getBoolean("nohunger"));
+                }
+                if (playerSection.contains("locale")) {
+                    String locale = MessagesManager.normalizeLocale(playerSection.getString("locale"));
+                    if (!locale.isEmpty()) {
+                        localeOverrides.put(playerId, locale);
+                    }
                 }
             }
         } finally {
@@ -223,6 +232,10 @@ public class PlayerDataManager {
         playerSection.set("fly", isFly(playerId));
         playerSection.set("nofall", isNoFall(playerId));
         playerSection.set("nohunger", isNoHunger(playerId));
+        String locale = localeOverrides.get(playerId);
+        if (locale != null) {
+            playerSection.set("locale", locale);
+        }
     }
 
     private Set<UUID> collectKnownPlayerIds() {
@@ -321,8 +334,22 @@ public class PlayerDataManager {
         }, 1L);
     }
 
+    public String getLocaleOverride(UUID playerId) {
+        return localeOverrides.get(playerId);
+    }
+
+    public void setLocaleOverride(UUID playerId, String locale) {
+        if (locale == null || locale.isBlank()) {
+            localeOverrides.remove(playerId);
+        } else {
+            localeOverrides.put(playerId, MessagesManager.normalizeLocale(locale));
+        }
+        scheduleSave();
+    }
+
     private boolean hasStoredToggles(UUID playerId) {
-        return isGod(playerId) || isFly(playerId) || isNoFall(playerId) || isNoHunger(playerId);
+        return isGod(playerId) || isFly(playerId) || isNoFall(playerId) || isNoHunger(playerId)
+                || localeOverrides.containsKey(playerId);
     }
 
     private void updateBoolean(Map<UUID, Boolean> state, UUID id, boolean value) {

@@ -2,6 +2,8 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.util.CommandUtil;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,19 +24,19 @@ public class GodCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!sender.hasPermission("aura.god")) {
-            sender.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(sender, "general.no-permission");
             return true;
         }
 
         Player target;
         if (args.length >= 1) {
             if (!sender.hasPermission("aura.god.others")) {
-                sender.sendMessage(plugin.prefix("&cYou can't toggle god mode on others."));
+                plugin.send(sender, "god.others-denied");
                 return true;
             }
             target = plugin.getServer().getPlayer(args[0]);
             if (target == null) {
-                sender.sendMessage(plugin.prefix("&cPlayer not found."));
+                plugin.send(sender, "general.player-not-found");
                 return true;
             }
         } else {
@@ -45,12 +47,13 @@ public class GodCommand implements CommandExecutor, TabCompleter {
             target = player;
         }
 
-        boolean now = plugin.getPlayerDataManager().toggleGod(target.getUniqueId());
-        String state = now ? "&aENABLED" : "&cDISABLED";
-
-        target.sendMessage(plugin.prefix("God mode " + state + "&r."));
+        boolean enabled = plugin.getPlayerDataManager().toggleGod(target.getUniqueId());
+        plugin.sendToggle(target, "god.toggled-self", enabled);
         if (!target.equals(sender)) {
-            sender.sendMessage(plugin.prefix("God mode " + state + " &rfor &e" + target.getName() + "&r."));
+            plugin.send(sender, "god.toggled-other", TagResolver.builder()
+                    .resolver(Placeholder.parsed("player", target.getName()))
+                    .resolver(Placeholder.component("state", plugin.getMessages().stateComponent(sender, enabled)))
+                    .build());
         }
         return true;
     }

@@ -1,4 +1,8 @@
 # AuraUtils Configuration
+#
+# RTP / teleport chunk loading (see README "Random teleport (async-safe)"):
+#   Paper  — leave only-loaded-chunks unset/false; use generate-chunks, async-urgent, max-pending-chunk-loads
+#   Spigot — set only-loaded-chunks: true and pre-generate worlds for reliable /rtp
 
 # TPA settings
 tpa:
@@ -17,6 +21,15 @@ rtp:
   attempts: 80
   # Number of attempts to try per server tick (spreads load)
   attemptsPerTick: 10
+  # Spigot: set true to only search already-loaded chunks (best with pre-generated worlds).
+  # Paper: omit or set false to use async chunk loading during search (default when unset).
+  # only-loaded-chunks: true
+  # Paper: generate terrain during async RTP search (false = pre-generated / existing terrain only)
+  generate-chunks: false
+  # Paper: prioritize async chunk loads for RTP
+  async-urgent: true
+  # Paper: max concurrent async chunk loads per active RTP search
+  max-pending-chunk-loads: 4
   # Countdown (seconds) before executing the teleport; 0 = immediate
   countdown: 0
   # Cooldown (seconds) between successful RTP uses; 0 = disabled
@@ -25,6 +38,10 @@ rtp:
 # Global teleport countdown used by warp/home/back/tpa (seconds)
 teleport:
   countdown: 5
+  # Paper: load destination chunks asynchronously before teleporting
+  async-chunk-load: true
+  # Spigot: allow one synchronous chunk load at teleport time when the chunk is not loaded
+  sync-chunk-fallback: true
 
 # Per-player home limits (-1 = unlimited)
 homes:
@@ -35,5 +52,9 @@ server:
   # When true, players keep inventory on death in all worlds (vanilla keepInventory gamerule)
   keep-inventory: false
 
-# Messages prefix
-prefix: "&8[&bAura&8] &r"
+# Messages (MiniMessage) — edit plugins/AuraUtils/messages/<locale>.yml
+messages:
+  default-locale: en
+  fallback-locale: en
+  # When true, uses the client's language on Paper if a matching messages/<locale>.yml exists
+  use-client-locale: true

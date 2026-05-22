@@ -1,41 +1,68 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.CommandUtil;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-public class NoHungerCommand implements CommandExecutor {
+import java.util.Collections;
+import java.util.List;
+
+public class NoHungerCommand implements CommandExecutor, TabCompleter {
 
     private final AuraUtils plugin;
-    public NoHungerCommand(AuraUtils plugin) { this.plugin = plugin; }
+
+    public NoHungerCommand(AuraUtils plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!sender.hasPermission("aura.nohunger")) {
-            sender.sendMessage(plugin.prefix("&cNo permission.")); return true;
+            plugin.send(sender, "general.no-permission");
+            return true;
         }
 
         Player target;
         if (args.length >= 1) {
             if (!sender.hasPermission("aura.nohunger.others")) {
-                sender.sendMessage(plugin.prefix("&cYou can't toggle nohunger on others.")); return true;
+                plugin.send(sender, "nohunger.others-denied");
+                return true;
             }
             target = plugin.getServer().getPlayer(args[0]);
-            if (target == null) { sender.sendMessage(plugin.prefix("&cPlayer not found.")); return true; }
+            if (target == null) {
+                plugin.send(sender, "general.player-not-found");
+                return true;
+            }
         } else {
-            if (!(sender instanceof Player p)) { sender.sendMessage("Console must specify a player."); return true; }
-            target = p;
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Console must specify a player.");
+                return true;
+            }
+            target = player;
         }
 
-        boolean now = plugin.getPlayerDataManager().toggleNoHunger(target.getUniqueId());
-        if (now) target.setFoodLevel(20); // fill hunger bar when toggled on
-        String state = now ? "&aENABLED" : "&cDISABLED";
-        target.sendMessage(plugin.prefix("No hunger " + state + "&r."));
+        boolean enabled = plugin.getPlayerDataManager().toggleNoHunger(target.getUniqueId());
+        plugin.sendToggle(target, "nohunger.toggled-self", enabled);
         if (!target.equals(sender)) {
-            sender.sendMessage(plugin.prefix("No hunger " + state + " &rfor &e" + target.getName() + "&r."));
+            plugin.send(sender, "nohunger.toggled-other", TagResolver.builder()
+                    .resolver(Placeholder.parsed("player", target.getName()))
+                    .resolver(Placeholder.component("state", plugin.getMessages().stateComponent(sender, enabled)))
+                    .build());
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length != 1) {
+            return Collections.emptyList();
+        }
+        return CommandUtil.onlinePlayerNames(sender, args[0], "aura.nohunger.others");
     }
 }

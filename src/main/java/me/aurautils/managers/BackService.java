@@ -10,24 +10,24 @@ public final class BackService {
 
     public static boolean teleportBack(AuraUtils plugin, Player player) {
         if (!player.hasPermission("aura.back")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return false;
         }
 
         var backLocation = plugin.getBackManager().get(player.getUniqueId());
         if (backLocation == null) {
-            player.sendMessage(plugin.prefix("&cYou have no previous teleport location."));
+            plugin.send(player, "teleport.no-back");
             return false;
         }
 
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = new TeleportHelper(plugin);
+        TeleportHelper helper = plugin.getTeleportHelper();
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, backLocation, tpCountdown);
+            helper.scheduleTeleport(player, backLocation, tpCountdown, false, "teleport.success-back");
         } else {
             plugin.getBackManager().skipNextRecord(player.getUniqueId());
             player.teleport(backLocation);
-            player.sendMessage(plugin.prefix("&aReturned to your last teleport location."));
+            plugin.send(player, "teleport.success-back");
         }
         return true;
     }

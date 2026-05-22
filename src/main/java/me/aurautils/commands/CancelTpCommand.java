@@ -6,24 +6,22 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class TpaDenyCommand implements CommandExecutor {
+public class CancelTpCommand implements CommandExecutor {
 
     private final AuraUtils plugin;
 
-    public TpaDenyCommand(AuraUtils plugin) {
+    public CancelTpCommand(AuraUtils plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
             return true;
         }
-        if (!plugin.getTpaManager().hasPending(player.getUniqueId())) {
-            plugin.send(player, "tpa.no-pending");
-            return true;
+        if (plugin.getTeleportHelper().cancelPendingTeleport(player)) {
+            plugin.send(player, "teleport.cancelled-manual");
         }
-        plugin.getTpaManager().deny(player);
         return true;
     }
 }

@@ -2,7 +2,7 @@ name: AuraUtils
 version: ${project.version}
 main: me.aurautils.AuraUtils
 api-version: "1.21"
-description: Utility bundle — TPA, God, Fly, and more.
+description: Utility bundle — async-safe RTP, TPA, homes, warps, and more.
 author: YourName
 
 commands:
@@ -88,6 +88,10 @@ commands:
   aura:
     description: Show AuraUtils info and commands
     usage: /aura
+    permission: aura.use
+  auracanceltp:
+    description: Cancel a pending AuraUtils teleport countdown
+    usage: /auracanceltp
     permission: aura.use
 
 permissions:

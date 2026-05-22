@@ -2,6 +2,8 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.util.CommandUtil;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,7 +22,7 @@ public class KeepInventoryCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("aura.keepinventory")) {
-            sender.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(sender, "general.no-permission");
             return true;
         }
 
@@ -48,13 +50,14 @@ public class KeepInventoryCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        sender.sendMessage(plugin.prefix("&eUsage: /keepinventory [on|off|status]"));
+        plugin.send(sender, "keepinventory.usage");
         return true;
     }
 
     private void sendStatus(CommandSender sender, boolean enabled) {
-        String state = enabled ? "&aenabled" : "&cdisabled";
-        sender.sendMessage(plugin.prefix("Keep inventory on death is now " + state + " &7for all worlds&r."));
+        plugin.send(sender, "keepinventory.toggled", TagResolver.builder()
+                .resolver(Placeholder.component("state", plugin.getMessages().stateComponent(sender, enabled)))
+                .build());
     }
 
     @Override

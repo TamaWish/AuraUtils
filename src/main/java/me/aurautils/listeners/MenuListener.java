@@ -109,23 +109,24 @@ public class MenuListener implements Listener {
             return;
         }
         if (!WarpPermissions.canUse(player, name)) {
-            player.sendMessage(plugin.prefix("&cYou don't have permission to use warp &e" + name + "&c."));
+            plugin.send(player, "warp.no-permission", me.aurautils.util.MessagePlaceholders.of("name", name));
             return;
         }
         var location = plugin.getWarpManager().getWarp(name);
         if (location == null) {
-            player.sendMessage(plugin.prefix("&cWarp &e" + name + " &cwas not found."));
+            plugin.send(player, "warp.not-found", me.aurautils.util.MessagePlaceholders.of("name", name));
             return;
         }
         player.closeInventory();
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = new TeleportHelper(plugin);
+        TeleportHelper helper = plugin.getTeleportHelper();
+        var placeholders = me.aurautils.util.MessagePlaceholders.of("name", name);
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown);
+            helper.scheduleTeleport(player, location, tpCountdown, false, "teleport.success-warp", placeholders);
         } else {
             plugin.getBackManager().skipNextRecord(player.getUniqueId());
             player.teleport(location);
-            player.sendMessage(plugin.prefix("&aTeleported to warp &e" + name + "&a."));
+            plugin.send(player, "teleport.success-warp", placeholders);
         }
     }
 
@@ -135,18 +136,19 @@ public class MenuListener implements Listener {
         }
         var location = plugin.getHomeManager().getHome(player.getUniqueId(), name);
         if (location == null) {
-            player.sendMessage(plugin.prefix("&cHome &e" + name + " &cwas not found."));
+            plugin.send(player, "home.not-found", me.aurautils.util.MessagePlaceholders.of("name", name));
             return;
         }
         player.closeInventory();
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = new TeleportHelper(plugin);
+        TeleportHelper helper = plugin.getTeleportHelper();
+        var placeholders = me.aurautils.util.MessagePlaceholders.of("name", name);
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown);
+            helper.scheduleTeleport(player, location, tpCountdown, false, "teleport.success-home", placeholders);
         } else {
             plugin.getBackManager().skipNextRecord(player.getUniqueId());
             player.teleport(location);
-            player.sendMessage(plugin.prefix("&aTeleported to home &e" + name + "&a."));
+            plugin.send(player, "teleport.success-home", placeholders);
         }
     }
 }

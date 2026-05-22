@@ -1,6 +1,7 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.MessagePlaceholders;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,19 +22,19 @@ public class SetSpawnCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("aura.setspawn")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return true;
         }
 
         var world = player.getWorld();
         plugin.getServerSettingsManager().setWorldSpawn(player.getLocation());
-        player.sendMessage(plugin.prefix(
-                "&aSet spawn for world &e" + world.getName()
-                        + " &7(&f" + formatBlock(player.getLocation().getBlockX())
-                        + ", " + formatBlock(player.getLocation().getBlockY())
-                        + ", " + formatBlock(player.getLocation().getBlockZ())
-                        + "&7). &8Persists across resource-world resets."
-        ));
+        String coords = formatBlock(player.getLocation().getBlockX())
+                + ", " + formatBlock(player.getLocation().getBlockY())
+                + ", " + formatBlock(player.getLocation().getBlockZ());
+        plugin.send(player, "spawn.set", MessagePlaceholders.builder()
+                .add("world", world.getName())
+                .add("coords", coords)
+                .build());
         return true;
     }
 

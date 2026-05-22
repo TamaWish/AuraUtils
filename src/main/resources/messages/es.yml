@@ -1,0 +1,32 @@
+# AuraUtils — Español (MiniMessage)
+# Añade más claves según necesites; las ausentes usan el idioma de respaldo (fallback).
+
+meta:
+  prefix: "<dark_gray>[<gradient:#00d2ff:#3a7bd5>Aura</gradient>]</dark_gray> "
+
+toggle:
+  on: "<green>activado"
+  off: "<red>desactivado"
+
+general:
+  no-permission: "<prefix><red>Sin permiso."
+  no-permission-short: "<prefix><red>No tienes permiso."
+  player-not-found: "<prefix><red>Jugador no encontrado."
+  player-offline: "<prefix><red>El jugador <yellow><name></yellow> no está en línea."
+
+teleport:
+  countdown: "<prefix><yellow>Teletransporte en <gold><seconds></gold><gray>s</gray>… <hover:show_text:'<gray>Clic para cancelar'><click:run_command:/auracanceltp><red><bold>✕</bold></red></click></hover>"
+  cancelled-movement: "<prefix><red>Teletransporte cancelado por movimiento."
+  cancelled-manual: "<prefix><red>Teletransporte cancelado."
+  success-rtp: "<prefix><green>Teletransportado a un lugar seguro al azar."
+  chunk-unavailable: "<prefix><red>El chunk de destino no está cargado. Explora la zona o inténtalo de nuevo."
+
+rtp:
+  searching: "<prefix><yellow>Buscando un lugar seguro…"
+  cooldown: "<prefix><red>RTP en enfriamiento. Intenta en <yellow><seconds>s<red>."
+  found-countdown: "<prefix><green>¡Lugar encontrado a <yellow><blocks></yellow> bloques! ¡Quédate quieto!"
+  failed: "<prefix><red>No se encontró un lugar seguro. En Spigot, pregenera el terreno con <yellow>rtp.only-loaded-chunks</yellow> activado."
+
+tpa:
+  received: "<prefix><yellow><requester></yellow> <green>quiere teletransportarse hacia ti. <aqua>/tpaccept</aqua> o <red>/tpadeny</red><green>."
+  no-pending: "<prefix><red>No tienes solicitudes TPA pendientes."

@@ -1,6 +1,7 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.MessagePlaceholders;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,17 +22,17 @@ public class SetWarpCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("aura.warp.set")) {
-            player.sendMessage(plugin.prefix("&cNo permission."));
+            plugin.send(player, "general.no-permission");
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(plugin.prefix("&eUsage: /setwarp <name>"));
+            plugin.send(player, "warp.usage-set");
             return true;
         }
 
         plugin.getWarpManager().setWarp(args[0], player.getLocation());
         plugin.getWarpManager().save();
-        player.sendMessage(plugin.prefix("&aSet warp &e" + args[0] + "&a."));
+        plugin.send(player, "warp.set", MessagePlaceholders.of("name", args[0]));
         return true;
     }
 }

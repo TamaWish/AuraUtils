@@ -412,7 +412,7 @@ public class MenuManager {
 
     private String color(String text) {
 
-        return AuraUtils.colorize(text);
+        return me.aurautils.util.MessageUtil.colorize(text);
 
     }
 

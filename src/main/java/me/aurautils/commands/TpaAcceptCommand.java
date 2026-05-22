@@ -9,16 +9,21 @@ import org.bukkit.entity.Player;
 public class TpaAcceptCommand implements CommandExecutor {
 
     private final AuraUtils plugin;
-    public TpaAcceptCommand(AuraUtils plugin) { this.plugin = plugin; }
+
+    public TpaAcceptCommand(AuraUtils plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!(sender instanceof Player p)) { sender.sendMessage("Console cannot use TPA."); return true; }
-        if (!plugin.getTpaManager().hasPending(p.getUniqueId())) {
-            p.sendMessage(plugin.prefix("&cYou have no pending TPA request."));
+        if (!(sender instanceof Player player)) {
             return true;
         }
-        plugin.getTpaManager().accept(p);
+        if (!plugin.getTpaManager().hasPending(player.getUniqueId())) {
+            plugin.send(player, "tpa.no-pending");
+            return true;
+        }
+        plugin.getTpaManager().accept(player);
         return true;
     }
 }
