@@ -50,6 +50,8 @@ RWR does not provide `/rwr tp random` or `/rwr back`; use AuraUtils (or another 
 
 Install both JARs in `plugins/`, configure RWR’s `worldName` and `teleport.defaultWorld`, and use **`/rwr tp`** to open the world GUI when entering the resource world. No extra AuraUtils config is required.
 
+**Spawn & keep inventory:** Use **`/setspawn`** in a world before or after resets; AuraUtils stores spawn coordinates in `server-spawns.yml` and reapplies them when the world loads again. **`/keepinventory`** sets the `keepInventory` gamerule on all worlds (including newly loaded resource worlds after a reset).
+
 ## Commands
 
 | Command | Usage | Description |
@@ -71,6 +73,8 @@ Install both JARs in `plugins/`, configure RWR’s `worldName` and `teleport.def
 | `/nofall` | `[player]` | Toggle fall damage |
 | `/nohunger` | `[player]` | Toggle hunger depletion |
 | `/menu` | — | Open the utility GUI |
+| `/setspawn` | — | Set spawn for your current world (saved for RWR world reloads) |
+| `/keepinventory` | `[on\|off\|status]` | Toggle or set server-wide keep inventory on death (`aura.keepinventory`) |
 | `/aura` | `[reload]` | Plugin info, your toggle status, reload config (`aura.admin`) |
 
 **Aliases:** `homelist` → `/home list`, `warplist` → `/warp list`, `tplist` → `/tpa list`
@@ -110,6 +114,9 @@ teleport:
 homes:
   max-per-player: 5              # Home limit per player (-1 = unlimited)
 
+server:
+  keep-inventory: false          # Server-wide; use /keepinventory or edit here
+
 prefix: "&8[&bAura&8] &r"        # Chat prefix (& color codes)
 ```
 
@@ -138,6 +145,8 @@ prefix: "&8[&bAura&8] &r"        # Chat prefix (& color codes)
 | `aura.nohunger` | `op` | Toggle hunger (self) |
 | `aura.nohunger.others` | `op` | Toggle hunger on others |
 | `aura.rtp` | `true` | Use `/rtp` |
+| `aura.setspawn` | `op` | Set world spawn with `/setspawn` |
+| `aura.keepinventory` | `op` | Toggle server-wide keep inventory |
 | `aura.admin` | `op` | All AuraUtils permissions |
 
 ### Per-warp access

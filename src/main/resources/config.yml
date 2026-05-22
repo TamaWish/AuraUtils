@@ -30,5 +30,10 @@ teleport:
 homes:
   max-per-player: 5
 
+# Server-wide settings (re-applied when worlds load, e.g. after ResourceWorldResetter)
+server:
+  # When true, players keep inventory on death in all worlds (vanilla keepInventory gamerule)
+  keep-inventory: false
+
 # Messages prefix
 prefix: "&8[&bAura&8] &r"

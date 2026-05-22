@@ -6,6 +6,7 @@ import me.aurautils.managers.BackManager;
 import me.aurautils.managers.HomeManager;
 import me.aurautils.managers.PlayerDataManager;
 import me.aurautils.managers.RtpCooldownManager;
+import me.aurautils.managers.ServerSettingsManager;
 import me.aurautils.managers.TpaManager;
 import me.aurautils.managers.WarpManager;
 import me.aurautils.menus.MenuManager;
@@ -24,6 +25,7 @@ public final class AuraUtils extends JavaPlugin {
     private BackManager backManager;
     private MenuManager menuManager;
     private RtpCooldownManager rtpCooldownManager;
+    private ServerSettingsManager serverSettingsManager;
 
     @Override
     public void onEnable() {
@@ -40,6 +42,9 @@ public final class AuraUtils extends JavaPlugin {
         backManager = new BackManager();
         menuManager = new MenuManager(this);
         rtpCooldownManager = new RtpCooldownManager();
+        serverSettingsManager = new ServerSettingsManager(this);
+        serverSettingsManager.load();
+        serverSettingsManager.applyToAllWorlds();
 
         registerCommand("tpa", new TpaCommand(this));
         registerCommand("tpahere", new TpaHereCommand(this));
@@ -58,6 +63,8 @@ public final class AuraUtils extends JavaPlugin {
         registerCommand("nofall", new NoFallCommand(this));
         registerCommand("nohunger", new NoHungerCommand(this));
         registerCommand("rtp", new RtpCommand(this));
+        registerCommand("setspawn", new SetSpawnCommand(this));
+        registerCommand("keepinventory", new KeepInventoryCommand(this));
         registerCommand("aura", new AuraCommand(this));
 
         getServer().getPluginManager().registerEvents(new GodModeListener(this), this);
@@ -67,6 +74,7 @@ public final class AuraUtils extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerSessionListener(this), this);
         getServer().getPluginManager().registerEvents(new BackListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
+        getServer().getPluginManager().registerEvents(new WorldSettingsListener(this), this);
 
         for (Player player : getServer().getOnlinePlayers()) {
             playerDataManager.applyTo(player);
@@ -88,6 +96,9 @@ public final class AuraUtils extends JavaPlugin {
         }
         if (playerDataManager != null) {
             playerDataManager.flushSave();
+        }
+        if (serverSettingsManager != null) {
+            serverSettingsManager.save();
         }
 
         getLogger().info("AuraUtils disabled.");
@@ -139,8 +150,15 @@ public final class AuraUtils extends JavaPlugin {
         return rtpCooldownManager;
     }
 
+    public ServerSettingsManager getServerSettingsManager() {
+        return serverSettingsManager;
+    }
+
     public void reloadPluginConfig() {
         reloadConfig();
+        if (serverSettingsManager != null) {
+            serverSettingsManager.applyToAllWorlds();
+        }
     }
 
     public String prefix(String msg) {

@@ -22,6 +22,8 @@ public class AuraCommand implements CommandExecutor {
 
             plugin.reloadPluginConfig();
             sender.sendMessage(AuraUtils.colorize("&aAuraUtils configuration reloaded."));
+            boolean keepInv = plugin.getServerSettingsManager().isKeepInventoryEnabled();
+            sender.sendMessage(AuraUtils.colorize("  Keep inventory: " + (keepInv ? "&aON" : "&cOFF")));
             return true;
         }
 
@@ -46,6 +48,8 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &e/nohunger &8[p]   &7- Toggle hunger"));
         sender.sendMessage(AuraUtils.colorize("  &e/aura reload    &7- Reload config and weapon list"));
         sender.sendMessage(AuraUtils.colorize("  &e/rtp &7- Random safe teleport"));
+        sender.sendMessage(AuraUtils.colorize("  &e/setspawn &7- Set world spawn (persists across RWR resets)"));
+        sender.sendMessage(AuraUtils.colorize("  &e/keepinventory &8[on|off] &7- Server-wide keep inventory on death"));
 
         if (sender instanceof Player p) {
             var mgr = plugin.getPlayerDataManager();

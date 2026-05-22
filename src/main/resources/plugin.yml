@@ -77,6 +77,14 @@ commands:
     description: Randomly teleport to a safe location
     usage: /rtp
     permission: aura.rtp
+  setspawn:
+    description: Set the spawn point for your current world
+    usage: /setspawn
+    permission: aura.setspawn
+  keepinventory:
+    description: Toggle keep inventory on death for all worlds
+    usage: /keepinventory [on|off|status]
+    permission: aura.keepinventory
   aura:
     description: Show AuraUtils info and commands
     usage: /aura
@@ -143,6 +151,12 @@ permissions:
   aura.rtp:
     description: Use random teleport
     default: true
+  aura.setspawn:
+    description: Set world spawn points
+    default: op
+  aura.keepinventory:
+    description: Toggle keep inventory on death for the server
+    default: op
   aura.admin:
     description: All AuraUtils permissions
     default: op
@@ -167,3 +181,5 @@ permissions:
       aura.home.set: true
       aura.home.delete: true
       aura.rtp: true
+      aura.setspawn: true
+      aura.keepinventory: true
