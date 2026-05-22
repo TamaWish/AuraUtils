@@ -2,6 +2,7 @@ package me.aurautils.listeners;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.BackService;
+import me.aurautils.managers.TeleportHelper;
 import me.aurautils.util.WarpPermissions;
 import me.aurautils.menus.MenuType;
 import me.aurautils.menus.UtilityMenuHolder;
@@ -57,7 +58,7 @@ public class MenuListener implements Listener {
             }
             case "open_main" -> plugin.getMenuManager().openMainMenu(player);
             
-            case "refresh_menu" -> plugin.getMenuManager().openMainMenu(player);
+            case "refresh_menu" -> refreshMenu(holder, player);
             case "page_next" -> openNextPage(holder, player);
             case "page_prev" -> openPreviousPage(holder, player);
             case "close_menu" -> player.closeInventory();
@@ -79,6 +80,10 @@ public class MenuListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         // no-op; menus are stateless and reopen on demand
+    }
+
+    private void refreshMenu(UtilityMenuHolder holder, Player player) {
+        plugin.getMenuManager().openMenuForType(player, holder.getType(), holder.getPage());
     }
 
     private void openNextPage(UtilityMenuHolder holder, Player player) {
@@ -113,9 +118,15 @@ public class MenuListener implements Listener {
             return;
         }
         player.closeInventory();
-        plugin.getBackManager().skipNextRecord(player.getUniqueId());
-        player.teleport(location);
-        player.sendMessage(plugin.prefix("&aTeleported to warp &e" + name + "&a."));
+        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        TeleportHelper helper = new TeleportHelper(plugin);
+        if (tpCountdown > 0) {
+            helper.scheduleTeleport(player, location, tpCountdown);
+        } else {
+            plugin.getBackManager().skipNextRecord(player.getUniqueId());
+            player.teleport(location);
+            player.sendMessage(plugin.prefix("&aTeleported to warp &e" + name + "&a."));
+        }
     }
 
     private void teleportToHome(Player player, String name) {
@@ -128,8 +139,14 @@ public class MenuListener implements Listener {
             return;
         }
         player.closeInventory();
-        plugin.getBackManager().skipNextRecord(player.getUniqueId());
-        player.teleport(location);
-        player.sendMessage(plugin.prefix("&aTeleported to home &e" + name + "&a."));
+        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        TeleportHelper helper = new TeleportHelper(plugin);
+        if (tpCountdown > 0) {
+            helper.scheduleTeleport(player, location, tpCountdown);
+        } else {
+            plugin.getBackManager().skipNextRecord(player.getUniqueId());
+            player.teleport(location);
+            player.sendMessage(plugin.prefix("&aTeleported to home &e" + name + "&a."));
+        }
     }
 }

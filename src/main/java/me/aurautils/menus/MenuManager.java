@@ -7,9 +7,9 @@ import me.aurautils.managers.TpaManager;
 import me.aurautils.util.WarpPermissions;
 
 import org.bukkit.Bukkit;
-
+import org.bukkit.Location;
 import org.bukkit.Material;
-
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import org.bukkit.inventory.Inventory;
@@ -108,7 +108,7 @@ public class MenuManager {
 
         inventory.setItem(MAIN_SLOT_BACK, menuItem(Material.ENDER_EYE, "&6Back", "open_back", "Return to your last teleport location."));
 
-        inventory.setItem(MAIN_SLOT_REFRESH, menuItem(Material.COMPASS, "&aRefresh", "refresh_menu", "Refresh the menu."));
+        inventory.setItem(MAIN_SLOT_REFRESH, menuItem(Material.COMPASS, "&aRefresh", "refresh_menu", "Rebuild this menu."));
 
 
 
@@ -158,6 +158,8 @@ public class MenuManager {
         if (requesterId == null) {
 
             inventory.setItem(TPA_SLOT_REQUESTER, menuItem(Material.BARRIER, "&cNo pending TPA requests", "noop", "No requests are waiting for you."));
+
+            inventory.setItem(TPA_SLOT_MAIN_MENU, menuItem(Material.BOOK, "&bMain Menu", "open_main", "Return to the main menu."));
 
             player.openInventory(inventory);
 
@@ -244,7 +246,15 @@ public class MenuManager {
 
             String name = entries.get(index);
 
-            inventory.setItem(slot++, taggedItem(icon, name, type.name().toLowerCase(), name, "&7Click to teleport."));
+            Location location = type == MenuType.WARPS
+
+                    ? plugin.getWarpManager().getWarp(name)
+
+                    : plugin.getHomeManager().getHome(player.getUniqueId(), name);
+
+            String action = type == MenuType.WARPS ? "warp" : "home";
+
+            inventory.setItem(slot++, taggedItem(icon, name, action, name, locationLore(location)));
 
         }
 
@@ -298,7 +308,7 @@ public class MenuManager {
 
 
 
-    private ItemStack taggedItem(Material material, String displayName, String action, String id, String loreLine) {
+    private ItemStack taggedItem(Material material, String displayName, String action, String id, List<String> loreLines) {
 
         ItemStack item = new ItemStack(material);
 
@@ -306,7 +316,7 @@ public class MenuManager {
 
         meta.setDisplayName(color("&f" + displayName));
 
-        meta.setLore(List.of(color(loreLine)));
+        meta.setLore(loreLines.stream().map(this::color).toList());
 
         meta.getPersistentDataContainer().set(pluginKey("action"), PersistentDataType.STRING, action);
 
@@ -315,6 +325,54 @@ public class MenuManager {
         item.setItemMeta(meta);
 
         return item;
+
+    }
+
+
+
+    private List<String> locationLore(Location location) {
+
+        List<String> lore = new ArrayList<>();
+
+        lore.add("&7Click to teleport.");
+
+        if (location == null || location.getWorld() == null) {
+
+            lore.add("&cLocation unavailable.");
+
+            return lore;
+
+        }
+
+        lore.add("&8X: &f" + (int) location.getBlockX()
+
+                + " &8Y: &f" + (int) location.getBlockY()
+
+                + " &8Z: &f" + (int) location.getBlockZ());
+
+        lore.add("&8World: &f" + location.getWorld().getName());
+
+        lore.add("&8Dimension: &f" + formatEnvironment(location.getWorld().getEnvironment()));
+
+        return lore;
+
+    }
+
+
+
+    private static String formatEnvironment(World.Environment environment) {
+
+        return switch (environment) {
+
+            case NORMAL -> "Overworld";
+
+            case NETHER -> "Nether";
+
+            case THE_END -> "The End";
+
+            default -> environment.name();
+
+        };
 
     }
 

@@ -5,6 +5,7 @@ import me.aurautils.listeners.*;
 import me.aurautils.managers.BackManager;
 import me.aurautils.managers.HomeManager;
 import me.aurautils.managers.PlayerDataManager;
+import me.aurautils.managers.RtpCooldownManager;
 import me.aurautils.managers.TpaManager;
 import me.aurautils.managers.WarpManager;
 import me.aurautils.menus.MenuManager;
@@ -22,6 +23,7 @@ public final class AuraUtils extends JavaPlugin {
     private HomeManager homeManager;
     private BackManager backManager;
     private MenuManager menuManager;
+    private RtpCooldownManager rtpCooldownManager;
 
     @Override
     public void onEnable() {
@@ -37,6 +39,7 @@ public final class AuraUtils extends JavaPlugin {
         homeManager.load();
         backManager = new BackManager();
         menuManager = new MenuManager(this);
+        rtpCooldownManager = new RtpCooldownManager();
 
         registerCommand("tpa", new TpaCommand(this));
         registerCommand("tpahere", new TpaHereCommand(this));
@@ -130,6 +133,10 @@ public final class AuraUtils extends JavaPlugin {
 
     public MenuManager getMenuManager() {
         return menuManager;
+    }
+
+    public RtpCooldownManager getRtpCooldownManager() {
+        return rtpCooldownManager;
     }
 
     public void reloadPluginConfig() {
