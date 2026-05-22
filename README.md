@@ -77,7 +77,7 @@ Install both JARs in `plugins/`, configure RWR’s `worldName` and `teleport.def
 
 ## Requirements
 
-- **Java 21+**
+- **Java 25+**
 - **Spigot / Paper 1.21+**
 
 ## Building
