@@ -70,7 +70,7 @@ public class MessagesManager {
 
         for (String locale : BUNDLED_LOCALES) {
             if (!bundles.containsKey(locale)) {
-                loadBundleFromJar(locale);
+                loadBundle(locale, null);
             }
         }
 
@@ -96,22 +96,39 @@ public class MessagesManager {
                 + " (default=" + defaultLocale + ", fallback=" + fallbackLocale + ")");
     }
 
-    private void loadBundleFromJar(String locale) {
-        String resourcePath = "messages/" + locale + ".yml";
-        try (InputStream stream = plugin.getResource(resourcePath)) {
-            if (stream == null) {
-                return;
-            }
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(stream, StandardCharsets.UTF_8));
-            loadBundle(locale, config);
-        } catch (Exception exception) {
-            plugin.getLogger().log(Level.WARNING, "Could not load bundled messages/" + locale + ".yml", exception);
+    /**
+     * Loads a locale: bundled defaults from the JAR first, then optional on-disk overrides.
+     * Prevents stale {@code plugins/AuraUtils/messages/*.yml} from missing keys added in updates.
+     */
+    private void loadBundle(String locale, YamlConfiguration diskOverlay) {
+        Map<String, String> flat = new HashMap<>();
+        YamlConfiguration bundled = readBundledConfig(locale);
+        if (bundled != null) {
+            flattenConfig(bundled, flat);
+        }
+        if (diskOverlay != null) {
+            flattenConfig(diskOverlay, flat);
+        }
+        if (!flat.isEmpty()) {
+            bundles.put(locale, flat);
         }
     }
 
-    private void loadBundle(String locale, YamlConfiguration config) {
-        Map<String, String> flat = new HashMap<>();
+    private YamlConfiguration readBundledConfig(String locale) {
+        String resourcePath = "messages/" + locale + ".yml";
+        try (InputStream stream = plugin.getResource(resourcePath)) {
+            if (stream == null) {
+                return null;
+            }
+            return YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(stream, StandardCharsets.UTF_8));
+        } catch (Exception exception) {
+            plugin.getLogger().log(Level.WARNING, "Could not read bundled messages/" + locale + ".yml", exception);
+            return null;
+        }
+    }
+
+    private void flattenConfig(YamlConfiguration config, Map<String, String> flat) {
         for (String topKey : config.getKeys(false)) {
             if ("meta".equals(topKey)) {
                 continue;
@@ -121,7 +138,6 @@ public class MessagesManager {
                 flattenKeys(topKey, section, flat);
             }
         }
-        bundles.put(locale, flat);
     }
 
     private void flattenKeys(String prefix, ConfigurationSection section, Map<String, String> out) {
