@@ -89,17 +89,13 @@ public class AuraCommand implements CommandExecutor {
             UUID id = player.getUniqueId();
             plugin.send(player, "aura.status-header");
             plugin.send(player, "aura.status-line", MessagePlaceholders.builder()
-                    .add("god", toggleState(mgr.isGod(id), player))
-                    .add("fly", toggleState(mgr.isFly(id), player))
-                    .add("nofall", toggleState(mgr.isNoFall(id), player))
-                    .add("nohunger", toggleState(mgr.isNoHunger(id), player))
+                    .component("god", plugin.getMessages().stateComponent(player, mgr.isGod(id)))
+                    .component("fly", plugin.getMessages().stateComponent(player, mgr.isFly(id)))
+                    .component("nofall", plugin.getMessages().stateComponent(player, mgr.isNoFall(id)))
+                    .component("nohunger", plugin.getMessages().stateComponent(player, mgr.isNoHunger(id)))
                     .build());
         }
         plugin.send(sender, "aura.header");
         return true;
-    }
-
-    private String toggleState(boolean on, Player player) {
-        return plugin.getMessages().raw(on ? "toggle.on" : "toggle.off", player);
     }
 }

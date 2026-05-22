@@ -5,8 +5,8 @@ meta:
   prefix: "<dark_gray>[<gradient:#00d2ff:#3a7bd5>Aura</gradient>]</dark_gray> "
 
 toggle:
-  on: "<green>activado"
-  off: "<red>desactivado"
+  enabled: "<green>activado"
+  disabled: "<red>desactivado"
 
 general:
   no-permission: "<prefix><red>Sin permiso."

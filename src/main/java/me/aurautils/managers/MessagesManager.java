@@ -31,6 +31,14 @@ public class MessagesManager {
 
     private static final String[] BUNDLED_LOCALES = {"en", "es"};
 
+    /** Always available even if YAML / JAR resources fail to load. */
+    private static final Map<String, String> BUILTIN_TOGGLE = Map.of(
+            "toggle.on", "<green>enabled",
+            "toggle.off", "<red>disabled",
+            "toggle.enabled", "<green>enabled",
+            "toggle.disabled", "<red>disabled"
+    );
+
     private final AuraUtils plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final GsonComponentSerializer gson = GsonComponentSerializer.gson();
@@ -102,15 +110,40 @@ public class MessagesManager {
      */
     private void loadBundle(String locale, YamlConfiguration diskOverlay) {
         Map<String, String> flat = new HashMap<>();
+        Map<String, String> jarFlat = new HashMap<>();
         YamlConfiguration bundled = readBundledConfig(locale);
         if (bundled != null) {
-            flattenConfig(bundled, flat);
+            flattenConfig(bundled, jarFlat);
+            flat.putAll(jarFlat);
         }
         if (diskOverlay != null) {
             flattenConfig(diskOverlay, flat);
         }
+        sanitizeStaleToggleTags(flat, jarFlat);
+        for (Map.Entry<String, String> builtin : BUILTIN_TOGGLE.entrySet()) {
+            flat.putIfAbsent(builtin.getKey(), builtin.getValue());
+        }
         if (!flat.isEmpty()) {
             bundles.put(locale, flat);
+        }
+    }
+
+    /**
+     * Older message files used {@code <toggle.on>} as a MiniMessage tag; unknown tags render as {@code [toggle.on]}.
+     */
+    private void sanitizeStaleToggleTags(Map<String, String> flat, Map<String, String> jarFlat) {
+        for (Map.Entry<String, String> entry : flat.entrySet()) {
+            String value = entry.getValue();
+            if (value == null || (!value.contains("<toggle.on>") && !value.contains("<toggle.off>"))) {
+                continue;
+            }
+            String jarValue = jarFlat.get(entry.getKey());
+            if (jarValue != null && !jarValue.equals(value)) {
+                flat.put(entry.getKey(), jarValue);
+                plugin.getLogger().warning(
+                        "Updated stale MiniMessage tag in messages key '" + entry.getKey()
+                                + "' — use <state>, <god>, <fly>, etc. instead of <toggle.on>.");
+            }
         }
     }
 
@@ -211,15 +244,39 @@ public class MessagesManager {
     }
 
     private String resolveRaw(String key, String locale) {
-        Map<String, String> bundle = bundles.get(locale);
-        if (bundle != null && bundle.containsKey(key)) {
-            return bundle.get(key);
+        String resolved = lookupRaw(key, locale);
+        if (resolved != null) {
+            return resolved;
         }
         if (!locale.equals(fallbackLocale)) {
-            return resolveRaw(key, fallbackLocale);
+            resolved = lookupRaw(key, fallbackLocale);
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        String builtin = BUILTIN_TOGGLE.get(key);
+        if (builtin != null) {
+            return builtin;
         }
         plugin.getLogger().warning("Missing message key: " + key + " (locale=" + locale + ")");
         return "<red>[" + key + "]";
+    }
+
+    private String lookupRaw(String key, String locale) {
+        Map<String, String> bundle = bundles.get(locale);
+        if (bundle == null) {
+            return null;
+        }
+        if (bundle.containsKey(key)) {
+            return bundle.get(key);
+        }
+        if ("toggle.on".equals(key) && bundle.containsKey("toggle.enabled")) {
+            return bundle.get("toggle.enabled");
+        }
+        if ("toggle.off".equals(key) && bundle.containsKey("toggle.disabled")) {
+            return bundle.get("toggle.disabled");
+        }
+        return null;
     }
 
     public Component component(String key, CommandSender sender, MessagePlaceholders placeholders) {
