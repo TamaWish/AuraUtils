@@ -58,7 +58,7 @@ public class MenuListener implements Listener {
             }
             case "open_main" -> plugin.getMenuManager().openMainMenu(player);
             
-            case "refresh_menu" -> plugin.getMenuManager().openMainMenu(player);
+            case "refresh_menu" -> refreshMenu(holder, player);
             case "page_next" -> openNextPage(holder, player);
             case "page_prev" -> openPreviousPage(holder, player);
             case "close_menu" -> player.closeInventory();
@@ -80,6 +80,10 @@ public class MenuListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         // no-op; menus are stateless and reopen on demand
+    }
+
+    private void refreshMenu(UtilityMenuHolder holder, Player player) {
+        plugin.getMenuManager().openMenuForType(player, holder.getType(), holder.getPage());
     }
 
     private void openNextPage(UtilityMenuHolder holder, Player player) {
