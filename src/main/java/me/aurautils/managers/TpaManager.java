@@ -12,6 +12,10 @@ import java.util.UUID;
 /**
  * Tracks pending TPA requests and handles automatic expiry.
  * Key = target UUID (who will accept/deny), Value = pending request details.
+ * <p>
+ * Only one pending request per target is allowed. If another player sends
+ * {@code /tpa} or {@code /tpahere} while a request is already waiting,
+ * {@link #sendRequest} returns {@code false} and the command layer notifies the requester.
  */
 public class TpaManager {
 
@@ -36,12 +40,20 @@ public class TpaManager {
         this.plugin = plugin;
     }
 
-    /** Send a TPA request from `from` to `to`. Returns false if one is already pending. */
+    /**
+     * Send a TPA request from {@code from} to {@code to}.
+     *
+     * @return {@code false} if the target already has a pending request (any requester)
+     */
     public boolean sendRequest(Player from, Player to) {
         return sendRequest(from, to, TpaType.TO_TARGET);
     }
 
-    /** Send a TPA request from `from` to `to` with the given type. Returns false if one is already pending. */
+    /**
+     * Send a TPA request from {@code from} to {@code to} with the given type.
+     *
+     * @return {@code false} if the target already has a pending request (any requester)
+     */
     public boolean sendRequest(Player from, Player to, TpaType type) {
         if (pendingRequests.containsKey(to.getUniqueId())) return false;
 

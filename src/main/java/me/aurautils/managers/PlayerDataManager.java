@@ -9,14 +9,11 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -26,16 +23,15 @@ import java.util.concurrent.locks.ReentrantLock;
 public class PlayerDataManager {
 
     private static final long SAVE_DEBOUNCE_TICKS = 40L;
-    private static final long FLUSH_AWAIT_SECONDS = 10L;
 
     private final AuraUtils plugin;
     private final File dataFile;
     private final ReentrantLock fileLock = new ReentrantLock();
 
-    private final Map<UUID, Boolean> godMode = new HashMap<>();
-    private final Map<UUID, Boolean> flyMode = new HashMap<>();
-    private final Map<UUID, Boolean> noFall = new HashMap<>();
-    private final Map<UUID, Boolean> noHunger = new HashMap<>();
+    private final Map<UUID, Boolean> godMode = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> flyMode = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> noFall = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> noHunger = new ConcurrentHashMap<>();
 
     private final Set<UUID> pendingPlayerSaves = ConcurrentHashMap.newKeySet();
     private volatile boolean pendingFullSave;
@@ -112,7 +108,7 @@ public class PlayerDataManager {
         }
         pendingFullSave = false;
         pendingPlayerSaves.clear();
-        awaitDiskWrite(this::persistAllToDisk);
+        persistAllToDisk();
     }
 
     /** Queues a single-player persist (e.g. on quit). */
@@ -122,7 +118,7 @@ public class PlayerDataManager {
     }
 
     private void requestSaveDrain() {
-        if (saveWorkerActive) {
+        if (saveWorkerActive || !plugin.isEnabled()) {
             return;
         }
         saveWorkerActive = true;
@@ -167,25 +163,6 @@ public class PlayerDataManager {
             if (hasPendingWrites()) {
                 requestSaveDrain();
             }
-        }
-    }
-
-    private void awaitDiskWrite(Runnable writeTask) {
-        CountDownLatch latch = new CountDownLatch(1);
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                writeTask.run();
-            } finally {
-                latch.countDown();
-            }
-        });
-        try {
-            if (!latch.await(FLUSH_AWAIT_SECONDS, TimeUnit.SECONDS)) {
-                plugin.getLogger().warning("Timed out waiting for player-states.yml to save.");
-            }
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            plugin.getLogger().warning("Interrupted while waiting for player-states.yml to save.");
         }
     }
 
