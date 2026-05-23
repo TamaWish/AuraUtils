@@ -11,6 +11,14 @@
 
     <name>AuraUtils</name>
     <description>Utility plugin bundle: TPA, God Mode, Fly, and more.</description>
+    <url>https://github.com/TamaWish/AuraUtils</url>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <java.version>25</java.version>

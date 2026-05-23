@@ -1,6 +1,7 @@
 # AuraUtils Configuration
+# Full reference: README.md (config, features, RTP platform notes)
 #
-# RTP / teleport chunk loading (see README "Random teleport (async-safe)"):
+# RTP / teleport chunk loading:
 #   Paper  — leave only-loaded-chunks unset/false; use generate-chunks, async-urgent, max-pending-chunk-loads
 #   Spigot — set only-loaded-chunks: true and pre-generate worlds for reliable /rtp
 
