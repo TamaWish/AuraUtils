@@ -19,7 +19,7 @@ public class CancelTpCommand implements CommandExecutor {
         if (!(sender instanceof Player player)) {
             return true;
         }
-        if (plugin.getTeleportHelper().cancelPendingTeleport(player)) {
+        if (plugin.getTeleportService().cancelPendingTeleport(player)) {
             plugin.send(player, "teleport.cancelled-manual");
         }
         return true;

@@ -1,7 +1,9 @@
 package me.aurautils.util;
 
-import me.aurautils.AuraUtils;
+import me.aurautils.storage.WorldResolver;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -39,20 +41,30 @@ public final class LocationIO {
      * Returns the world name when the world is loaded; {@code null} if the world reference is gone.
      */
     public static String resolveWorldName(Location location) {
-        if (location == null || !location.isWorldLoaded()) {
+        if (location == null) {
             return null;
         }
         World world = location.getWorld();
-        return world == null ? null : world.getName();
+        if (world == null) {
+            return null;
+        }
+        Server server = Bukkit.getServer();
+        if (server == null) {
+            return world.getName();
+        }
+        if (!location.isWorldLoaded()) {
+            return null;
+        }
+        return world.getName();
     }
 
-    public static Location read(AuraUtils plugin, ConfigurationSection section) {
+    public static Location read(WorldResolver worlds, ConfigurationSection section) {
         if (section == null) {
             return null;
         }
 
         String worldName = section.getString("world");
-        World world = worldName == null ? null : plugin.getServer().getWorld(worldName);
+        World world = worldName == null ? null : worlds.getWorld(worldName);
         if (world == null) {
             return null;
         }

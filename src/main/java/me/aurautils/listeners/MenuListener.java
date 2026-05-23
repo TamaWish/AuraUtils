@@ -2,8 +2,8 @@ package me.aurautils.listeners;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.BackService;
-import me.aurautils.managers.TeleportHelper;
-import me.aurautils.util.WarpPermissions;
+import me.aurautils.managers.HomeService;
+import me.aurautils.managers.WarpService;
 import me.aurautils.menus.MenuType;
 import me.aurautils.menus.UtilityMenuHolder;
 import org.bukkit.Material;
@@ -50,6 +50,9 @@ public class MenuListener implements Listener {
 
         switch (action) {
             case "open_warps" -> plugin.getMenuManager().openWarpsMenu(player, 0);
+            case "open_warps_all" -> plugin.getMenuManager().openWarpsMenu(player, 0, null, true);
+            case "open_warp_category" -> plugin.getMenuManager().openWarpsMenu(player, 0, id, true);
+            case "open_warp_categories" -> plugin.getMenuManager().openWarpCategoriesMenu(player);
             case "open_homes" -> plugin.getMenuManager().openHomesMenu(player, 0);
             case "open_tpa" -> plugin.getMenuManager().openTpaMenu(player);
             case "open_spawn" -> player.performCommand("spawn");
@@ -86,13 +89,13 @@ public class MenuListener implements Listener {
     }
 
     private void refreshMenu(UtilityMenuHolder holder, Player player) {
-        plugin.getMenuManager().openMenuForType(player, holder.getType(), holder.getPage());
+        plugin.getMenuManager().openMenuForType(player, holder);
     }
 
     private void openNextPage(UtilityMenuHolder holder, Player player) {
         int nextPage = holder.getPage() + 1;
         if (holder.getType() == MenuType.WARPS) {
-            plugin.getMenuManager().openWarpsMenu(player, nextPage);
+            plugin.getMenuManager().openWarpsMenu(player, nextPage, holder.getWarpCategoryFilter(), true);
         } else if (holder.getType() == MenuType.HOMES) {
             plugin.getMenuManager().openHomesMenu(player, nextPage);
         }
@@ -101,7 +104,7 @@ public class MenuListener implements Listener {
     private void openPreviousPage(UtilityMenuHolder holder, Player player) {
         int previousPage = Math.max(0, holder.getPage() - 1);
         if (holder.getType() == MenuType.WARPS) {
-            plugin.getMenuManager().openWarpsMenu(player, previousPage);
+            plugin.getMenuManager().openWarpsMenu(player, previousPage, holder.getWarpCategoryFilter(), true);
         } else if (holder.getType() == MenuType.HOMES) {
             plugin.getMenuManager().openHomesMenu(player, previousPage);
         }
@@ -111,47 +114,15 @@ public class MenuListener implements Listener {
         if (name == null) {
             return;
         }
-        if (!WarpPermissions.canUse(player, name)) {
-            plugin.send(player, "warp.no-permission", me.aurautils.util.MessagePlaceholders.of("name", name));
-            return;
-        }
-        var location = plugin.getWarpManager().getWarp(name);
-        if (location == null) {
-            plugin.send(player, "warp.not-found", me.aurautils.util.MessagePlaceholders.of("name", name));
-            return;
-        }
         player.closeInventory();
-        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = plugin.getTeleportHelper();
-        var placeholders = me.aurautils.util.MessagePlaceholders.of("name", name);
-        if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown, false, "teleport.success-warp", placeholders);
-        } else {
-            plugin.getBackManager().skipNextRecord(player.getUniqueId());
-            player.teleport(location);
-            plugin.send(player, "teleport.success-warp", placeholders);
-        }
+        WarpService.teleport(plugin, player, name);
     }
 
     private void teleportToHome(Player player, String name) {
         if (name == null) {
             return;
         }
-        var location = plugin.getHomeManager().getHome(player.getUniqueId(), name);
-        if (location == null) {
-            plugin.send(player, "home.not-found", me.aurautils.util.MessagePlaceholders.of("name", name));
-            return;
-        }
         player.closeInventory();
-        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = plugin.getTeleportHelper();
-        var placeholders = me.aurautils.util.MessagePlaceholders.of("name", name);
-        if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown, false, "teleport.success-home", placeholders);
-        } else {
-            plugin.getBackManager().skipNextRecord(player.getUniqueId());
-            player.teleport(location);
-            plugin.send(player, "teleport.success-home", placeholders);
-        }
+        HomeService.teleport(plugin, player, name);
     }
 }

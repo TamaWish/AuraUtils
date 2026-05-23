@@ -1,39 +1,67 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.storage.BukkitPlayerLookup;
+import me.aurautils.storage.BukkitWorldResolver;
+import me.aurautils.storage.DataStore;
+import me.aurautils.storage.PlayerLookup;
+import me.aurautils.storage.StoragePaths;
+import me.aurautils.storage.WorldResolver;
+import me.aurautils.storage.YamlDataStore;
 import me.aurautils.util.LocationIO;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class HomeManager {
 
-    private final AuraUtils plugin;
-    private final File homesFile;
+    private final DataStore dataStore;
+    private final WorldResolver worldResolver;
+    private final PlayerLookup playerLookup;
+    private final HomeLimitPolicy homeLimitPolicy;
+    private final Logger logger;
     private final Map<UUID, Map<String, Location>> homes = new HashMap<>();
 
     public HomeManager(AuraUtils plugin) {
-        this.plugin = plugin;
-        this.homesFile = new File(plugin.getDataFolder(), "homes.yml");
+        this(
+                new YamlDataStore(plugin),
+                new BukkitWorldResolver(plugin),
+                new BukkitPlayerLookup(plugin),
+                new HomeLimitPolicy.AuraHomeLimitPolicy(plugin),
+                plugin.getLogger()
+        );
+    }
+
+    public HomeManager(
+            DataStore dataStore,
+            WorldResolver worldResolver,
+            PlayerLookup playerLookup,
+            HomeLimitPolicy homeLimitPolicy,
+            Logger logger
+    ) {
+        this.dataStore = dataStore;
+        this.worldResolver = worldResolver;
+        this.playerLookup = playerLookup;
+        this.homeLimitPolicy = homeLimitPolicy;
+        this.logger = logger;
     }
 
     public void load() {
-        plugin.getDataFolder().mkdirs();
         homes.clear();
 
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(homesFile);
+        YamlConfiguration config = dataStore.load(StoragePaths.HOMES);
         ConfigurationSection homesSection = config.getConfigurationSection("homes");
         if (homesSection == null) {
             return;
@@ -54,7 +82,7 @@ public class HomeManager {
 
             Map<String, Location> playerMap = new TreeMap<>();
             for (String homeName : playerHomes.getKeys(false)) {
-                Location location = LocationIO.read(plugin, playerHomes.getConfigurationSection(homeName));
+                Location location = LocationIO.read(worldResolver, playerHomes.getConfigurationSection(homeName));
                 if (location != null) {
                     playerMap.put(normalize(homeName), location);
                 }
@@ -66,9 +94,8 @@ public class HomeManager {
     }
 
     public void save() {
-        plugin.getDataFolder().mkdirs();
-        YamlConfiguration existing = homesFile.exists()
-                ? YamlConfiguration.loadConfiguration(homesFile)
+        YamlConfiguration existing = dataStore.exists(StoragePaths.HOMES)
+                ? dataStore.load(StoragePaths.HOMES)
                 : null;
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection homesSection = config.createSection("homes");
@@ -86,42 +113,16 @@ public class HomeManager {
                             fallbackWorld
                     );
                 } catch (IllegalArgumentException exception) {
-                    plugin.getLogger().warning("Skipping home '" + homeEntry.getKey() + "' for "
+                    logger.warning("Skipping home '" + homeEntry.getKey() + "' for "
                             + playerKey + " during save: " + exception.getMessage());
                 }
             }
         }
-        try {
-            config.save(homesFile);
-        } catch (IOException exception) {
-            plugin.getLogger().severe("Failed to save homes.yml: " + exception.getMessage());
-        }
+        dataStore.save(StoragePaths.HOMES, config);
     }
 
     public int getMaxHomesPerPlayer(Player player) {
-        if (player.hasPermission("aura.admin")) {
-            return -1;
-        }
-
-        int defaultLimit = plugin.getConfig().getInt("homes.default-limit",
-                plugin.getConfig().getInt("homes.max-per-player", 5));
-        int highestConfiguredLimit = defaultLimit;
-
-        List<String> limitNodes = plugin.getConfig().getStringList("homes.permission-limits");
-        if (limitNodes.isEmpty()) {
-            return defaultLimit;
-        }
-
-        for (String limitNode : limitNodes) {
-            int limit = parseHomeLimit(limitNode);
-            if (limit < 0) {
-                continue;
-            }
-            if (player.hasPermission(limitNode)) {
-                highestConfiguredLimit = Math.max(highestConfiguredLimit, limit);
-            }
-        }
-        return highestConfiguredLimit;
+        return homeLimitPolicy.getMaxHomes(player);
     }
 
     public int getHomeCount(UUID playerId) {
@@ -154,6 +155,21 @@ public class HomeManager {
         return new ArrayList<>(new TreeSet<>(playerHomes.keySet()));
     }
 
+    /**
+     * Resolves a player UUID from an admin token (UUID string, online name, or offline name with homes).
+     */
+    public UUID resolvePlayerId(String token) {
+        return playerLookup.resolveToken(token, homes.keySet());
+    }
+
+    public String getPlayerDisplayName(UUID playerId) {
+        return playerLookup.displayName(playerId);
+    }
+
+    public List<String> knownPlayerTokens() {
+        return playerLookup.tabCompleteTokens(homes.keySet());
+    }
+
     public Location getHome(UUID playerId, String name) {
         Map<String, Location> playerHomes = homes.get(playerId);
         if (playerHomes == null) {
@@ -182,23 +198,5 @@ public class HomeManager {
 
     private String normalize(String name) {
         return name.toLowerCase();
-    }
-
-    private int parseHomeLimit(String permissionNode) {
-        if (permissionNode == null) {
-            return -1;
-        }
-
-        String trimmed = permissionNode.trim();
-        int lastDot = trimmed.lastIndexOf('.');
-        if (lastDot < 0 || lastDot == trimmed.length() - 1) {
-            return -1;
-        }
-
-        try {
-            return Integer.parseInt(trimmed.substring(lastDot + 1));
-        } catch (NumberFormatException ignored) {
-            return -1;
-        }
     }
 }

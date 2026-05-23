@@ -1,6 +1,7 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.config.AuraConfig;
 import me.aurautils.util.MessagePlaceholders;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -82,9 +83,16 @@ public class MessagesManager {
             }
         }
 
-        defaultLocale = normalizeLocale(plugin.getConfig().getString("messages.default-locale", "en"));
-        fallbackLocale = normalizeLocale(plugin.getConfig().getString("messages.fallback-locale", "en"));
-        useClientLocale = plugin.getConfig().getBoolean("messages.use-client-locale", true);
+        AuraConfig auraConfig = plugin.getAuraConfig();
+        if (auraConfig != null) {
+            defaultLocale = auraConfig.messagesDefaultLocale();
+            fallbackLocale = auraConfig.messagesFallbackLocale();
+            useClientLocale = auraConfig.messagesUseClientLocale();
+        } else {
+            defaultLocale = normalizeLocale(plugin.getConfig().getString("messages.default-locale", "en"));
+            fallbackLocale = normalizeLocale(plugin.getConfig().getString("messages.fallback-locale", "en"));
+            useClientLocale = plugin.getConfig().getBoolean("messages.use-client-locale", true);
+        }
 
         if (!bundles.containsKey(defaultLocale)) {
             defaultLocale = "en";

@@ -11,13 +11,18 @@ import me.aurautils.managers.PlayerDataManager;
 import me.aurautils.managers.RtpCooldownManager;
 import me.aurautils.managers.ServerSettingsManager;
 import me.aurautils.managers.TeleportHelper;
+import me.aurautils.managers.TeleportService;
 import me.aurautils.managers.TpaManager;
+import me.aurautils.managers.WarpCooldownManager;
 import me.aurautils.managers.WarpManager;
 import me.aurautils.menus.MenuManager;
+import me.aurautils.config.AuraConfig;
+import me.aurautils.config.ConfigValidator;
 import me.aurautils.platform.PlatformAdapter;
 import me.aurautils.platform.PlatformFactory;
 import me.aurautils.util.MessagePlaceholders;
 import me.aurautils.util.MessageUtil;
+import me.aurautils.util.VanishSupport;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -36,9 +41,13 @@ public final class AuraUtils extends JavaPlugin {
     private BackManager backManager;
     private MenuManager menuManager;
     private RtpCooldownManager rtpCooldownManager;
+    private WarpCooldownManager warpCooldownManager;
     private ServerSettingsManager serverSettingsManager;
     private TeleportHelper teleportHelper;
+    private TeleportService teleportService;
     private AsyncRtpEngine asyncRtpEngine;
+    private VanishSupport vanishSupport;
+    private AuraConfig auraConfig;
 
     @Override
     public void onEnable() {
@@ -50,6 +59,9 @@ public final class AuraUtils extends JavaPlugin {
 
         messages = new MessagesManager(this);
         messages.load();
+        auraConfig = ConfigValidator.validate(this);
+        messages.load();
+        vanishSupport = new VanishSupport(this);
 
         playerDataManager = new PlayerDataManager(this);
         playerDataManager.load();
@@ -61,23 +73,28 @@ public final class AuraUtils extends JavaPlugin {
         backManager = new BackManager();
         menuManager = new MenuManager(this);
         rtpCooldownManager = new RtpCooldownManager();
+        warpCooldownManager = new WarpCooldownManager();
         serverSettingsManager = new ServerSettingsManager(this);
         serverSettingsManager.load();
         serverSettingsManager.applyToAllWorlds();
 
         teleportHelper = new TeleportHelper(this);
-        asyncRtpEngine = new AsyncRtpEngine(this, teleportHelper);
+        teleportService = new TeleportService(this, teleportHelper);
+        asyncRtpEngine = new AsyncRtpEngine(this, teleportService);
 
         registerCommand("tpa", new TpaCommand(this));
         registerCommand("tpahere", new TpaHereCommand(this));
         registerCommand("tpaccept", new TpaAcceptCommand(this));
         registerCommand("tpadeny", new TpaDenyCommand(this));
+        registerCommand("tphere", new TpHereCommand(this));
+        registerCommand("tpall", new TpAllCommand(this));
         registerCommand("warp", new WarpCommand(this));
         registerCommand("setwarp", new SetWarpCommand(this));
         registerCommand("delwarp", new DelWarpCommand(this));
         registerCommand("home", new HomeCommand(this));
         registerCommand("sethome", new SetHomeCommand(this));
         registerCommand("delhome", new DelHomeCommand(this));
+        registerCommand("adminhome", new AdminHomeCommand(this));
         registerCommand("back", new BackCommand(this));
         registerCommand("menu", new MenuCommand(this));
         registerCommand("spawn", new SpawnCommand(this));
@@ -201,6 +218,10 @@ public final class AuraUtils extends JavaPlugin {
         return teleportHelper;
     }
 
+    public TeleportService getTeleportService() {
+        return teleportService;
+    }
+
     public AsyncRtpEngine getAsyncRtpEngine() {
         return asyncRtpEngine;
     }
@@ -233,13 +254,30 @@ public final class AuraUtils extends JavaPlugin {
         return rtpCooldownManager;
     }
 
+    public WarpCooldownManager getWarpCooldownManager() {
+        return warpCooldownManager;
+    }
+
     public ServerSettingsManager getServerSettingsManager() {
         return serverSettingsManager;
+    }
+
+    public VanishSupport getVanishSupport() {
+        return vanishSupport;
+    }
+
+    public AuraConfig getAuraConfig() {
+        return auraConfig;
     }
 
     public void reloadPluginConfig() {
         reloadConfig();
         messages.load();
+        auraConfig = ConfigValidator.validate(this);
+        messages.load();
+        if (vanishSupport != null) {
+            vanishSupport.reload();
+        }
         if (serverSettingsManager != null) {
             serverSettingsManager.applyToAllWorlds();
         }

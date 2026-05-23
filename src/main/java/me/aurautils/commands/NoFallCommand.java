@@ -37,7 +37,7 @@ public class NoFallCommand implements CommandExecutor, TabCompleter {
                 plugin.send(sender, "nofall.others-denied");
                 return true;
             }
-            target = plugin.getServer().getPlayer(args[0]);
+            target = CommandUtil.resolveVisiblePlayer(plugin, sender, args[0]);
             if (target == null) {
                 plugin.send(sender, "general.player-not-found");
                 return true;
@@ -66,6 +66,6 @@ public class NoFallCommand implements CommandExecutor, TabCompleter {
         if (args.length != 1) {
             return Collections.emptyList();
         }
-        return CommandUtil.onlinePlayerNames(sender, args[0], "aura.nofall.others");
+        return CommandUtil.onlinePlayerNames(plugin, sender, args[0], "aura.nofall.others");
     }
 }

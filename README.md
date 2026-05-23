@@ -24,7 +24,7 @@ On first run, bundled `messages/en.yml` and `messages/es.yml` are copied into `p
 
 | Area | What you get |
 |------|----------------|
-| **Warps & homes** | Set, delete, teleport via command or paginated GUI; tab completion |
+| **Warps & homes** | Warps with per-warp cooldowns, categories, aliases; homes with limits; GUI + tab completion |
 | **TPA & TPA Here** | `/tpa`, `/tpahere`, `/tpaccept`, `/tpadeny` with timeout and teleport countdown |
 | **Async-safe RTP** | `/rtp` with Paper async chunk loads or Spigot loaded-chunk-only search |
 | **Back** | `/back` to the last AuraUtils teleport destination |
@@ -32,7 +32,7 @@ On first run, bundled `messages/en.yml` and `messages/es.yml` are copied into `p
 | **Toggles** | `/fly`, `/god`, `/nofall`, `/nohunger` (self or others with `.others`) |
 | **Heal & feed** | `/heal` and `/feed` (self or others with `.others`) |
 | **Utility menu** | `/menu` — warps, homes, TPA, spawn, heal, feed, back; paged warp/home lists |
-| **Per-warp permissions** | `aura.warp.<name>` or `aura.warp` for all; `aura.warp.admin` for operators |
+| **Per-warp permissions** | `aura.warp.<name>` or `aura.warp` for all; aliases use the canonical warp node |
 | **Teleport countdown** | Shared delay for warp, home, back, TPA, spawn; separate RTP countdown; clickable `/auracanceltp` |
 | **Feature toggles** | Disable commands and related behavior per feature in `config.yml` |
 | **Locales** | MiniMessage `messages/*.yml`; Paper client locale; `/aura locale` override |
@@ -172,13 +172,15 @@ During a reset, players moved out of the resource world may cancel an in-progres
 | `/home` | `[name\|list]` | `aura.home` |
 | `/sethome` | `<name>` | `aura.home.set` |
 | `/delhome` | `<name>` | `aura.home.delete` |
-| `/warp` | `[name\|list]` | `aura.warp` |
+| `/warp` | `[name\|list [category]]` | `aura.warp` |
 | `/setwarp` | `<name>` | `aura.warp.set` |
 | `/delwarp` | `<name>` | `aura.warp.delete` |
 | `/tpa` | `<player>\|list` | `aura.tpa` |
 | `/tpahere` | `<player>` | `aura.tpahere` |
 | `/tpaccept` | — | `aura.tpaccept` |
 | `/tpadeny` | — | `aura.tpdeny` |
+| `/tphere` | `<player>` | `aura.tphere.others` |
+| `/tpall` | — | `aura.tpall` |
 | `/rtp` | — | `aura.rtp` |
 | `/spawn` | — | `aura.spawn` |
 | `/setspawn` | — | `aura.setspawn` |
@@ -285,7 +287,7 @@ features:
 |------|----------|
 | `config.yml` | Gameplay, RTP, teleports, features, locale defaults |
 | `messages/*.yml` | MiniMessage strings per locale |
-| `warps.yml` | Warp locations |
+| `warps.yml` | Warp locations, optional cooldowns, categories, aliases |
 | `homes.yml` | Player homes |
 | `player-states.yml` | Toggles, optional `locale` override |
 | `server-spawns.yml` | Per-world spawn from `/setspawn` |
@@ -301,9 +303,12 @@ features:
 | `aura.warp.<name>` | — | Specific warp (lowercase) |
 | `aura.warp.admin` | `op` | Admin warp access |
 | `aura.warp.set` / `aura.warp.delete` | `op` | Manage warps |
+| `aura.warp.cooldown.bypass` | `op` | Skip per-warp cooldowns |
 | `aura.home` / `.set` / `.delete` | `true` | Home commands |
 | `aura.home.limit.<n>` | varies | Home cap (`3`, `5`, `10`, `25` in `plugin.yml`) |
 | `aura.tpa` / `tpahere` / `tpaccept` / `tpdeny` | `true` | TPA flow |
+| `aura.tphere.others` | `op` | Force-teleport a player to you (`/tphere`) |
+| `aura.tpall` | `op` | Force-teleport all players to you (`/tpall`) |
 | `aura.spawn` | `true` | `/spawn` |
 | `aura.setspawn` | `op` | `/setspawn` |
 | `aura.rtp` | `true` | `/rtp` |
@@ -317,7 +322,29 @@ features:
 
 ### Per-warp access
 
-A player may use warp `spawn` if they have any of: `aura.admin`, `aura.warp.admin`, `aura.warp.spawn`, or `aura.warp` (all warps). For restricted servers, omit `aura.warp` and grant only `aura.warp.<name>` nodes.
+A player may use warp `spawn` if they have any of: `aura.admin`, `aura.warp.admin`, `aura.warp.spawn`, or `aura.warp` (all warps). For restricted servers, omit `aura.warp` and grant only `aura.warp.<name>` nodes. Permissions always use the **canonical** warp name (aliases do not get separate nodes).
+
+### `warps.yml` metadata
+
+Each warp entry supports optional fields alongside location coordinates:
+
+```yaml
+warps:
+  spawn:
+    world: world
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+    cooldown: 30          # seconds between uses (per player, per warp); omit = no cooldown
+    category: hubs          # groups warps in the GUI and /warp list <category>
+    aliases: [s, hub]       # extra names for /warp and tab completion
+```
+
+- **Cooldown** — tracked in memory per player; use `aura.warp.cooldown.bypass` to skip.
+- **Category** — when a player can use warps in more than one category, `/warp list` opens a category picker first. Use `other` for uncategorized warps in commands (`/warp list other`).
+- **Aliases** — resolve to the canonical warp; `/setwarp` only sets the primary name.
 
 Authoritative definitions: [`plugin.yml`](src/main/resources/plugin.yml).
 

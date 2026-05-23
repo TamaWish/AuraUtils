@@ -43,7 +43,7 @@ public class TpaManager {
 
         UUID targetId = to.getUniqueId();
         UUID requesterId = from.getUniqueId();
-        int timeout = plugin.getConfig().getInt("tpa.timeout", 60);
+        int timeout = plugin.getAuraConfig().tpaTimeout();
         BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> expire(targetId, requesterId), timeout * 20L);
 
         expiryTasks.put(to.getUniqueId(), task);
@@ -82,21 +82,27 @@ public class TpaManager {
         Player traveler = type == TpaType.TO_TARGET ? requester : target;
         Player destinationHolder = type == TpaType.TO_TARGET ? target : requester;
 
-        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = plugin.getTeleportHelper();
+        TeleportService teleports = plugin.getTeleportService();
+        int tpCountdown = teleports.countdownFor(TeleportService.TeleportKind.STANDARD);
+        MessagePlaceholders travelerToDestination = MessagePlaceholders.of("destination", destinationHolder.getName());
+        MessagePlaceholders destinationToTraveler = MessagePlaceholders.of("traveler", traveler.getName());
+
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(traveler, destinationHolder.getLocation(), tpCountdown);
+            teleports.teleport(traveler, destinationHolder.getLocation(), teleports.standardOptions()
+                    .noSuccessMessage()
+                    .build());
             plugin.send(traveler, "tpa.accepted-countdown-traveler",
                     MessagePlaceholders.of("seconds", String.valueOf(tpCountdown)));
-            plugin.send(destinationHolder, "tpa.accepted-countdown-destination",
-                    MessagePlaceholders.of("traveler", traveler.getName()));
+            plugin.send(destinationHolder, "tpa.accepted-countdown-destination", destinationToTraveler);
         } else {
-            plugin.getBackManager().skipNextRecord(traveler.getUniqueId());
-            traveler.teleport(destinationHolder.getLocation());
-            plugin.send(traveler, "tpa.accepted-instant-traveler",
-                    MessagePlaceholders.of("destination", destinationHolder.getName()));
-            plugin.send(destinationHolder, "tpa.accepted-instant-destination",
-                    MessagePlaceholders.of("traveler", traveler.getName()));
+            teleports.teleport(traveler, destinationHolder.getLocation(), teleports.standardOptions()
+                    .countdownSeconds(0)
+                    .noSuccessMessage()
+                    .onSuccess(() -> {
+                        plugin.send(traveler, "tpa.accepted-instant-traveler", travelerToDestination);
+                        plugin.send(destinationHolder, "tpa.accepted-instant-destination", destinationToTraveler);
+                    })
+                    .build());
         }
     }
 

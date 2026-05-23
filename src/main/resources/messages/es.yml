@@ -20,6 +20,9 @@ teleport:
   cancelled-manual: "<prefix><red>Teletransporte cancelado."
   success-rtp: "<prefix><green>Teletransportado a un lugar seguro al azar."
   chunk-unavailable: "<prefix><red>El chunk de destino no está cargado. Explora la zona o inténtalo de nuevo."
+  chunk-timeout: "<prefix><red>El chunk de destino tardó demasiado en cargar. Inténtalo de nuevo."
+  world-invalid: "<prefix><red>Ese destino no es válido."
+  world-unloaded: "<prefix><red>El mundo <yellow><world></yellow> no está cargado."
 
 rtp:
   searching: "<prefix><yellow>Buscando un lugar seguro…"
@@ -27,6 +30,24 @@ rtp:
   found-countdown: "<prefix><green>¡Lugar encontrado a <yellow><blocks></yellow> bloques! ¡Quédate quieto!"
   failed: "<prefix><red>No se encontró un lugar seguro. En Spigot, pregenera el terreno con <yellow>rtp.only-loaded-chunks</yellow> activado."
 
+warp:
+  cooldown: "<prefix><red>El warp <yellow><name></yellow> <red>está en enfriamiento. Intenta en <yellow><seconds>s<red>."
+
+tphere:
+  teleported-traveler: "<prefix><green>Teletransportado a <yellow><destination></yellow><green>."
+  teleported-sender: "<prefix><green>Teletransportaste a <yellow><player></yellow> <green>hacia ti."
+
+tpall:
+  summary: "<prefix><green>Teletransportando <yellow><count></yellow> jugador(es) hacia ti."
+
 tpa:
   received: "<prefix><yellow><requester></yellow> <green>quiere teletransportarse hacia ti. <aqua>/tpaccept</aqua> o <red>/tpadeny</red><green>."
   no-pending: "<prefix><red>No tienes solicitudes TPA pendientes."
+
+adminhome:
+  usage: "<prefix><yellow>Uso: <white>/adminhome <jugador|uuid> list|del <nombre></white>"
+  player-not-found: "<prefix><red>No se encontró jugador para <yellow><target></yellow><red>."
+  list-header: "<prefix><gray>Homes de <yellow><player></yellow> <gray>(<white><count></white><gray>):"
+  list-entry: "<gray>  <yellow><name></yellow> <dark_gray>— <white><world></white> <gray>(<coords></gray>)"
+  list-empty: "<prefix><yellow><player></yellow> <gray>no tiene homes."
+  deleted: "<prefix><green>Home <yellow><name></yellow> <green>eliminado para <yellow><player></yellow><green>."

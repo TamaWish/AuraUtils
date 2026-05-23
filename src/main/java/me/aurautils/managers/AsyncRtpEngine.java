@@ -1,6 +1,7 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.config.AuraConfig;
 import me.aurautils.platform.ChunkLoadPolicy;
 import me.aurautils.platform.PlatformAdapter;
 import org.bukkit.HeightMap;
@@ -11,7 +12,6 @@ import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -49,38 +49,36 @@ public class AsyncRtpEngine {
 
     private final AuraUtils plugin;
     private final PlatformAdapter platform;
-    private final TeleportHelper teleportHelper;
+    private final TeleportService teleportService;
 
-    public AsyncRtpEngine(AuraUtils plugin, TeleportHelper teleportHelper) {
+    public AsyncRtpEngine(AuraUtils plugin, TeleportService teleportService) {
         this.plugin = plugin;
         this.platform = plugin.getPlatform();
-        this.teleportHelper = teleportHelper;
+        this.teleportService = teleportService;
     }
 
     public void search(Player player, boolean bypassCooldown, ResultHandler handler) {
         World world = player.getWorld();
-        int radius = Math.max(1, plugin.getConfig().getInt("rtp.radius", 2000));
-        radius = clampRadiusToBorder(world, radius);
-        int minDistance = Math.max(0, plugin.getConfig().getInt("rtp.minDistance", 100));
-        if (minDistance > radius) {
-            minDistance = radius;
-        }
-
-        int attempts = Math.max(1, plugin.getConfig().getInt("rtp.attempts", 80));
-        int attemptsPerTick = Math.max(1, plugin.getConfig().getInt("rtp.attemptsPerTick", 10));
-        boolean centerOnPlayer = plugin.getConfig().getBoolean("rtp.center-on-player", true);
-        boolean onlyLoadedChunks = plugin.getConfig().getBoolean("rtp.only-loaded-chunks", !platform.supportsAsyncChunkLoading());
-        boolean generateChunks = plugin.getConfig().getBoolean("rtp.generate-chunks", false);
-        boolean asyncUrgent = plugin.getConfig().getBoolean("rtp.async-urgent", true);
-        int maxPendingLoads = Math.max(1, plugin.getConfig().getInt("rtp.max-pending-chunk-loads", 4));
+        AuraConfig config = plugin.getAuraConfig();
+        int radius = clampRadiusToBorder(world, config.rtpRadius());
+        int minDistance = config.rtpMinDistance();
+        int attempts = config.rtpAttempts();
+        int attemptsPerTick = config.rtpAttemptsPerTick();
+        boolean centerOnPlayer = config.rtpCenterOnPlayer();
+        boolean onlyLoadedChunks = config.rtpOnlyLoadedChunksExplicitlySet()
+                ? config.rtpOnlyLoadedChunks()
+                : !platform.supportsAsyncChunkLoading();
+        boolean generateChunks = config.rtpGenerateChunks();
+        boolean asyncUrgent = config.rtpAsyncUrgent();
+        int maxPendingLoads = config.rtpMaxPendingChunkLoads();
 
         Location from = player.getLocation().clone();
         Location center = centerOnPlayer ? from : world.getSpawnLocation();
         int centerX = center.getBlockX();
         int centerZ = center.getBlockZ();
 
-        int cooldownSeconds = bypassCooldown ? 0 : Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
-        int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", 0));
+        int cooldownSeconds = bypassCooldown ? 0 : config.rtpCooldown();
+        int rtpCountdown = teleportService.countdownFor(TeleportService.TeleportKind.RTP);
         UUID playerId = player.getUniqueId();
 
         boolean useAsyncSearch = platform.supportsAsyncChunkLoading() && !onlyLoadedChunks;
@@ -107,7 +105,7 @@ public class AsyncRtpEngine {
     }
 
     public void teleportWithCountdown(Player player, Location destination, int countdownSeconds) {
-        teleportHelper.scheduleTeleport(player, destination, countdownSeconds, true, "teleport.success-rtp");
+        teleportService.teleport(player, destination, TeleportService.rtpWithCountdown(countdownSeconds));
     }
 
     private void finishSuccess(Player player, Location from, Location destination, int cooldownSeconds,
@@ -120,27 +118,9 @@ public class AsyncRtpEngine {
         if (rtpCountdown > 0) {
             handler.onFound(destination, blocksAway);
         } else {
-            executeTeleport(player, destination);
+            teleportService.teleport(player, destination, teleportService.rtpInstant(plugin));
             handler.onFound(destination, blocksAway);
         }
-    }
-
-    private void executeTeleport(Player player, Location destination) {
-        platform.whenChunkReady(
-                destination,
-                platform.supportsAsyncChunkLoading() ? ChunkLoadPolicy.ASYNC : ChunkLoadPolicy.LOADED_ONLY,
-                plugin.getConfig().getBoolean("rtp.generate-chunks", false),
-                plugin.getConfig().getBoolean("rtp.async-urgent", true),
-                () -> {
-                    if (!player.isOnline()) {
-                        return;
-                    }
-                    plugin.getBackManager().skipNextRecord(player.getUniqueId());
-                    player.teleport(destination, PlayerTeleportEvent.TeleportCause.COMMAND);
-                },
-                () -> {
-                }
-        );
     }
 
     private Location findSafeLocation(World world, int x, int z, float yaw, float pitch) {

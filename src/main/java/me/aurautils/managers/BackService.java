@@ -20,15 +20,10 @@ public final class BackService {
             return false;
         }
 
-        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = plugin.getTeleportHelper();
-        if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, backLocation, tpCountdown, false, "teleport.success-back");
-        } else {
-            plugin.getBackManager().skipNextRecord(player.getUniqueId());
-            player.teleport(backLocation);
-            plugin.send(player, "teleport.success-back");
-        }
+        plugin.getTeleportService().teleport(player, backLocation, plugin.getTeleportService().standardOptions()
+                .skipBackRecord(true)
+                .successMessageKey("teleport.success-back")
+                .build());
         return true;
     }
 }

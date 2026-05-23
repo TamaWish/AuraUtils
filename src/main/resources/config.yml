@@ -5,6 +5,17 @@
 #   Paper  — leave only-loaded-chunks unset/false; use generate-chunks, async-urgent, max-pending-chunk-loads
 #   Spigot — set only-loaded-chunks: true and pre-generate worlds for reliable /rtp
 
+# Vanish compatibility (metadata-based; no vanish plugin dependency)
+vanish:
+  enabled: true
+  # Players with this permission still see vanished staff in tab-complete and can target them
+  see-permission: aura.vanish.see
+  # Bukkit metadata keys that mark a player as vanished (vanish plugins often use "vanished")
+  metadata-keys:
+    - aura.vanish
+    - vanished
+    - supervanished
+
 # TPA settings
 tpa:
   # How long (seconds) a TPA request stays pending before expiring
@@ -43,6 +54,15 @@ teleport:
   async-chunk-load: true
   # Spigot: allow one synchronous chunk load at teleport time when the chunk is not loaded
   sync-chunk-fallback: true
+  # Seconds to wait for a destination chunk before failing (0 = no timeout)
+  chunk-load-timeout-seconds: 10
+  # Per-feature overrides (optional). Unset keys inherit global teleport / rtp settings.
+  overrides:
+    admin:
+      countdown: 0
+      async-chunk-load: true
+    rtp:
+      countdown: 0
 
 # Per-player home limits (-1 = unlimited)
 homes:

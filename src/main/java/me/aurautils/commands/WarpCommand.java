@@ -1,9 +1,8 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
-import me.aurautils.managers.TeleportHelper;
+import me.aurautils.managers.WarpService;
 import me.aurautils.util.CommandUtil;
-import me.aurautils.util.MessagePlaceholders;
 import me.aurautils.util.WarpPermissions;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,6 +13,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class WarpCommand implements CommandExecutor, TabCompleter {
 
@@ -40,49 +40,56 @@ public class WarpCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
-            plugin.getMenuManager().openWarpsMenu(player, 0);
+            String categoryFilter = null;
+            if (args.length >= 2 && !args[1].equalsIgnoreCase("list")) {
+                categoryFilter = resolveCategoryFilter(args[1]);
+            }
+            boolean skipCategoryPicker = args.length >= 2;
+            plugin.getMenuManager().openWarpsMenu(player, 0, categoryFilter, skipCategoryPicker);
             return true;
         }
 
-        if (!WarpPermissions.canUse(player, args[0])) {
-            plugin.send(player, "warp.no-permission", MessagePlaceholders.of("name", args[0]));
-            return true;
-        }
-
-        var location = plugin.getWarpManager().getWarp(args[0]);
-        if (location == null) {
-            plugin.send(player, "warp.not-found", MessagePlaceholders.of("name", args[0]));
-            return true;
-        }
-
-        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
-        TeleportHelper helper = plugin.getTeleportHelper();
-        MessagePlaceholders placeholders = MessagePlaceholders.of("name", args[0]);
-
-        if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown, false, "teleport.success-warp", placeholders);
-        } else {
-            plugin.getBackManager().skipNextRecord(player.getUniqueId());
-            player.teleport(location);
-            plugin.send(player, "teleport.success-warp", placeholders);
-        }
-
-        return true;
+        return WarpService.teleport(plugin, player, args[0]);
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length != 1 || !(sender instanceof Player player)) {
+        if (!(sender instanceof Player player)) {
             return Collections.emptyList();
         }
 
-        List<String> allowed = new ArrayList<>();
-        for (String name : plugin.getWarpManager().getWarpNames()) {
-            if (WarpPermissions.canUse(player, name)) {
-                allowed.add(name);
+        if (args.length == 1) {
+            List<String> suggestions = new ArrayList<>();
+            suggestions.add("list");
+            for (String resolvable : plugin.getWarpManager().getAllResolvableNames()) {
+                String canonical = plugin.getWarpManager().resolveWarpName(resolvable);
+                if (canonical != null && WarpPermissions.canUse(player, canonical)) {
+                    suggestions.add(resolvable);
+                }
             }
+            return CommandUtil.filterPrefix(args[0], suggestions);
         }
 
-        return CommandUtil.filterPrefix(args[0], allowed);
+        if (args.length == 2 && args[0].equalsIgnoreCase("list")) {
+            List<String> categories = new ArrayList<>();
+            categories.add("all");
+            categories.addAll(plugin.getWarpManager().getCategories());
+            if (plugin.getWarpManager().hasUncategorizedWarps()) {
+                categories.add("other");
+            }
+            return CommandUtil.filterPrefix(args[1], categories);
+        }
+
+        return Collections.emptyList();
+    }
+
+    private static String resolveCategoryFilter(String input) {
+        if (input.equalsIgnoreCase("all")) {
+            return null;
+        }
+        if (input.equalsIgnoreCase("other")) {
+            return "";
+        }
+        return input.toLowerCase(Locale.ROOT).trim();
     }
 }

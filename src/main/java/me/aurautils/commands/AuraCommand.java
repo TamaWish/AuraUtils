@@ -68,6 +68,8 @@ public class AuraCommand implements CommandExecutor {
         plugin.send(sender, "aura.help-tpahere");
         plugin.send(sender, "aura.help-tpaccept");
         plugin.send(sender, "aura.help-tpadeny");
+        plugin.send(sender, "aura.help-tphere");
+        plugin.send(sender, "aura.help-tpall");
         plugin.send(sender, "aura.help-warp");
         plugin.send(sender, "aura.help-setwarp");
         plugin.send(sender, "aura.help-home");

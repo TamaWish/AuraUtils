@@ -1,20 +1,24 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.storage.BukkitTaskExecutor;
+import me.aurautils.storage.DataStore;
+import me.aurautils.storage.StoragePaths;
+import me.aurautils.storage.TaskExecutor;
+import me.aurautils.storage.YamlDataStore;
 import org.bukkit.GameMode;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
+import me.aurautils.storage.Cancellable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 /**
  * Persistent store for all per-player toggles and settings.
@@ -24,8 +28,10 @@ public class PlayerDataManager {
 
     private static final long SAVE_DEBOUNCE_TICKS = 40L;
 
+    private final DataStore dataStore;
+    private final TaskExecutor taskExecutor;
+    private final Logger logger;
     private final AuraUtils plugin;
-    private final File dataFile;
     private final ReentrantLock fileLock = new ReentrantLock();
 
     private final Map<UUID, Boolean> godMode = new ConcurrentHashMap<>();
@@ -39,24 +45,29 @@ public class PlayerDataManager {
     private volatile boolean pendingFullSave;
     private volatile boolean saveWorkerActive;
 
-    private BukkitTask debounceTask;
+    private Cancellable debounceTask;
 
     public PlayerDataManager(AuraUtils plugin) {
+        this(new YamlDataStore(plugin), new BukkitTaskExecutor(plugin), plugin, plugin.getLogger());
+    }
+
+    public PlayerDataManager(DataStore dataStore, TaskExecutor taskExecutor, AuraUtils plugin, Logger logger) {
+        this.dataStore = dataStore;
+        this.taskExecutor = taskExecutor;
         this.plugin = plugin;
-        this.dataFile = new File(plugin.getDataFolder(), "player-states.yml");
+        this.logger = logger;
     }
 
     public void load() {
         fileLock.lock();
         try {
-            plugin.getDataFolder().mkdirs();
             godMode.clear();
             flyMode.clear();
             noFall.clear();
             noHunger.clear();
             localeOverrides.clear();
 
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            YamlConfiguration config = dataStore.load(StoragePaths.PLAYER_STATES);
             ConfigurationSection playersSection = config.getConfigurationSection("players");
             if (playersSection == null) {
                 return;
@@ -104,7 +115,7 @@ public class PlayerDataManager {
         if (debounceTask != null) {
             debounceTask.cancel();
         }
-        debounceTask = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        debounceTask = taskExecutor.runSyncLater(() -> {
             debounceTask = null;
             requestSaveDrain();
         }, SAVE_DEBOUNCE_TICKS);
@@ -127,16 +138,16 @@ public class PlayerDataManager {
     }
 
     private void requestSaveDrain() {
-        if (saveWorkerActive || !plugin.isEnabled()) {
+        if (saveWorkerActive || !taskExecutor.isPluginEnabled()) {
             return;
         }
         saveWorkerActive = true;
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::runSaveDrain);
+        taskExecutor.runAsync(this::runSaveDrain);
     }
 
     private void runSaveDrain() {
         try {
-            while (plugin.isEnabled() && hasPendingWrites()) {
+            while (taskExecutor.isPluginEnabled() && hasPendingWrites()) {
                 boolean fullSave = pendingFullSave;
                 pendingFullSave = false;
 
@@ -153,7 +164,7 @@ public class PlayerDataManager {
                 }
             }
 
-            if (!plugin.isEnabled() && hasPendingWrites()) {
+            if (!taskExecutor.isPluginEnabled() && hasPendingWrites()) {
                 boolean fullSave = pendingFullSave;
                 pendingFullSave = false;
                 Set<UUID> playerIds = Set.copyOf(pendingPlayerSaves);
@@ -182,20 +193,17 @@ public class PlayerDataManager {
     private void persistAllToDisk() {
         fileLock.lock();
         try {
-            plugin.getDataFolder().mkdirs();
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            YamlConfiguration config = dataStore.load(StoragePaths.PLAYER_STATES);
             ConfigurationSection playersSection = config.getConfigurationSection("players");
             if (playersSection == null) {
                 playersSection = config.createSection("players");
             }
 
-            for (UUID playerId : collectKnownPlayerIds()) {
+            for (UUID playerId : collectPlayerIdsForPersist(playersSection)) {
                 writePlayerSection(playersSection, playerId);
             }
 
-            config.save(dataFile);
-        } catch (IOException exception) {
-            plugin.getLogger().severe("Failed to save player-states.yml: " + exception.getMessage());
+            dataStore.save(StoragePaths.PLAYER_STATES, config);
         } finally {
             fileLock.unlock();
         }
@@ -204,17 +212,14 @@ public class PlayerDataManager {
     private void persistPlayerToDisk(UUID playerId) {
         fileLock.lock();
         try {
-            plugin.getDataFolder().mkdirs();
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
+            YamlConfiguration config = dataStore.load(StoragePaths.PLAYER_STATES);
             ConfigurationSection playersSection = config.getConfigurationSection("players");
             if (playersSection == null) {
                 playersSection = config.createSection("players");
             }
 
             writePlayerSection(playersSection, playerId);
-            config.save(dataFile);
-        } catch (IOException exception) {
-            plugin.getLogger().severe("Failed to save player-states.yml for " + playerId + ": " + exception.getMessage());
+            dataStore.save(StoragePaths.PLAYER_STATES, config);
         } finally {
             fileLock.unlock();
         }
@@ -244,6 +249,22 @@ public class PlayerDataManager {
         playerIds.addAll(flyMode.keySet());
         playerIds.addAll(noFall.keySet());
         playerIds.addAll(noHunger.keySet());
+        playerIds.addAll(localeOverrides.keySet());
+        return playerIds;
+    }
+
+    /** In-memory toggles plus any player already present on disk (so cleared toggles are removed). */
+    private Set<UUID> collectPlayerIdsForPersist(ConfigurationSection playersSection) {
+        Set<UUID> playerIds = collectKnownPlayerIds();
+        if (playersSection != null) {
+            for (String playerKey : playersSection.getKeys(false)) {
+                try {
+                    playerIds.add(UUID.fromString(playerKey));
+                } catch (IllegalArgumentException ignored) {
+                    // skip non-UUID keys
+                }
+            }
+        }
         return playerIds;
     }
 

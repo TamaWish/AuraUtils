@@ -1,5 +1,6 @@
 package me.aurautils.util;
 
+import me.aurautils.AuraUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -25,13 +26,34 @@ public final class CommandUtil {
         return matches;
     }
 
-    public static List<String> onlinePlayerNames(CommandSender sender, String input, String othersPermission) {
-        if (!sender.hasPermission(othersPermission)) {
+    /**
+     * Resolves an online player visible to the viewer (vanished players hidden unless bypass permission).
+     */
+    public static Player resolveVisiblePlayer(AuraUtils plugin, CommandSender viewer, String name) {
+        Player target = Bukkit.getPlayerExact(name);
+        if (target == null || !target.isOnline()) {
+            return null;
+        }
+        if (!plugin.getVanishSupport().canSee(viewer, target)) {
+            return null;
+        }
+        return target;
+    }
+
+    public static List<String> onlinePlayerNames(AuraUtils plugin, CommandSender sender, String input) {
+        return onlinePlayerNames(plugin, sender, input, null);
+    }
+
+    public static List<String> onlinePlayerNames(AuraUtils plugin, CommandSender sender, String input, String othersPermission) {
+        if (othersPermission != null && !sender.hasPermission(othersPermission)) {
             return List.of();
         }
+        VanishSupport vanish = plugin.getVanishSupport();
         List<String> names = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            names.add(player.getName());
+            if (vanish.canSee(sender, player)) {
+                names.add(player.getName());
+            }
         }
         return filterPrefix(input, names);
     }

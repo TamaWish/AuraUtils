@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Warps** — Per-warp cooldowns, categories, and aliases in `warps.yml`; category picker GUI when multiple groups apply; `/warp list [category]`; `aura.warp.cooldown.bypass`.
+- **Admin teleports** — `/tphere <player>` and `/tpall` (force teleport via `TeleportHelper`; `aura.tphere.others`, `aura.tpall`).
+- **Vanish compatibility** — Metadata-based playerlist filtering for tab-complete and player-targeting commands (`vanish.metadata-keys`, `aura.vanish.see`); `/tpa` and `/tpahere` tab completion.
+- **Admin homes** — `/adminhome <player|uuid> list|del <name>` for console and ops to manage offline players' homes (`aura.home.admin`).
+- **Config validation** — `ConfigValidator` normalizes numeric/bounds settings on enable and `/aura reload`, logging `[Config]` warnings to the console.
+- **Storage layer** — `DataStore` / `YamlDataStore` / `InMemoryDataStore` for homes, warps, and player states; injectable `WorldResolver`, `PlayerLookup`, and `TaskExecutor` for unit tests.
+
 ### Documentation
 
 - README, CHANGELOG, and v1.0.0 release notes updated for feature toggles, `/spawn`, heal/feed, menu GUI, bundled Maven path, and correct shaded JAR deployment.

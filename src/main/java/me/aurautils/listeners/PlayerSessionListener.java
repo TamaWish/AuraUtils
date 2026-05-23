@@ -18,6 +18,7 @@ public class PlayerSessionListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        plugin.getTeleportService().clearPendingOnQuit(event.getPlayer().getUniqueId());
         plugin.getPlayerDataManager().savePlayer(event.getPlayer().getUniqueId());
     }
 }

@@ -1,90 +1,228 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
-import me.aurautils.util.LocationIO;
+import me.aurautils.storage.BukkitWorldResolver;
+import me.aurautils.storage.DataStore;
+import me.aurautils.storage.StoragePaths;
+import me.aurautils.storage.WorldResolver;
+import me.aurautils.storage.YamlDataStore;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 public class WarpManager {
 
-    private final AuraUtils plugin;
-    private final File warpsFile;
-    private final Map<String, Location> warps = new TreeMap<>();
+    private final DataStore dataStore;
+    private final WorldResolver worldResolver;
+    private final Logger logger;
+    private final Map<String, WarpData> warps = new TreeMap<>();
+    private final Map<String, String> aliasToCanonical = new TreeMap<>();
 
     public WarpManager(AuraUtils plugin) {
-        this.plugin = plugin;
-        this.warpsFile = new File(plugin.getDataFolder(), "warps.yml");
+        this(new YamlDataStore(plugin), new BukkitWorldResolver(plugin), plugin.getLogger());
+    }
+
+    public WarpManager(DataStore dataStore, WorldResolver worldResolver, Logger logger) {
+        this.dataStore = dataStore;
+        this.worldResolver = worldResolver;
+        this.logger = logger;
     }
 
     public void load() {
-        plugin.getDataFolder().mkdirs();
         warps.clear();
+        aliasToCanonical.clear();
 
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(warpsFile);
+        YamlConfiguration config = dataStore.load(StoragePaths.WARPS);
         ConfigurationSection warpsSection = config.getConfigurationSection("warps");
         if (warpsSection == null) {
             return;
         }
 
         for (String name : warpsSection.getKeys(false)) {
-            Location location = LocationIO.read(plugin, warpsSection.getConfigurationSection(name));
-            if (location != null) {
-                warps.put(normalize(name), location);
+            String canonical = normalize(name);
+            WarpData data = WarpData.fromSection(worldResolver, warpsSection.getConfigurationSection(name));
+            if (data != null) {
+                warps.put(canonical, data);
             }
         }
+        rebuildAliasIndex();
     }
 
     public void save() {
-        plugin.getDataFolder().mkdirs();
-        YamlConfiguration existing = warpsFile.exists()
-                ? YamlConfiguration.loadConfiguration(warpsFile)
+        YamlConfiguration existing = dataStore.exists(StoragePaths.WARPS)
+                ? dataStore.load(StoragePaths.WARPS)
                 : null;
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection warpsSection = config.createSection("warps");
-        for (Map.Entry<String, Location> entry : warps.entrySet()) {
+        for (Map.Entry<String, WarpData> entry : warps.entrySet()) {
             String fallbackWorld = existing == null
                     ? null
                     : existing.getString("warps." + entry.getKey() + ".world");
             try {
-                LocationIO.write(warpsSection.createSection(entry.getKey()), entry.getValue(), fallbackWorld);
+                entry.getValue().writeTo(warpsSection.createSection(entry.getKey()), fallbackWorld);
             } catch (IllegalArgumentException exception) {
-                plugin.getLogger().warning("Skipping warp '" + entry.getKey()
+                logger.warning("Skipping warp '" + entry.getKey()
                         + "' during save: " + exception.getMessage());
             }
         }
-        try {
-            config.save(warpsFile);
-        } catch (IOException exception) {
-            plugin.getLogger().severe("Failed to save warps.yml: " + exception.getMessage());
-        }
+        dataStore.save(StoragePaths.WARPS, config);
     }
 
     public Set<String> getWarpNames() {
         return new TreeSet<>(warps.keySet());
     }
 
+    /** Canonical names and aliases (for tab completion). */
+    public List<String> getAllResolvableNames() {
+        List<String> names = new ArrayList<>();
+        for (String canonical : warps.keySet()) {
+            names.add(canonical);
+            names.addAll(warps.get(canonical).getAliases());
+        }
+        return names;
+    }
+
+    /**
+     * Resolves a warp name or alias to the canonical warp key, or {@code null} if unknown.
+     */
+    public String resolveWarpName(String nameOrAlias) {
+        if (nameOrAlias == null || nameOrAlias.isBlank()) {
+            return null;
+        }
+        String key = normalize(nameOrAlias);
+        if (warps.containsKey(key)) {
+            return key;
+        }
+        return aliasToCanonical.get(key);
+    }
+
+    public WarpData getWarpData(String name) {
+        String canonical = resolveWarpName(name);
+        if (canonical == null) {
+            return null;
+        }
+        WarpData data = warps.get(canonical);
+        return data == null ? null : data;
+    }
+
     public Location getWarp(String name) {
-        Location location = warps.get(normalize(name));
-        return location == null ? null : location.clone();
+        WarpData data = getWarpData(name);
+        return data == null ? null : data.getLocation();
     }
 
     public void setWarp(String name, Location location) {
-        warps.put(normalize(name), location.clone());
+        String canonical = normalize(name);
+        WarpData existing = warps.get(canonical);
+        if (existing != null) {
+            warps.put(canonical, existing.withLocation(location));
+        } else {
+            warps.put(canonical, WarpData.locationOnly(location));
+        }
+        rebuildAliasIndex();
     }
 
     public boolean deleteWarp(String name) {
-        return warps.remove(normalize(name)) != null;
+        String canonical = resolveWarpName(name);
+        if (canonical == null) {
+            return false;
+        }
+        if (warps.remove(canonical) == null) {
+            return false;
+        }
+        rebuildAliasIndex();
+        return true;
+    }
+
+    /** Distinct non-empty categories among all warps, sorted. */
+    public Set<String> getCategories() {
+        Set<String> categories = new TreeSet<>();
+        for (WarpData data : warps.values()) {
+            if (data.getCategory() != null) {
+                categories.add(data.getCategory());
+            }
+        }
+        return categories;
+    }
+
+    public boolean hasUncategorizedWarps() {
+        return warps.values().stream().anyMatch(data -> data.getCategory() == null);
+    }
+
+    /**
+     * Warps visible in menus/lists, optionally filtered by category.
+     * {@code categoryFilter} {@code null} = all; empty string = uncategorized only.
+     */
+    public List<String> getWarpNamesSorted(String categoryFilter) {
+        List<String> names = new ArrayList<>();
+        for (Map.Entry<String, WarpData> entry : warps.entrySet()) {
+            if (!matchesCategory(entry.getValue(), categoryFilter)) {
+                continue;
+            }
+            names.add(entry.getKey());
+        }
+        names.sort((a, b) -> {
+            String catA = warps.get(a).getCategory();
+            String catB = warps.get(b).getCategory();
+            if (catA == null && catB != null) {
+                return 1;
+            }
+            if (catA != null && catB == null) {
+                return -1;
+            }
+            if (catA != null && catB != null) {
+                int catCmp = catA.compareTo(catB);
+                if (catCmp != 0) {
+                    return catCmp;
+                }
+            }
+            return a.compareTo(b);
+        });
+        return names;
+    }
+
+    private static boolean matchesCategory(WarpData data, String categoryFilter) {
+        if (categoryFilter == null) {
+            return true;
+        }
+        if (categoryFilter.isEmpty()) {
+            return data.getCategory() == null;
+        }
+        return categoryFilter.equals(data.getCategory());
+    }
+
+    private void rebuildAliasIndex() {
+        aliasToCanonical.clear();
+        for (Map.Entry<String, WarpData> entry : warps.entrySet()) {
+            String canonical = entry.getKey();
+            for (String alias : entry.getValue().getAliases()) {
+                if (alias.equals(canonical)) {
+                    logger.warning("Warp '" + canonical + "' lists itself as an alias; ignored.");
+                    continue;
+                }
+                if (warps.containsKey(alias)) {
+                    logger.warning("Warp alias '" + alias + "' conflicts with warp '" + alias + "'; ignored.");
+                    continue;
+                }
+                String previous = aliasToCanonical.put(alias, canonical);
+                if (previous != null && !previous.equals(canonical)) {
+                    logger.warning("Warp alias '" + alias + "' is used by both '"
+                            + previous + "' and '" + canonical + "'; keeping '" + previous + "'.");
+                    aliasToCanonical.put(alias, previous);
+                }
+            }
+        }
     }
 
     private String normalize(String name) {
-        return name.toLowerCase();
+        return name.toLowerCase(Locale.ROOT).trim();
     }
 }

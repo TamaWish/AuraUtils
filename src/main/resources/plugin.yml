@@ -20,7 +20,7 @@ commands:
     permission: aura.back
   warp:
     description: Teleport to a warp or open the warp GUI
-    usage: /warp [name|list]
+    usage: /warp [name|list [category]]
     aliases: [warplist]
     permission: aura.warp
   setwarp:
@@ -44,6 +44,10 @@ commands:
     description: Delete a home
     usage: /delhome <name>
     permission: aura.home.delete
+  adminhome:
+    description: List or delete another player's homes (console-friendly)
+    usage: /adminhome <player|uuid> list|del <name>
+    permission: aura.home.admin
   tpa:
     description: Send a TPA request to a player or open the TPA GUI
     usage: /tpa <player>|list
@@ -61,6 +65,14 @@ commands:
     description: Deny a pending TPA request
     usage: /tpadeny
     permission: aura.tpdeny
+  tphere:
+    description: Force-teleport a player to you
+    usage: /tphere <player>
+    permission: aura.tphere.others
+  tpall:
+    description: Force-teleport all online players to you
+    usage: /tpall
+    permission: aura.tpall
   god:
     description: Toggle god mode (invincibility)
     usage: /god [player]
@@ -128,6 +140,9 @@ permissions:
   aura.warp.delete:
     description: Delete warps
     default: op
+  aura.warp.cooldown.bypass:
+    description: Bypass per-warp cooldowns
+    default: op
   aura.home:
     description: Use home commands
     default: true
@@ -137,6 +152,9 @@ permissions:
   aura.home.delete:
     description: Delete homes
     default: true
+  aura.home.admin:
+    description: List or delete any player's homes (including offline)
+    default: op
   aura.home.limit.3:
     description: Allow up to 3 homes
     default: true
@@ -161,6 +179,15 @@ permissions:
   aura.tpdeny:
     description: Deny pending TPA requests
     default: true
+  aura.vanish.see:
+    description: See vanished players in tab-complete and target them with player commands
+    default: op
+  aura.tphere.others:
+    description: Force-teleport other players to you
+    default: op
+  aura.tpall:
+    description: Force-teleport all online players to you
+    default: op
   aura.god:
     description: Use god mode
     default: op
@@ -234,15 +261,20 @@ permissions:
       aura.tpahere: true
       aura.tpaccept: true
       aura.tpdeny: true
+      aura.vanish.see: true
+      aura.tphere.others: true
+      aura.tpall: true
       aura.menu: true
       aura.back: true
       aura.warp: true
       aura.warp.admin: true
       aura.warp.set: true
       aura.warp.delete: true
+      aura.warp.cooldown.bypass: true
       aura.home: true
       aura.home.set: true
       aura.home.delete: true
+      aura.home.admin: true
       aura.home.limit.3: true
       aura.home.limit.5: true
       aura.home.limit.10: true

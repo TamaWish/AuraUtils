@@ -31,6 +31,9 @@ teleport:
   success-back: "<prefix><green>Returned to your last teleport location."
   success-rtp: "<prefix><green>Teleported to a random safe location."
   chunk-unavailable: "<prefix><red>Destination chunk is not loaded. Try again or explore the area first."
+  chunk-timeout: "<prefix><red>Destination chunk took too long to load. Try again."
+  world-invalid: "<prefix><red>That destination is invalid."
+  world-unloaded: "<prefix><red>World <yellow><world></yellow> is not loaded."
   no-back: "<prefix><red>You have no previous teleport location."
 
 rtp:
@@ -60,9 +63,23 @@ tpa:
   expired-requester: "<prefix><yellow>Your TPA request to <aqua><target></aqua> <yellow>expired."
   expired-target: "<prefix><yellow>TPA request from <aqua><requester></aqua> <yellow>expired."
 
+tphere:
+  usage: "<prefix><yellow>Usage: <white>/tphere <player></white>"
+  self: "<prefix><red>You cannot teleport yourself to yourself."
+  teleported-traveler: "<prefix><green>Teleported to <yellow><destination></yellow><green>."
+  teleported-destination: "<prefix><yellow><traveler></yellow> <green>was teleported to you."
+  teleported-sender: "<prefix><green>Teleported <yellow><player></yellow> <green>to you."
+  countdown-traveler: "<prefix><yellow>Teleporting to <aqua><destination></aqua> in <gold><seconds></gold><yellow>s…"
+  countdown-destination: "<prefix><yellow><traveler></yellow> <green>will teleport to you in <gold><seconds></gold><green>s…"
+
+tpall:
+  none: "<prefix><yellow>No other players are online to teleport."
+  summary: "<prefix><green>Teleporting <yellow><count></yellow> player(s) to you."
+
 warp:
   not-found: "<prefix><red>Warp <yellow><name></yellow> <red>was not found."
   no-permission: "<prefix><red>You don't have permission to use warp <yellow><name></yellow><red>."
+  cooldown: "<prefix><red>Warp <yellow><name></yellow> <red>is on cooldown. Try again in <yellow><seconds>s<red>."
   set: "<prefix><green>Set warp <yellow><name></yellow><green>."
   deleted: "<prefix><green>Deleted warp <yellow><name></yellow><green>."
   usage-set: "<prefix><yellow>Usage: <white>/setwarp <name></white>"
@@ -75,6 +92,14 @@ home:
   limit: "<prefix><red>You have reached the home limit (<yellow><max></yellow><red>). Delete a home first."
   usage-set: "<prefix><yellow>Usage: <white>/sethome <name></white>"
   usage-del: "<prefix><yellow>Usage: <white>/delhome <name></white>"
+
+adminhome:
+  usage: "<prefix><yellow>Usage: <white>/adminhome <player|uuid> list|del <name></white>"
+  player-not-found: "<prefix><red>No player found for <yellow><target></yellow><red>."
+  list-header: "<prefix><gray>Homes for <yellow><player></yellow> <gray>(<white><count></white><gray>):"
+  list-entry: "<gray>  <yellow><name></yellow> <dark_gray>— <white><world></white> <gray>(<coords></gray>)"
+  list-empty: "<prefix><yellow><player></yellow> <gray>has no homes."
+  deleted: "<prefix><green>Deleted home <yellow><name></yellow> <green>for <yellow><player></yellow><green>."
 
 spawn:
   set: "<prefix><green>Set spawn for world <yellow><world></yellow> <gray>(<white><coords></white><gray>). <dark_gray>Persists across resource-world resets."
@@ -130,6 +155,8 @@ aura:
   help-tpahere: "<gray>  <yellow>/tpahere <dark_gray><player> <gray>- Ask a player to teleport to you"
   help-tpaccept: "<gray>  <yellow>/tpaccept        <gray>- Accept TPA"
   help-tpadeny: "<gray>  <yellow>/tpadeny         <gray>- Deny TPA"
+  help-tphere: "<gray>  <yellow>/tphere <dark_gray><player>   <gray>- Force-teleport a player to you"
+  help-tpall: "<gray>  <yellow>/tpall            <gray>- Force-teleport everyone to you"
   help-warp: "<gray>  <yellow>/warp <dark_gray>[<name>|list] <gray>- Teleport to a warp or open GUI"
   help-setwarp: "<gray>  <yellow>/setwarp <dark_gray><name> <gray>- Set a warp"
   help-home: "<gray>  <yellow>/home <dark_gray>[<name>|list] <gray>- Teleport to a home or open GUI"

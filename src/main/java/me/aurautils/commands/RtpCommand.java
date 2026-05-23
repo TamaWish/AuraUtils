@@ -2,6 +2,7 @@ package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.AsyncRtpEngine;
+import me.aurautils.managers.TeleportService;
 import me.aurautils.util.MessagePlaceholders;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -30,7 +31,7 @@ public class RtpCommand implements CommandExecutor {
             return true;
         }
 
-        int cooldownSeconds = Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
+        int cooldownSeconds = plugin.getAuraConfig().rtpCooldown();
         boolean bypassCooldown = player.hasPermission("aura.rtp.cooldown.bypass");
         long remaining = bypassCooldown ? 0 : plugin.getRtpCooldownManager().remainingSeconds(player.getUniqueId(), cooldownSeconds);
         if (remaining > 0) {
@@ -40,7 +41,7 @@ public class RtpCommand implements CommandExecutor {
 
         plugin.send(player, "rtp.searching");
 
-        int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", 0));
+        int rtpCountdown = plugin.getTeleportService().countdownFor(TeleportService.TeleportKind.RTP);
         AsyncRtpEngine engine = plugin.getAsyncRtpEngine();
 
         engine.search(player, bypassCooldown, new AsyncRtpEngine.ResultHandler() {
