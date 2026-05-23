@@ -32,6 +32,9 @@ public class TpaManager {
     }
 
     public boolean sendRequest(Player from, Player to, TpaType type) {
+        if (from.getUniqueId().equals(to.getUniqueId())) {
+            return false;
+        }
         if (pendingRequests.containsKey(to.getUniqueId())) {
             return false;
         }

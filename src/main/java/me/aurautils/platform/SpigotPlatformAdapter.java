@@ -15,10 +15,6 @@ public class SpigotPlatformAdapter implements PlatformAdapter {
 
     protected final AuraUtils plugin;
 
-    public SpigotPlatformAdapter() {
-        this.plugin = null;
-    }
-
     public SpigotPlatformAdapter(AuraUtils plugin) {
         this.plugin = plugin;
     }
@@ -96,10 +92,6 @@ public class SpigotPlatformAdapter implements PlatformAdapter {
     }
 
     protected void runOnMain(Runnable action) {
-        if (plugin == null) {
-            action.run();
-            return;
-        }
         if (plugin.getServer().isPrimaryThread()) {
             action.run();
         } else {
