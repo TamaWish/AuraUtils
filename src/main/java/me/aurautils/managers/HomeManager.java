@@ -5,6 +5,7 @@ import me.aurautils.util.LocationIO;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,8 +82,30 @@ public class HomeManager {
         }
     }
 
-    public int getMaxHomesPerPlayer() {
-        return plugin.getConfig().getInt("homes.max-per-player", 5);
+    public int getMaxHomesPerPlayer(Player player) {
+        if (player.hasPermission("aura.admin")) {
+            return -1;
+        }
+
+        int defaultLimit = plugin.getConfig().getInt("homes.default-limit",
+                plugin.getConfig().getInt("homes.max-per-player", 5));
+        int highestConfiguredLimit = defaultLimit;
+
+        List<String> limitNodes = plugin.getConfig().getStringList("homes.permission-limits");
+        if (limitNodes.isEmpty()) {
+            return defaultLimit;
+        }
+
+        for (String limitNode : limitNodes) {
+            int limit = parseHomeLimit(limitNode);
+            if (limit < 0) {
+                continue;
+            }
+            if (player.hasPermission(limitNode)) {
+                highestConfiguredLimit = Math.max(highestConfiguredLimit, limit);
+            }
+        }
+        return highestConfiguredLimit;
     }
 
     public int getHomeCount(UUID playerId) {
@@ -95,11 +118,12 @@ public class HomeManager {
         return playerHomes != null && playerHomes.containsKey(normalize(name));
     }
 
-    public boolean canSetHome(UUID playerId, String name) {
-        int max = getMaxHomesPerPlayer();
+    public boolean canSetHome(Player player, String name) {
+        int max = getMaxHomesPerPlayer(player);
         if (max < 0) {
             return true;
         }
+        UUID playerId = player.getUniqueId();
         if (hasHome(playerId, name)) {
             return true;
         }
@@ -142,5 +166,23 @@ public class HomeManager {
 
     private String normalize(String name) {
         return name.toLowerCase();
+    }
+
+    private int parseHomeLimit(String permissionNode) {
+        if (permissionNode == null) {
+            return -1;
+        }
+
+        String trimmed = permissionNode.trim();
+        int lastDot = trimmed.lastIndexOf('.');
+        if (lastDot < 0 || lastDot == trimmed.length() - 1) {
+            return -1;
+        }
+
+        try {
+            return Integer.parseInt(trimmed.substring(lastDot + 1));
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
     }
 }

@@ -22,7 +22,7 @@ public class TpaHereCommand implements CommandExecutor {
             sender.sendMessage("Console cannot use TPA Here.");
             return true;
         }
-        if (!player.hasPermission("aura.tpa")) {
+        if (!player.hasPermission("aura.tpahere")) {
             plugin.send(player, "general.no-permission-short");
             return true;
         }

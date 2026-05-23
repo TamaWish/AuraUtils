@@ -28,7 +28,8 @@ public class RtpCommand implements CommandExecutor {
         }
 
         int cooldownSeconds = Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
-        long remaining = plugin.getRtpCooldownManager().remainingSeconds(player.getUniqueId(), cooldownSeconds);
+        boolean bypassCooldown = player.hasPermission("aura.rtp.cooldown.bypass");
+        long remaining = bypassCooldown ? 0 : plugin.getRtpCooldownManager().remainingSeconds(player.getUniqueId(), cooldownSeconds);
         if (remaining > 0) {
             plugin.send(player, "rtp.cooldown", MessagePlaceholders.of("seconds", String.valueOf(remaining)));
             return true;
@@ -39,7 +40,7 @@ public class RtpCommand implements CommandExecutor {
         int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", 0));
         AsyncRtpEngine engine = plugin.getAsyncRtpEngine();
 
-        engine.search(player, new AsyncRtpEngine.ResultHandler() {
+        engine.search(player, bypassCooldown, new AsyncRtpEngine.ResultHandler() {
             @Override
             public void onFound(org.bukkit.Location destination, int blocksAway) {
                 if (!player.isOnline()) {

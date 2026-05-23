@@ -45,7 +45,11 @@ teleport:
 
 # Per-player home limits (-1 = unlimited)
 homes:
-  max-per-player: 5
+  default-limit: 3
+  permission-limits:
+    - aura.home.limit.5
+    - aura.home.limit.10
+    - aura.home.limit.25
 
 # Server-wide settings (re-applied when worlds load, e.g. after ResourceWorldResetter)
 server:

@@ -30,7 +30,7 @@ On first run, bundled `messages/en.yml` and `messages/es.yml` are copied into `p
 - **Back** — `/back` returns players to their last teleport destination.
 - **Player toggles** — `/fly`, `/god`, `/nofall`, `/nohunger` (self or others with `.others` permissions).
 - **Utility menu** — `/menu` GUI for warps, homes, pending TPA, and back.
-- **Per-warp permissions** — Restrict individual warps with nodes like `aura.warp.spawn`.
+- **Per-warp permissions** — Restrict individual warps with nodes like `aura.warp.spawn`, while keeping a clean admin node at `aura.warp.admin`.
 - **Teleport countdown** — Shared delay for warp, home, back, and TPA; RTP has its own countdown. During countdown, players see a **clickable cancel** control (`/auracanceltp`).
 - **Persistence** — Warps, homes, per-player toggles, optional locale override, and server spawn data saved to disk.
 - **MiniMessage locales** — All player chat uses message keys; add `messages/de.yml`, etc., for translations.
@@ -223,7 +223,11 @@ teleport:
   sync-chunk-fallback: true      # Spigot: allow one sync load at teleport time if needed
 
 homes:
-  max-per-player: 5              # -1 = unlimited
+  default-limit: 3               # Base home limit when no rank-specific node matches
+  permission-limits:
+    - aura.home.limit.5
+    - aura.home.limit.10
+    - aura.home.limit.25
 
 server:
   keep-inventory: false
@@ -256,13 +260,17 @@ messages:
 | `aura.back` | `true` | Use `/back` |
 | `aura.warp` | `true` | Use all warps (see per-warp nodes below) |
 | `aura.warp.<name>` | — | Use a specific warp (e.g. `aura.warp.spawn`) |
-| `aura.warp.*` | `op` | All per-warp nodes |
+| `aura.warp.admin` | `op` | Administrative warp access |
 | `aura.warp.set` | `op` | Create/update warps |
 | `aura.warp.delete` | `op` | Delete warps |
 | `aura.home` | `true` | Use home commands |
 | `aura.home.set` | `true` | Set homes |
 | `aura.home.delete` | `true` | Delete homes |
-| `aura.tpa` | `true` | `/tpa`, `/tpahere`, `/tpaccept`, `/tpadeny` |
+| `aura.home.limit.<number>` | — | Home limit nodes (e.g. `aura.home.limit.10`) |
+| `aura.tpa` | `true` | `/tpa` |
+| `aura.tpahere` | `true` | `/tpahere` |
+| `aura.tpaccept` | `true` | `/tpaccept` |
+| `aura.tpdeny` | `true` | `/tpadeny` |
 | `aura.god` | `op` | Toggle god mode (self) |
 | `aura.god.others` | `op` | Toggle god mode on others |
 | `aura.fly` | `op` | Toggle fly (self) |
@@ -272,6 +280,7 @@ messages:
 | `aura.nohunger` | `op` | Toggle hunger (self) |
 | `aura.nohunger.others` | `op` | Toggle hunger on others |
 | `aura.rtp` | `true` | Use `/rtp` |
+| `aura.rtp.cooldown.bypass` | `op` | Ignore RTP cooldowns |
 | `aura.setspawn` | `op` | Set world spawn with `/setspawn` |
 | `aura.keepinventory` | `op` | Toggle server-wide keep inventory |
 | `aura.admin` | `op` | All AuraUtils permissions |
@@ -281,8 +290,8 @@ messages:
 Players can use a warp if they have **any** of:
 
 - `aura.admin`
+- `aura.warp.admin`
 - `aura.warp.<warpname>` (lowercase name, e.g. `aura.warp.spawn`)
-- `aura.warp.*`
 - `aura.warp` (grants every warp)
 
 For restricted servers, omit `aura.warp` and grant only the nodes you need.

@@ -35,8 +35,8 @@ public class SetHomeCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!plugin.getHomeManager().canSetHome(player.getUniqueId(), args[0])) {
-            int max = plugin.getHomeManager().getMaxHomesPerPlayer();
+        if (!plugin.getHomeManager().canSetHome(player, args[0])) {
+            int max = plugin.getHomeManager().getMaxHomesPerPlayer(player);
             plugin.send(player, "home.limit", MessagePlaceholders.of("max", String.valueOf(max)));
             return true;
         }

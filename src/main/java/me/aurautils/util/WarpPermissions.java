@@ -16,11 +16,15 @@ public final class WarpPermissions {
     }
 
     /**
-     * A player may use a warp if they have {@code aura.admin}, the per-warp node,
-     * {@code aura.warp.*}, or the general {@code aura.warp} (all warps).
+     * A player may use a warp if they have {@code aura.admin}, {@code aura.warp.admin},
+     * the per-warp node, {@code aura.warp.*} for backwards compatibility, or the
+     * general {@code aura.warp} (all warps).
      */
     public static boolean canUse(Player player, String warpName) {
         if (player.hasPermission("aura.admin")) {
+            return true;
+        }
+        if (player.hasPermission("aura.warp.admin")) {
             return true;
         }
         String normalized = warpName.toLowerCase(Locale.ROOT);
@@ -36,6 +40,7 @@ public final class WarpPermissions {
     /** True if the player can use at least one configured warp. */
     public static boolean canUseAny(Player player, Collection<String> warpNames) {
         if (player.hasPermission("aura.admin")
+            || player.hasPermission("aura.warp.admin")
                 || player.hasPermission("aura.warp")
                 || player.hasPermission("aura.warp.*")) {
             return true;

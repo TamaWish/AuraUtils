@@ -19,6 +19,10 @@ public class TpaAcceptCommand implements CommandExecutor {
         if (!(sender instanceof Player player)) {
             return true;
         }
+        if (!player.hasPermission("aura.tpaccept")) {
+            plugin.send(player, "general.no-permission-short");
+            return true;
+        }
         if (!plugin.getTpaManager().hasPending(player.getUniqueId())) {
             plugin.send(player, "tpa.no-pending");
             return true;

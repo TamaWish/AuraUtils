@@ -57,7 +57,7 @@ public class AsyncRtpEngine {
         this.teleportHelper = teleportHelper;
     }
 
-    public void search(Player player, ResultHandler handler) {
+    public void search(Player player, boolean bypassCooldown, ResultHandler handler) {
         World world = player.getWorld();
         int radius = Math.max(1, plugin.getConfig().getInt("rtp.radius", 2000));
         radius = clampRadiusToBorder(world, radius);
@@ -79,7 +79,7 @@ public class AsyncRtpEngine {
         int centerX = center.getBlockX();
         int centerZ = center.getBlockZ();
 
-        int cooldownSeconds = Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
+        int cooldownSeconds = bypassCooldown ? 0 : Math.max(0, plugin.getConfig().getInt("rtp.cooldown", 0));
         int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", 0));
         UUID playerId = player.getUniqueId();
 

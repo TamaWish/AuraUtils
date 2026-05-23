@@ -48,15 +48,15 @@ commands:
   tpahere:
     description: Ask a player to teleport to you
     usage: /tpahere <player>
-    permission: aura.tpa
+    permission: aura.tpahere
   tpaccept:
     description: Accept a pending TPA request
     usage: /tpaccept
-    permission: aura.tpa
+    permission: aura.tpaccept
   tpadeny:
     description: Deny a pending TPA request
     usage: /tpadeny
-    permission: aura.tpa
+    permission: aura.tpdeny
   god:
     description: Toggle god mode (invincibility)
     usage: /god [player]
@@ -107,8 +107,8 @@ permissions:
   aura.warp:
     description: Use all warps (or grant aura.warp.<name> per warp instead)
     default: true
-  aura.warp.*:
-    description: Use any warp via per-warp permission nodes
+  aura.warp.admin:
+    description: Administrative warp access
     default: op
   aura.warp.set:
     description: Set warps
@@ -125,8 +125,29 @@ permissions:
   aura.home.delete:
     description: Delete homes
     default: true
+  aura.home.limit.3:
+    description: Allow up to 3 homes
+    default: true
+  aura.home.limit.5:
+    description: Allow up to 5 homes
+    default: true
+  aura.home.limit.10:
+    description: Allow up to 10 homes
+    default: true
+  aura.home.limit.25:
+    description: Allow up to 25 homes
+    default: true
   aura.tpa:
     description: Use TPA commands
+    default: true
+  aura.tpahere:
+    description: Use TPA Here
+    default: true
+  aura.tpaccept:
+    description: Accept pending TPA requests
+    default: true
+  aura.tpdeny:
+    description: Deny pending TPA requests
     default: true
   aura.god:
     description: Use god mode
@@ -155,6 +176,9 @@ permissions:
   aura.rtp:
     description: Use random teleport
     default: true
+  aura.rtp.cooldown.bypass:
+    description: Bypass RTP cooldowns
+    default: op
   aura.setspawn:
     description: Set world spawn points
     default: op
@@ -175,15 +199,23 @@ permissions:
       aura.nohunger.others: true
       
       aura.tpa: true
+      aura.tpahere: true
+      aura.tpaccept: true
+      aura.tpdeny: true
       aura.menu: true
       aura.back: true
       aura.warp: true
-      aura.warp.*: true
+      aura.warp.admin: true
       aura.warp.set: true
       aura.warp.delete: true
       aura.home: true
       aura.home.set: true
       aura.home.delete: true
+      aura.home.limit.3: true
+      aura.home.limit.5: true
+      aura.home.limit.10: true
+      aura.home.limit.25: true
       aura.rtp: true
+      aura.rtp.cooldown.bypass: true
       aura.setspawn: true
       aura.keepinventory: true
