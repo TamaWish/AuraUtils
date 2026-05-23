@@ -24,6 +24,7 @@ import me.aurautils.platform.PlatformFactory;
 import me.aurautils.util.MessagePlaceholders;
 import me.aurautils.util.MessageUtil;
 import me.aurautils.util.VanishSupport;
+import org.bstats.bukkit.Metrics;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
@@ -55,6 +56,7 @@ public final class AuraUtils extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        Metrics metrics = new Metrics(this, 31511);
 
         platform = PlatformFactory.create(this);
         getLogger().info("Platform: " + platform.getPlatformName());
