@@ -1,6 +1,6 @@
 # AuraUtils
 
-**Version 1.0.0** (in development — not yet published to GitHub)
+**Version 1.0.0** (released 2026-05-20)
 
 AuraUtils is a lightweight, configurable Spigot/Paper plugin that bundles essential player utilities and admin tools for Minecraft servers (**1.21+**, **Java 25+**).
 
@@ -189,6 +189,12 @@ Install both JARs in `plugins/`, configure RWR’s `worldName` and `teleport.def
 
 ```bash
 mvn clean package
+```
+
+On this repository, the bundled Maven wrapper is also available:
+
+```powershell
+tools/apache-maven-3.9.6/bin/mvn.cmd clean package
 ```
 
 Output in `target/`:
