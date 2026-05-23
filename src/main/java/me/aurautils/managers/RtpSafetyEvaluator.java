@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * RTP surface validation: standable floor, clearance, liquid depth, biome filters, hazard scoring.
+ * RTP safety validation for surface and cave modes: standable floor, clearance, biome filters, hazard scoring.
  */
 public final class RtpSafetyEvaluator {
 
@@ -47,19 +47,82 @@ public final class RtpSafetyEvaluator {
             int z,
             float yaw,
             float pitch,
+            RtpMode mode,
             int solidBlocksBelow,
             int ceilingClearance,
+            int caveSurfaceBuffer,
+            int caveMinY,
+            int caveMaxY,
             Set<String> allowedBiomes,
             Set<String> deniedBiomes
     ) {
         if (!world.isChunkLoaded(x >> 4, z >> 4)) {
             return Optional.empty();
         }
+        return mode == RtpMode.CAVE
+                ? evaluateCave(world, x, z, yaw, pitch, solidBlocksBelow, ceilingClearance,
+                caveSurfaceBuffer, caveMinY, caveMaxY, allowedBiomes, deniedBiomes)
+                : evaluateSurface(world, x, z, yaw, pitch, solidBlocksBelow, ceilingClearance,
+                allowedBiomes, deniedBiomes);
+    }
 
+    private static Optional<RtpCandidate> evaluateSurface(
+            World world,
+            int x,
+            int z,
+            float yaw,
+            float pitch,
+            int solidBlocksBelow,
+            int ceilingClearance,
+            Set<String> allowedBiomes,
+            Set<String> deniedBiomes
+    ) {
         int topY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
         int minY = world.getMinHeight();
+        int scanMin = Math.max(minY, topY - SURFACE_SCAN_DEPTH);
 
-        for (int y = topY; y >= Math.max(minY, topY - SURFACE_SCAN_DEPTH); y--) {
+        return scanVertical(world, x, z, yaw, pitch, topY, scanMin, solidBlocksBelow, ceilingClearance,
+                allowedBiomes, deniedBiomes);
+    }
+
+    private static Optional<RtpCandidate> evaluateCave(
+            World world,
+            int x,
+            int z,
+            float yaw,
+            float pitch,
+            int solidBlocksBelow,
+            int ceilingClearance,
+            int caveSurfaceBuffer,
+            int caveMinY,
+            int caveMaxY,
+            Set<String> allowedBiomes,
+            Set<String> deniedBiomes
+    ) {
+        int surfaceY = world.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES);
+        int scanTop = Math.min(caveMaxY, surfaceY - caveSurfaceBuffer);
+        int scanMin = Math.max(world.getMinHeight() + 1, caveMinY);
+        if (scanTop <= scanMin) {
+            return Optional.empty();
+        }
+        return scanVertical(world, x, z, yaw, pitch, scanTop, scanMin, solidBlocksBelow, ceilingClearance,
+                allowedBiomes, deniedBiomes);
+    }
+
+    private static Optional<RtpCandidate> scanVertical(
+            World world,
+            int x,
+            int z,
+            float yaw,
+            float pitch,
+            int startY,
+            int minY,
+            int solidBlocksBelow,
+            int ceilingClearance,
+            Set<String> allowedBiomes,
+            Set<String> deniedBiomes
+    ) {
+        for (int y = startY; y >= minY; y--) {
             Block floor = world.getBlockAt(x, y, z);
             if (!isStandableFloor(floor)) {
                 continue;
@@ -76,7 +139,8 @@ public final class RtpSafetyEvaluator {
             if (!hasCeilingClearance(head, ceilingClearance)) {
                 continue;
             }
-        if (!biomeAllowed(normalizeBiomeKey(world.getBiome(x, y, z).getKey().toString()), allowedBiomes, deniedBiomes)) {
+            if (!biomeAllowed(normalizeBiomeKey(world.getBiome(x, y, z).getKey().toString()),
+                    allowedBiomes, deniedBiomes)) {
                 continue;
             }
 

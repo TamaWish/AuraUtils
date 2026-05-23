@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -58,54 +59,23 @@ public class AsyncRtpEngine {
             minDistance = radius;
         }
 
-        int attempts = config.rtpAttempts();
-        int attemptsPerTick = config.rtpAttemptsPerTick();
-        boolean centerOnPlayer = config.rtpCenterOnPlayer();
-        boolean onlyLoadedChunks = config.rtpOnlyLoadedChunksExplicitlySet()
-                ? config.rtpOnlyLoadedChunks()
-                : !platform.supportsAsyncChunkLoading();
-        boolean generateChunks = config.rtpGenerateChunks();
-        boolean asyncUrgent = config.rtpAsyncUrgent();
-        int maxPendingLoads = config.rtpMaxPendingChunkLoads();
-        int maxCandidates = config.rtpMaxCandidates();
-        int solidBlocksBelow = config.rtpSolidBlocksBelow();
-        int ceilingClearance = config.rtpCeilingClearance();
-        Set<String> allowedBiomes = config.rtpAllowedBiomes();
-        Set<String> deniedBiomes = config.rtpDeniedBiomes();
-
         Location from = player.getLocation().clone();
-        Location center = resolveSearchCenter(player, searchWorld, centerOnPlayer);
-        int centerX = center.getBlockX();
-        int centerZ = center.getBlockZ();
-
-        int cooldownSeconds = bypassCooldown ? 0 : config.rtpCooldown();
-        int rtpCountdown = teleportService.countdownFor(TeleportService.TeleportKind.RTP);
+        Location center = resolveSearchCenter(player, searchWorld, config.rtpCenterOnPlayer());
         UUID playerId = player.getUniqueId();
-
-        boolean useAsyncSearch = platform.supportsAsyncChunkLoading() && !onlyLoadedChunks;
 
         new SearchTask(
                 playerId,
                 searchWorld,
                 from,
-                centerX,
-                centerZ,
+                center.getBlockX(),
+                center.getBlockZ(),
                 radius,
                 minDistance,
-                attempts,
-                attemptsPerTick,
-                cooldownSeconds,
-                rtpCountdown,
-                onlyLoadedChunks,
-                generateChunks,
-                asyncUrgent,
-                maxPendingLoads,
-                maxCandidates,
-                solidBlocksBelow,
-                ceilingClearance,
-                allowedBiomes,
-                deniedBiomes,
-                useAsyncSearch,
+                config,
+                bypassCooldown ? 0 : config.rtpCooldown(),
+                teleportService.countdownFor(TeleportService.TeleportKind.RTP),
+                platform.supportsAsyncChunkLoading()
+                        && !(config.rtpOnlyLoadedChunksExplicitlySet() && config.rtpOnlyLoadedChunks()),
                 handler
         ).start();
     }
@@ -146,37 +116,44 @@ public class AsyncRtpEngine {
         private final int centerZ;
         private final int searchRadius;
         private final int minDist;
-        private final int maxAttempts;
-        private final int attemptsPerTick;
         private final int cooldownSeconds;
         private final int rtpCountdown;
+        private final boolean useAsyncSearch;
+        private final ResultHandler handler;
+
+        private final int maxAttempts;
+        private final int attemptsPerTick;
         private final boolean onlyLoadedChunks;
         private final boolean generateChunks;
         private final boolean asyncUrgent;
         private final int maxPendingLoads;
         private final int maxCandidates;
+        private final RtpMode rtpMode;
         private final int solidBlocksBelow;
         private final int ceilingClearance;
+        private final int caveSurfaceBuffer;
+        private final int caveMinY;
+        private final int caveMaxY;
         private final Set<String> allowedBiomes;
         private final Set<String> deniedBiomes;
-        private final boolean useAsyncSearch;
-        private final ResultHandler handler;
+        private final boolean preloadNeighbors;
+        private final int preloadRadius;
+
         private final ThreadLocalRandom random = ThreadLocalRandom.current();
         private final WorldBorder border;
+        private final RtpSessionCache sessionCache;
+        private final RtpCoordinateSampler coordinateSampler;
         private final List<RtpCandidate> candidates = new ArrayList<>();
 
         private int tried;
         private int pendingLoads;
+        private int lastBandIndex = -1;
         private boolean finished;
         private BukkitTask timerTask;
 
         private SearchTask(UUID playerId, World world, Location from, int centerX, int centerZ,
-                           int searchRadius, int minDist, int maxAttempts, int attemptsPerTick,
-                           int cooldownSeconds, int rtpCountdown, boolean onlyLoadedChunks,
-                           boolean generateChunks, boolean asyncUrgent, int maxPendingLoads,
-                           int maxCandidates, int solidBlocksBelow, int ceilingClearance,
-                           Set<String> allowedBiomes, Set<String> deniedBiomes,
-                           boolean useAsyncSearch, ResultHandler handler) {
+                           int searchRadius, int minDist, AuraConfig config, int cooldownSeconds,
+                           int rtpCountdown, boolean useAsyncSearch, ResultHandler handler) {
             this.playerId = playerId;
             this.world = world;
             this.from = from;
@@ -184,22 +161,46 @@ public class AsyncRtpEngine {
             this.centerZ = centerZ;
             this.searchRadius = searchRadius;
             this.minDist = minDist;
-            this.maxAttempts = maxAttempts;
-            this.attemptsPerTick = attemptsPerTick;
             this.cooldownSeconds = cooldownSeconds;
             this.rtpCountdown = rtpCountdown;
-            this.onlyLoadedChunks = onlyLoadedChunks;
-            this.generateChunks = generateChunks;
-            this.asyncUrgent = asyncUrgent;
-            this.maxPendingLoads = maxPendingLoads;
-            this.maxCandidates = maxCandidates;
-            this.solidBlocksBelow = solidBlocksBelow;
-            this.ceilingClearance = ceilingClearance;
-            this.allowedBiomes = allowedBiomes;
-            this.deniedBiomes = deniedBiomes;
             this.useAsyncSearch = useAsyncSearch;
             this.handler = handler;
+
+            this.maxAttempts = config.rtpAttempts();
+            this.attemptsPerTick = config.rtpAttemptsPerTick();
+            this.onlyLoadedChunks = config.rtpOnlyLoadedChunksExplicitlySet()
+                    && config.rtpOnlyLoadedChunks();
+            this.generateChunks = config.rtpGenerateChunks();
+            this.asyncUrgent = config.rtpAsyncUrgent();
+            this.maxPendingLoads = config.rtpMaxPendingChunkLoads();
+            this.maxCandidates = config.rtpMaxCandidates();
+            this.rtpMode = config.rtpMode();
+            this.solidBlocksBelow = config.rtpSolidBlocksBelow();
+            this.ceilingClearance = config.rtpCeilingClearance();
+            this.caveSurfaceBuffer = config.rtpCaveSurfaceBuffer();
+            this.caveMinY = config.rtpCaveMinY();
+            this.caveMaxY = config.rtpCaveMaxY();
+            this.allowedBiomes = config.rtpAllowedBiomes();
+            this.deniedBiomes = config.rtpDeniedBiomes();
+            this.preloadNeighbors = config.rtpPreloadNeighbors();
+            this.preloadRadius = config.rtpPreloadRadius();
+
             this.border = world.getWorldBorder();
+            this.sessionCache = new RtpSessionCache(config.rtpRingBands());
+            this.coordinateSampler = new RtpCoordinateSampler(
+                    centerX,
+                    centerZ,
+                    minDist,
+                    searchRadius,
+                    config.rtpRingBands(),
+                    config.rtpStratifiedRings(),
+                    config.rtpChunkCentric(),
+                    config.rtpGridJitter(),
+                    config.rtpGridCellSize(),
+                    config.rtpChunkRetryLimit(),
+                    sessionCache,
+                    random
+            );
         }
 
         void start() {
@@ -224,22 +225,16 @@ public class AsyncRtpEngine {
                     && pendingLoads < maxPendingLoads
                     && candidates.size() < maxCandidates
                     && chunkLoads.hasImmediateCapacity(playerId)) {
-                int x;
-                int z;
-                if (minDist > 0 && minDist < searchRadius) {
-                    double angle = random.nextDouble() * Math.PI * 2.0;
-                    double distance = minDist + random.nextDouble() * (searchRadius - minDist);
-                    x = centerX + (int) Math.round(Math.cos(angle) * distance);
-                    z = centerZ + (int) Math.round(Math.sin(angle) * distance);
-                } else {
-                    x = centerX + random.nextInt(-searchRadius, searchRadius + 1);
-                    z = centerZ + random.nextInt(-searchRadius, searchRadius + 1);
-                }
+                RtpCoordinateSampler.Sample sample = coordinateSampler.next();
+                lastBandIndex = sample.bandIndex();
+                int x = sample.x();
+                int z = sample.z();
 
                 tried++;
                 startedThisTick++;
 
                 if (!isInsideBorder(border, world, x, z, from.getY())) {
+                    recordFailedProbe();
                     continue;
                 }
 
@@ -262,15 +257,13 @@ public class AsyncRtpEngine {
 
         private void tryConservativeAttempt(Player player, int x, int z) {
             if (onlyLoadedChunks && !world.isChunkLoaded(x >> 4, z >> 4)) {
+                recordFailedProbe();
                 return;
             }
 
-            RtpSafetyEvaluator.evaluate(
-                    world, x, z, from.getYaw(), from.getPitch(),
-                    solidBlocksBelow, ceilingClearance, allowedBiomes, deniedBiomes
-            ).ifPresent(this::offerCandidate);
+            evaluateAt(x, z).ifPresentOrElse(this::offerCandidate, this::recordFailedProbe);
 
-            if (tried >= maxAttempts) {
+            if (tried >= maxAttempts && pendingLoads == 0) {
                 finishSearch(player);
             }
         }
@@ -301,16 +294,28 @@ public class AsyncRtpEngine {
                             stop();
                             return;
                         }
-                        RtpSafetyEvaluator.evaluate(
-                                world, x, z, from.getYaw(), from.getPitch(),
-                                solidBlocksBelow, ceilingClearance, allowedBiomes, deniedBiomes
-                        ).ifPresent(this::offerCandidate);
+                        evaluateAt(x, z).ifPresentOrElse(this::offerCandidate, this::recordFailedProbe);
                         onProbeFinished.run();
                         maybeFinishSearch();
                     },
                     onProbeFinished,
                     ChunkLoadCoordinator.QueuePolicy.REJECT_IF_BUSY
             );
+        }
+
+        private Optional<RtpCandidate> evaluateAt(int x, int z) {
+            return RtpSafetyEvaluator.evaluate(
+                    world, x, z, from.getYaw(), from.getPitch(),
+                    rtpMode, solidBlocksBelow, ceilingClearance,
+                    caveSurfaceBuffer, caveMinY, caveMaxY,
+                    allowedBiomes, deniedBiomes
+            );
+        }
+
+        private void recordFailedProbe() {
+            if (lastBandIndex >= 0) {
+                sessionCache.recordBandFailure(lastBandIndex);
+            }
         }
 
         private synchronized void offerCandidate(RtpCandidate candidate) {
@@ -361,7 +366,20 @@ public class AsyncRtpEngine {
             }
             finished = true;
             stop();
-            finishSuccess(player, from, destination, cooldownSeconds, rtpCountdown, handler);
+
+            Runnable complete = () -> finishSuccess(player, from, destination, cooldownSeconds, rtpCountdown, handler);
+            if (preloadNeighbors && preloadRadius >= 0) {
+                chunkLoads.preloadNeighbors(
+                        playerId,
+                        destination,
+                        preloadRadius,
+                        generateChunks,
+                        asyncUrgent,
+                        complete
+                );
+            } else {
+                complete.run();
+            }
         }
 
         private void fail() {

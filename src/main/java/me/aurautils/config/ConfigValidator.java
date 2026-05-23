@@ -2,6 +2,7 @@ package me.aurautils.config;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.MessagesManager;
+import me.aurautils.managers.RtpMode;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
@@ -82,6 +83,24 @@ public final class ConfigValidator {
         Set<String> rtpAllowedBiomes = parseBiomeSet(raw.getStringList("rtp.allowed-biomes"), warnings, "rtp.allowed-biomes");
         Set<String> rtpDeniedBiomes = parseBiomeSet(raw.getStringList("rtp.denied-biomes"), warnings, "rtp.denied-biomes");
         List<String> rtpWorlds = parseRtpWorlds(raw.getStringList("rtp.worlds"), warnings);
+        RtpMode rtpMode = parseRtpMode(raw.getString("rtp.mode", "surface"), warnings);
+        boolean rtpStratifiedRings = raw.getBoolean("rtp.search.stratified-rings", true);
+        int rtpRingBands = atLeast(raw, "rtp.search.ring-bands", 4, 1, "rtp.search.ring-bands", warnings);
+        boolean rtpChunkCentric = raw.getBoolean("rtp.search.chunk-centric", true);
+        boolean rtpGridJitter = raw.getBoolean("rtp.search.grid-jitter", true);
+        int rtpGridCellSize = atLeast(raw, "rtp.search.grid-cell-size", 64, 8, "rtp.search.grid-cell-size", warnings);
+        int rtpChunkRetryLimit = atLeast(raw, "rtp.search.chunk-retry-limit", 8, 1,
+                "rtp.search.chunk-retry-limit", warnings);
+        boolean rtpPreloadNeighbors = raw.getBoolean("rtp.preload-neighbors", true);
+        int rtpPreloadRadius = atLeast(raw, "rtp.preload-radius", 1, 0, "rtp.preload-radius", warnings);
+        int rtpCaveSurfaceBuffer = atLeast(raw, "rtp.cave.surface-buffer", 10, 0, "rtp.cave.surface-buffer", warnings);
+        int rtpCaveMinY = raw.getInt("rtp.cave.min-y", -32);
+        int rtpCaveMaxY = raw.getInt("rtp.cave.max-y", 64);
+        if (rtpCaveMaxY < rtpCaveMinY) {
+            warnings.add("rtp.cave.max-y (" + rtpCaveMaxY + ") is below rtp.cave.min-y (" + rtpCaveMinY
+                    + "); max-y set to min-y");
+            rtpCaveMaxY = rtpCaveMinY;
+        }
         int chunkLoadMaxInFlightGlobal = atLeast(raw, "chunk-load.max-in-flight-global", 32, 1,
                 "chunk-load.max-in-flight-global", warnings);
         int chunkLoadMaxPerPlayer = atLeast(raw, "chunk-load.max-in-flight-per-player", rtpMaxPendingChunkLoads, 1,
@@ -149,6 +168,18 @@ public final class ConfigValidator {
                 rtpAllowedBiomes,
                 rtpDeniedBiomes,
                 rtpWorlds,
+                rtpMode,
+                rtpStratifiedRings,
+                rtpRingBands,
+                rtpChunkCentric,
+                rtpGridJitter,
+                rtpGridCellSize,
+                rtpChunkRetryLimit,
+                rtpPreloadNeighbors,
+                rtpPreloadRadius,
+                rtpCaveSurfaceBuffer,
+                rtpCaveMinY,
+                rtpCaveMaxY,
                 chunkLoadMaxInFlightGlobal,
                 chunkLoadMaxPerPlayer,
                 chunkLoadMaxQueueSize,
@@ -241,6 +272,20 @@ public final class ConfigValidator {
             return minimum;
         }
         return value;
+    }
+
+    private static RtpMode parseRtpMode(String value, List<String> warnings) {
+        if (value == null || value.isBlank()) {
+            return RtpMode.SURFACE;
+        }
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "cave" -> RtpMode.CAVE;
+            case "surface" -> RtpMode.SURFACE;
+            default -> {
+                warnings.add("rtp.mode '" + value + "' is invalid; using surface");
+                yield RtpMode.SURFACE;
+            }
+        };
     }
 
     private static Set<String> parseBiomeSet(List<String> entries, List<String> warnings, String label) {

@@ -70,6 +70,22 @@ rtp:
     min-distance-reduction: 50
     # Absolute radius cap while adapting; 0 = no extra cap beyond rtp.radius + radius-bonus
     max-radius: 0
+  # surface = highest solid block scan; cave = scan underground band below surface
+  mode: surface
+  search:
+    stratified-rings: true
+    ring-bands: 4
+    chunk-centric: true
+    grid-jitter: true
+    grid-cell-size: 64
+    chunk-retry-limit: 8
+  cave:
+    surface-buffer: 10
+    min-y: -32
+    max-y: 64
+  # Preload a square of chunks around the destination before teleporting (radius 1 = 3x3)
+  preload-neighbors: true
+  preload-radius: 1
 
 # Shared async chunk load pipeline (RTP search + teleport destinations on Paper)
 chunk-load:

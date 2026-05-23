@@ -1,5 +1,7 @@
 package me.aurautils.config;
 
+import me.aurautils.managers.RtpMode;
+
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +38,18 @@ public record AuraConfig(
         Set<String> rtpAllowedBiomes,
         Set<String> rtpDeniedBiomes,
         List<String> rtpWorlds,
+        RtpMode rtpMode,
+        boolean rtpStratifiedRings,
+        int rtpRingBands,
+        boolean rtpChunkCentric,
+        boolean rtpGridJitter,
+        int rtpGridCellSize,
+        int rtpChunkRetryLimit,
+        boolean rtpPreloadNeighbors,
+        int rtpPreloadRadius,
+        int rtpCaveSurfaceBuffer,
+        int rtpCaveMinY,
+        int rtpCaveMaxY,
         int chunkLoadMaxInFlightGlobal,
         int chunkLoadMaxInFlightPerPlayer,
         int chunkLoadMaxQueueSize,

@@ -91,4 +91,47 @@ public final class ChunkLoadService {
             }
         };
     }
+
+    /**
+     * Loads a square of chunks around {@code center} before invoking {@code onComplete} on the main thread.
+     */
+    public void preloadNeighbors(UUID playerId, Location center, int chunkRadius,
+                                 boolean generate, boolean urgent, Runnable onComplete) {
+        if (center.getWorld() == null || chunkRadius < 0) {
+            plugin.getServer().getScheduler().runTask(plugin, onComplete);
+            return;
+        }
+
+        int centerChunkX = center.getBlockX() >> 4;
+        int centerChunkZ = center.getBlockZ() >> 4;
+        int span = chunkRadius * 2 + 1;
+        int total = span * span;
+        int[] remaining = {total};
+
+        Runnable markDone = () -> {
+            if (--remaining[0] == 0) {
+                plugin.getServer().getScheduler().runTask(plugin, onComplete);
+            }
+        };
+
+        for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
+            for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
+                Location probe = new Location(
+                        center.getWorld(),
+                        ((centerChunkX + dx) << 4) + 8,
+                        center.getY(),
+                        ((centerChunkZ + dz) << 4) + 8);
+                whenChunkReady(
+                        playerId,
+                        probe,
+                        ChunkLoadPolicy.ASYNC,
+                        generate,
+                        urgent,
+                        null,
+                        markDone,
+                        markDone,
+                        ChunkLoadCoordinator.QueuePolicy.QUEUE);
+            }
+        }
+    }
 }
