@@ -3,6 +3,7 @@ package me.aurautils.managers;
 import me.aurautils.AuraUtils;
 import me.aurautils.config.AuraConfig;
 import me.aurautils.config.TeleportFeatureOverride;
+import me.aurautils.platform.ChunkLoadService;
 import me.aurautils.test.StorageTestSupport;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -38,9 +39,11 @@ class TeleportHelperTest {
         AuraConfig config = new AuraConfig(
                 60, 5, true, true, 0,
                 TeleportFeatureOverride.EMPTY, TeleportFeatureOverride.EMPTY,
-                2000, 100, 80, 10, true, false, false, false, true, 4, 0, 60,
+                2000, 100, 80, 10, true, false, false, false, true, 4,
+                32, 4, 256, 0, 60,
                 3, true, "aura.vanish.see", List.of("aura.vanish"), "en", "en", true);
         when(plugin.getAuraConfig()).thenReturn(config);
+        when(plugin.getChunkLoadService()).thenReturn(new ChunkLoadService(plugin, StorageTestSupport.immediateChunkPlatform()));
 
         Server server = mock(Server.class);
         BukkitScheduler scheduler = mock(BukkitScheduler.class);

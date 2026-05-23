@@ -51,6 +51,12 @@ public final class ConfigValidator {
         boolean rtpAsyncUrgent = raw.getBoolean("rtp.async-urgent", true);
         int rtpMaxPendingChunkLoads = atLeast(raw, "rtp.max-pending-chunk-loads", 4, 1,
                 "rtp.max-pending-chunk-loads", warnings);
+        int chunkLoadMaxInFlightGlobal = atLeast(raw, "chunk-load.max-in-flight-global", 32, 1,
+                "chunk-load.max-in-flight-global", warnings);
+        int chunkLoadMaxPerPlayer = atLeast(raw, "chunk-load.max-in-flight-per-player", rtpMaxPendingChunkLoads, 1,
+                "chunk-load.max-in-flight-per-player", warnings);
+        int chunkLoadMaxQueueSize = atLeast(raw, "chunk-load.max-queue-size", 256, 0,
+                "chunk-load.max-queue-size", warnings);
         int rtpCountdown = nonNegative(raw, "rtp.countdown", 0, "rtp.countdown", warnings);
         int rtpCooldown = nonNegative(raw, "rtp.cooldown", 60, "rtp.cooldown", warnings);
 
@@ -100,6 +106,9 @@ public final class ConfigValidator {
                 rtpGenerateChunks,
                 rtpAsyncUrgent,
                 rtpMaxPendingChunkLoads,
+                chunkLoadMaxInFlightGlobal,
+                chunkLoadMaxPerPlayer,
+                chunkLoadMaxQueueSize,
                 rtpCountdown,
                 rtpCooldown,
                 homesDefaultLimit,

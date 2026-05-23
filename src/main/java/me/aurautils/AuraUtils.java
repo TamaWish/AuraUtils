@@ -18,6 +18,7 @@ import me.aurautils.managers.WarpManager;
 import me.aurautils.menus.MenuManager;
 import me.aurautils.config.AuraConfig;
 import me.aurautils.config.ConfigValidator;
+import me.aurautils.platform.ChunkLoadService;
 import me.aurautils.platform.PlatformAdapter;
 import me.aurautils.platform.PlatformFactory;
 import me.aurautils.util.MessagePlaceholders;
@@ -33,6 +34,7 @@ public final class AuraUtils extends JavaPlugin {
 
     private static AuraUtils instance;
     private PlatformAdapter platform;
+    private ChunkLoadService chunkLoadService;
     private MessagesManager messages;
     private PlayerDataManager playerDataManager;
     private TpaManager tpaManager;
@@ -61,6 +63,7 @@ public final class AuraUtils extends JavaPlugin {
         messages.load();
         auraConfig = ConfigValidator.validate(this);
         messages.load();
+        chunkLoadService = new ChunkLoadService(this, platform);
         vanishSupport = new VanishSupport(this);
 
         playerDataManager = new PlayerDataManager(this);
@@ -155,6 +158,9 @@ public final class AuraUtils extends JavaPlugin {
         if (serverSettingsManager != null) {
             serverSettingsManager.save();
         }
+        if (chunkLoadService != null) {
+            chunkLoadService.coordinator().clearQueue();
+        }
 
         getLogger().info("AuraUtils disabled.");
     }
@@ -212,6 +218,10 @@ public final class AuraUtils extends JavaPlugin {
 
     public PlatformAdapter getPlatform() {
         return platform;
+    }
+
+    public ChunkLoadService getChunkLoadService() {
+        return chunkLoadService;
     }
 
     public TeleportHelper getTeleportHelper() {
@@ -280,6 +290,9 @@ public final class AuraUtils extends JavaPlugin {
         }
         if (serverSettingsManager != null) {
             serverSettingsManager.applyToAllWorlds();
+        }
+        if (chunkLoadService != null) {
+            chunkLoadService.rebuildCoordinator();
         }
     }
 

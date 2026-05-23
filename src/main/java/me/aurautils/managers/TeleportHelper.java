@@ -526,7 +526,8 @@ public class TeleportHelper {
 
 
 
-        platform.whenChunkReady(dest, policy, generate, urgent, onReady, onFailed);
+        plugin.getChunkLoadService().whenChunkReady(
+                player.getUniqueId(), dest, policy, generate, urgent, onReady, onFailed);
 
     }
 

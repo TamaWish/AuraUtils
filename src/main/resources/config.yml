@@ -2,7 +2,7 @@
 # Full reference: README.md (config, features, RTP platform notes)
 #
 # RTP / teleport chunk loading:
-#   Paper  — leave only-loaded-chunks unset/false; use generate-chunks, async-urgent, max-pending-chunk-loads
+#   Paper  — leave only-loaded-chunks unset/false; use generate-chunks, async-urgent, chunk-load.*, rtp.max-pending-chunk-loads
 #   Spigot — set only-loaded-chunks: true and pre-generate worlds for reliable /rtp
 
 # Vanish compatibility (metadata-based; no vanish plugin dependency)
@@ -46,6 +46,15 @@ rtp:
   countdown: 0
   # Cooldown (seconds) between successful RTP uses; 0 = disabled
   cooldown: 60
+
+# Shared async chunk load pipeline (RTP search + teleport destinations on Paper)
+chunk-load:
+  # Max concurrent async/sync chunk loads server-wide
+  max-in-flight-global: 32
+  # Max concurrent chunk loads per player (RTP + teleports combined)
+  max-in-flight-per-player: 4
+  # Queued load requests when global/per-player caps are reached (teleports wait; RTP probes reject)
+  max-queue-size: 256
 
 # Global teleport countdown used by warp/home/back/tpa (seconds)
 teleport:

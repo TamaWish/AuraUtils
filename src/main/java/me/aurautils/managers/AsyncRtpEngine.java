@@ -2,7 +2,9 @@ package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.config.AuraConfig;
+import me.aurautils.platform.ChunkLoadCoordinator;
 import me.aurautils.platform.ChunkLoadPolicy;
+import me.aurautils.platform.ChunkLoadService;
 import me.aurautils.platform.PlatformAdapter;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
@@ -49,11 +51,13 @@ public class AsyncRtpEngine {
 
     private final AuraUtils plugin;
     private final PlatformAdapter platform;
+    private final ChunkLoadService chunkLoads;
     private final TeleportService teleportService;
 
     public AsyncRtpEngine(AuraUtils plugin, TeleportService teleportService) {
         this.plugin = plugin;
         this.platform = plugin.getPlatform();
+        this.chunkLoads = plugin.getChunkLoadService();
         this.teleportService = teleportService;
     }
 
@@ -224,7 +228,10 @@ public class AsyncRtpEngine {
             }
 
             int startedThisTick = 0;
-            while (startedThisTick < attemptsPerTick && tried < maxAttempts && pendingLoads < maxPendingLoads) {
+            while (startedThisTick < attemptsPerTick
+                    && tried < maxAttempts
+                    && pendingLoads < maxPendingLoads
+                    && chunkLoads.hasImmediateCapacity(playerId)) {
                 int x;
                 int z;
                 if (minDist > 0 && minDist < searchRadius) {
@@ -269,35 +276,40 @@ public class AsyncRtpEngine {
 
         private void tryAsyncAttempt(Player player, int x, int z) {
             Location probe = new Location(world, x + 0.5, from.getY(), z + 0.5);
-            pendingLoads++;
 
-            platform.whenChunkReady(
+            Runnable onProbeFinished = () -> {
+                pendingLoads--;
+                maybeFinishFailed();
+            };
+
+            chunkLoads.whenChunkReady(
+                    playerId,
                     probe,
                     ChunkLoadPolicy.ASYNC,
                     generateChunks,
                     asyncUrgent,
+                    () -> pendingLoads++,
                     () -> {
-                        pendingLoads--;
                         if (finished) {
-                            maybeFinishFailed();
+                            pendingLoads--;
                             return;
                         }
                         Player current = plugin.getServer().getPlayer(playerId);
                         if (current == null || !current.isOnline()) {
+                            pendingLoads--;
                             stop();
                             return;
                         }
                         Location candidate = findSafeLocation(world, x, z, from.getYaw(), from.getPitch());
                         if (candidate != null) {
+                            pendingLoads--;
                             succeed(current, candidate);
                         } else {
-                            maybeFinishFailed();
+                            onProbeFinished.run();
                         }
                     },
-                    () -> {
-                        pendingLoads--;
-                        maybeFinishFailed();
-                    }
+                    onProbeFinished,
+                    ChunkLoadCoordinator.QueuePolicy.REJECT_IF_BUSY
             );
         }
 

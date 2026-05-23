@@ -47,7 +47,8 @@ class TeleportServiceTest {
         AuraConfig config = new AuraConfig(
                 60, 5, true, true, 0,
                 new TeleportFeatureOverride(0, true), TeleportFeatureOverride.EMPTY,
-                2000, 100, 80, 10, true, false, false, false, true, 4, 3, 60,
+                2000, 100, 80, 10, true, false, false, false, true, 4,
+                32, 4, 256, 3, 60,
                 3, true, "aura.vanish.see", List.of("aura.vanish"), "en", "en", true);
         when(plugin.getAuraConfig()).thenReturn(config);
 
