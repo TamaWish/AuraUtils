@@ -42,6 +42,8 @@ rtp:
   found-countdown: "<prefix><green>Found a spot <yellow><blocks></yellow> blocks away. Stand still!"
   success-instant: "<prefix><green>Teleported <yellow><blocks></yellow> blocks to a random safe location."
   failed: "<prefix><red>Could not find a safe location. Lower <yellow>rtp.minDistance</yellow>, increase <yellow>rtp.attempts</yellow>, or on Spigot pre-generate terrain and keep <yellow>rtp.only-loaded-chunks</yellow> enabled."
+  world-invalid: "<prefix><red>That world is not allowed for RTP."
+  world-unloaded: "<prefix><red>World <yellow><world></yellow> is not loaded."
 
 tpa:
   usage-tpa: "<prefix><yellow>Usage: <white>/tpa <player></white>"

@@ -5,8 +5,10 @@ import me.aurautils.managers.MessagesManager;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public final class ConfigValidator {
 
@@ -51,6 +53,35 @@ public final class ConfigValidator {
         boolean rtpAsyncUrgent = raw.getBoolean("rtp.async-urgent", true);
         int rtpMaxPendingChunkLoads = atLeast(raw, "rtp.max-pending-chunk-loads", 4, 1,
                 "rtp.max-pending-chunk-loads", warnings);
+        int rtpSolidBlocksBelow = atLeast(raw, "rtp.solid-blocks-below", 2, 0,
+                "rtp.solid-blocks-below", warnings);
+        int rtpCeilingClearance = atLeast(raw, "rtp.ceiling-clearance", 3, 0,
+                "rtp.ceiling-clearance", warnings);
+        int rtpMaxCandidates = atLeast(raw, "rtp.max-candidates", 3, 1,
+                "rtp.max-candidates", warnings);
+        boolean rtpAdaptiveEnabled = raw.getBoolean("rtp.adaptive.enabled", true);
+        int rtpAdaptiveFailThreshold = atLeast(raw, "rtp.adaptive.fail-threshold-percent", 60, 1,
+                "rtp.adaptive.fail-threshold-percent", warnings);
+        if (rtpAdaptiveFailThreshold > 100) {
+            warnings.add("rtp.adaptive.fail-threshold-percent was " + rtpAdaptiveFailThreshold + ", set to 100");
+            rtpAdaptiveFailThreshold = 100;
+        }
+        int rtpAdaptiveMinSamples = atLeast(raw, "rtp.adaptive.min-samples", 8, 1,
+                "rtp.adaptive.min-samples", warnings);
+        int rtpAdaptiveRadiusBonus = nonNegative(raw, "rtp.adaptive.radius-bonus", 500,
+                "rtp.adaptive.radius-bonus", warnings);
+        int rtpAdaptiveMinDistanceReduction = nonNegative(raw, "rtp.adaptive.min-distance-reduction", 50,
+                "rtp.adaptive.min-distance-reduction", warnings);
+        int rtpAdaptiveMaxRadius = atLeast(raw, "rtp.adaptive.max-radius", 0, 0,
+                "rtp.adaptive.max-radius", warnings);
+        if (rtpAdaptiveMaxRadius > 0 && rtpAdaptiveMaxRadius < rtpRadius) {
+            warnings.add("rtp.adaptive.max-radius (" + rtpAdaptiveMaxRadius + ") is below rtp.radius ("
+                    + rtpRadius + "); adaptive max-radius set to " + rtpRadius);
+            rtpAdaptiveMaxRadius = rtpRadius;
+        }
+        Set<String> rtpAllowedBiomes = parseBiomeSet(raw.getStringList("rtp.allowed-biomes"), warnings, "rtp.allowed-biomes");
+        Set<String> rtpDeniedBiomes = parseBiomeSet(raw.getStringList("rtp.denied-biomes"), warnings, "rtp.denied-biomes");
+        List<String> rtpWorlds = parseRtpWorlds(raw.getStringList("rtp.worlds"), warnings);
         int chunkLoadMaxInFlightGlobal = atLeast(raw, "chunk-load.max-in-flight-global", 32, 1,
                 "chunk-load.max-in-flight-global", warnings);
         int chunkLoadMaxPerPlayer = atLeast(raw, "chunk-load.max-in-flight-per-player", rtpMaxPendingChunkLoads, 1,
@@ -106,6 +137,18 @@ public final class ConfigValidator {
                 rtpGenerateChunks,
                 rtpAsyncUrgent,
                 rtpMaxPendingChunkLoads,
+                rtpSolidBlocksBelow,
+                rtpCeilingClearance,
+                rtpMaxCandidates,
+                rtpAdaptiveEnabled,
+                rtpAdaptiveFailThreshold,
+                rtpAdaptiveMinSamples,
+                rtpAdaptiveRadiusBonus,
+                rtpAdaptiveMinDistanceReduction,
+                rtpAdaptiveMaxRadius,
+                rtpAllowedBiomes,
+                rtpDeniedBiomes,
+                rtpWorlds,
                 chunkLoadMaxInFlightGlobal,
                 chunkLoadMaxPerPlayer,
                 chunkLoadMaxQueueSize,
@@ -198,6 +241,45 @@ public final class ConfigValidator {
             return minimum;
         }
         return value;
+    }
+
+    private static Set<String> parseBiomeSet(List<String> entries, List<String> warnings, String label) {
+        if (entries == null || entries.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> normalized = new HashSet<>();
+        for (String entry : entries) {
+            if (entry == null || entry.isBlank()) {
+                continue;
+            }
+            String key = entry.trim().toLowerCase(Locale.ROOT);
+            if (!key.contains(":")) {
+                key = "minecraft:" + key;
+            }
+            normalized.add(key);
+        }
+        if (normalized.isEmpty()) {
+            warnings.add(label + " contained no valid biome keys");
+        }
+        return Set.copyOf(normalized);
+    }
+
+    private static List<String> parseRtpWorlds(List<String> entries, List<String> warnings) {
+        if (entries == null || entries.isEmpty()) {
+            return List.of();
+        }
+        List<String> worlds = new ArrayList<>();
+        for (String entry : entries) {
+            if (entry == null || entry.isBlank()) {
+                continue;
+            }
+            worlds.add(entry.trim());
+        }
+        if (worlds.isEmpty()) {
+            warnings.add("rtp.worlds contained no valid world names");
+            return List.of();
+        }
+        return List.copyOf(worlds);
     }
 
     private static void logWarnings(AuraUtils plugin, List<String> warnings) {

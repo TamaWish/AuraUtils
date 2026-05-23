@@ -1,9 +1,7 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
-import me.aurautils.managers.AsyncRtpEngine;
-import me.aurautils.managers.TeleportService;
-import me.aurautils.util.MessagePlaceholders;
+import me.aurautils.managers.RtpService;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,51 +21,7 @@ public class RtpCommand implements CommandExecutor {
             plugin.send(sender, "console.rtp-only-players");
             return true;
         }
-        if (!plugin.requireFeature(player, "rtp")) {
-            return true;
-        }
-        if (!player.hasPermission("aura.rtp")) {
-            plugin.send(player, "general.no-permission");
-            return true;
-        }
-
-        int cooldownSeconds = plugin.getAuraConfig().rtpCooldown();
-        boolean bypassCooldown = player.hasPermission("aura.rtp.cooldown.bypass");
-        long remaining = bypassCooldown ? 0 : plugin.getRtpCooldownManager().remainingSeconds(player.getUniqueId(), cooldownSeconds);
-        if (remaining > 0) {
-            plugin.send(player, "rtp.cooldown", MessagePlaceholders.of("seconds", String.valueOf(remaining)));
-            return true;
-        }
-
-        plugin.send(player, "rtp.searching");
-
-        int rtpCountdown = plugin.getTeleportService().countdownFor(TeleportService.TeleportKind.RTP);
-        AsyncRtpEngine engine = plugin.getAsyncRtpEngine();
-
-        engine.search(player, bypassCooldown, new AsyncRtpEngine.ResultHandler() {
-            @Override
-            public void onFound(org.bukkit.Location destination, int blocksAway) {
-                if (!player.isOnline()) {
-                    return;
-                }
-                if (rtpCountdown > 0) {
-                    plugin.send(player, "rtp.found-countdown",
-                            MessagePlaceholders.of("blocks", String.valueOf(blocksAway)));
-                    engine.teleportWithCountdown(player, destination, rtpCountdown);
-                } else {
-                    plugin.send(player, "rtp.success-instant",
-                            MessagePlaceholders.of("blocks", String.valueOf(blocksAway)));
-                }
-            }
-
-            @Override
-            public void onFailed() {
-                if (player.isOnline()) {
-                    plugin.send(player, "rtp.failed");
-                }
-            }
-        });
-
+        RtpService.startRtp(plugin, player);
         return true;
     }
 }

@@ -29,6 +29,8 @@ rtp:
   cooldown: "<prefix><red>RTP en enfriamiento. Intenta en <yellow><seconds>s<red>."
   found-countdown: "<prefix><green>¡Lugar encontrado a <yellow><blocks></yellow> bloques! ¡Quédate quieto!"
   failed: "<prefix><red>No se encontró un lugar seguro. En Spigot, pregenera el terreno con <yellow>rtp.only-loaded-chunks</yellow> activado."
+  world-invalid: "<prefix><red>Ese mundo no está permitido para RTP."
+  world-unloaded: "<prefix><red>El mundo <yellow><world></yellow> no está cargado."
 
 warp:
   cooldown: "<prefix><red>El warp <yellow><name></yellow> <red>está en enfriamiento. Intenta en <yellow><seconds>s<red>."

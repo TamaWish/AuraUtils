@@ -3,10 +3,12 @@ package me.aurautils.listeners;
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.BackService;
 import me.aurautils.managers.HomeService;
+import me.aurautils.managers.RtpService;
 import me.aurautils.managers.WarpService;
 import me.aurautils.menus.MenuType;
 import me.aurautils.menus.UtilityMenuHolder;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -78,6 +80,7 @@ public class MenuListener implements Listener {
                 player.closeInventory();
                 plugin.getTpaManager().deny(player);
             }
+            case "rtp_world" -> startRtpInWorld(player, id);
             default -> {
             }
         }
@@ -124,5 +127,25 @@ public class MenuListener implements Listener {
         }
         player.closeInventory();
         HomeService.teleport(plugin, player, name);
+    }
+
+    private void startRtpInWorld(Player player, String worldName) {
+        if (worldName == null || worldName.isBlank()) {
+            plugin.send(player, "rtp.world-invalid");
+            return;
+        }
+        World bukkitWorld = plugin.getServer().getWorld(worldName);
+        if (bukkitWorld == null) {
+            plugin.send(player, "rtp.world-unloaded",
+                    me.aurautils.util.MessagePlaceholders.of("world", worldName));
+            return;
+        }
+        World world = RtpService.resolveNamedWorld(plugin, worldName);
+        if (world == null) {
+            plugin.send(player, "rtp.world-invalid");
+            return;
+        }
+        player.closeInventory();
+        RtpService.beginSearch(plugin, player, world);
     }
 }

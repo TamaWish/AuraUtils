@@ -2,7 +2,7 @@ package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
 import me.aurautils.config.AuraConfig;
-import me.aurautils.config.TeleportFeatureOverride;
+import me.aurautils.test.TestAuraConfigs;
 import me.aurautils.test.StorageTestSupport;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -44,12 +44,23 @@ class TeleportServiceTest {
         when(plugin.getBackManager()).thenReturn(backManager);
         when(plugin.getPlatform()).thenReturn(StorageTestSupport.immediateChunkPlatform());
 
-        AuraConfig config = new AuraConfig(
-                60, 5, true, true, 0,
-                new TeleportFeatureOverride(0, true), TeleportFeatureOverride.EMPTY,
-                2000, 100, 80, 10, true, false, false, false, true, 4,
-                32, 4, 256, 3, 60,
-                3, true, "aura.vanish.see", List.of("aura.vanish"), "en", "en", true);
+        AuraConfig config = TestAuraConfigs.defaults();
+        config = new AuraConfig(
+                config.tpaTimeout(), config.teleportCountdown(), config.teleportAsyncChunkLoad(),
+                config.teleportSyncChunkFallback(), config.teleportChunkLoadTimeoutSeconds(),
+                config.adminTeleportOverride(), config.rtpTeleportOverride(),
+                config.rtpRadius(), config.rtpMinDistance(), config.rtpAttempts(), config.rtpAttemptsPerTick(),
+                config.rtpCenterOnPlayer(), config.rtpOnlyLoadedChunksExplicitlySet(), config.rtpOnlyLoadedChunks(),
+                config.rtpGenerateChunks(), config.rtpAsyncUrgent(), config.rtpMaxPendingChunkLoads(),
+                config.rtpSolidBlocksBelow(), config.rtpCeilingClearance(), config.rtpMaxCandidates(),
+                config.rtpAdaptiveEnabled(), config.rtpAdaptiveFailThresholdPercent(), config.rtpAdaptiveMinSamples(),
+                config.rtpAdaptiveRadiusBonus(), config.rtpAdaptiveMinDistanceReduction(), config.rtpAdaptiveMaxRadius(),
+                config.rtpAllowedBiomes(), config.rtpDeniedBiomes(), config.rtpWorlds(),
+                config.chunkLoadMaxInFlightGlobal(), config.chunkLoadMaxInFlightPerPlayer(), config.chunkLoadMaxQueueSize(),
+                3, config.rtpCooldown(),
+                config.homesDefaultLimit(), config.vanishEnabled(), config.vanishSeePermission(),
+                config.vanishMetadataKeys(), config.messagesDefaultLocale(), config.messagesFallbackLocale(),
+                config.messagesUseClientLocale());
         when(plugin.getAuraConfig()).thenReturn(config);
 
         Server server = mock(Server.class);

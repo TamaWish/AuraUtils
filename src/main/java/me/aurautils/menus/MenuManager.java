@@ -158,6 +158,44 @@ public class MenuManager {
         openPagedList(player, MenuType.HOMES, page, null, homes, "&8Aura &7| &dHomes", Material.RED_BED);
     }
 
+    public void openRtpWorldsMenu(Player player) {
+        UtilityMenuHolder holder = new UtilityMenuHolder(MenuType.RTP_WORLDS, 0);
+        Inventory inventory = createMenu(holder, MENU_SIZE_SMALL, "&8Aura &7| &aRTP Worlds");
+        holder.bind(inventory);
+
+        List<String> worlds = plugin.getAuraConfig().rtpWorlds();
+        int slot = 10;
+        for (String worldName : worlds) {
+            if (slot > 16) {
+                break;
+            }
+            World world = plugin.getServer().getWorld(worldName);
+            Material icon = world != null ? worldIcon(world.getEnvironment()) : Material.BARRIER;
+            String status = world != null ? "&7Click to random teleport." : "&cWorld is not loaded.";
+            inventory.setItem(slot++, taggedItem(icon, worldName, "rtp_world", worldName,
+                    List.of(status, "&8Dimension: &f" + (world != null
+                            ? formatEnvironment(world.getEnvironment())
+                            : "Unknown"))));
+        }
+
+        if (worlds.isEmpty()) {
+            inventory.setItem(SLOT_EMPTY_CENTER, menuItem(Material.BARRIER, "&cNo RTP worlds", "noop",
+                    "Configure rtp.worlds in config.yml."));
+        }
+
+        inventory.setItem(SLOT_MAIN_MENU, menuItem(Material.BOOK, "&bMain Menu", "open_main", "Return to the main menu."));
+        inventory.setItem(SLOT_CLOSE, menuItem(Material.BARRIER, "&cClose", "close_menu", "Close this menu."));
+        player.openInventory(inventory);
+    }
+
+    private static Material worldIcon(World.Environment environment) {
+        return switch (environment) {
+            case NETHER -> Material.NETHERRACK;
+            case THE_END -> Material.END_STONE;
+            default -> Material.GRASS_BLOCK;
+        };
+    }
+
     public void openTpaMenu(Player player) {
         UtilityMenuHolder holder = new UtilityMenuHolder(MenuType.TPA, 0);
         Inventory inventory = createMenu(holder, MENU_SIZE_SMALL, "&8Aura &7| &eTPA");
@@ -202,6 +240,7 @@ public class MenuManager {
             case WARPS -> openWarpsMenu(player, page, warpCategoryFilter, true);
             case HOMES -> openHomesMenu(player, page);
             case TPA -> openTpaMenu(player);
+            case RTP_WORLDS -> openRtpWorldsMenu(player);
         }
     }
 

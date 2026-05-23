@@ -5,5 +5,6 @@ public enum MenuType {
     WARP_CATEGORIES,
     WARPS,
     HOMES,
-    TPA
+    TPA,
+    RTP_WORLDS
 }
