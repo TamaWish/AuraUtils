@@ -11,6 +11,7 @@ import java.util.UUID;
 public class BackManager {
 
     private final Map<UUID, Location> lastLocations = new HashMap<>();
+    /** Single-use flag per player; see {@link me.aurautils.listeners.BackListener#onTeleport}. */
     private final Set<UUID> skipNextRecord = new HashSet<>();
 
     /** Do not record the next teleport for this player (AuraUtils-initiated). */
@@ -18,6 +19,7 @@ public class BackManager {
         skipNextRecord.add(playerId);
     }
 
+    /** Returns {@code true} and clears the skip if one was pending for this player. */
     public boolean consumeSkip(UUID playerId) {
         return skipNextRecord.remove(playerId);
     }

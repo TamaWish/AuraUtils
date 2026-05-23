@@ -67,12 +67,28 @@ public class HomeManager {
 
     public void save() {
         plugin.getDataFolder().mkdirs();
+        YamlConfiguration existing = homesFile.exists()
+                ? YamlConfiguration.loadConfiguration(homesFile)
+                : null;
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection homesSection = config.createSection("homes");
         for (Map.Entry<UUID, Map<String, Location>> playerEntry : homes.entrySet()) {
-            ConfigurationSection playerSection = homesSection.createSection(playerEntry.getKey().toString());
+            String playerKey = playerEntry.getKey().toString();
+            ConfigurationSection playerSection = homesSection.createSection(playerKey);
             for (Map.Entry<String, Location> homeEntry : playerEntry.getValue().entrySet()) {
-                LocationIO.write(playerSection.createSection(homeEntry.getKey()), homeEntry.getValue());
+                String fallbackWorld = existing == null
+                        ? null
+                        : existing.getString("homes." + playerKey + "." + homeEntry.getKey() + ".world");
+                try {
+                    LocationIO.write(
+                            playerSection.createSection(homeEntry.getKey()),
+                            homeEntry.getValue(),
+                            fallbackWorld
+                    );
+                } catch (IllegalArgumentException exception) {
+                    plugin.getLogger().warning("Skipping home '" + homeEntry.getKey() + "' for "
+                            + playerKey + " during save: " + exception.getMessage());
+                }
             }
         }
         try {

@@ -1,10 +1,15 @@
 package me.aurautils.platform;
 
 import me.aurautils.AuraUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 
 public class SpigotPlatformAdapter implements PlatformAdapter {
 
@@ -31,6 +36,12 @@ public class SpigotPlatformAdapter implements PlatformAdapter {
     @Override
     public boolean supportsAsyncChunkLoading() {
         return false;
+    }
+
+    @Override
+    public Inventory createInventory(InventoryHolder owner, int size, Component title) {
+        String legacyTitle = LegacyComponentSerializer.legacySection().serialize(title);
+        return Bukkit.createInventory(owner, size, legacyTitle);
     }
 
     @Override

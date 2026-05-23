@@ -55,7 +55,9 @@ public class HealCommand implements CommandExecutor, TabCompleter {
         if (target.equals(sender)) {
             plugin.send(target, "heal.healed-self");
         } else {
-            plugin.send(target, "heal.healed-self");
+            plugin.send(target, "heal.healed-by", TagResolver.builder()
+                    .resolver(Placeholder.parsed("healer", sender.getName()))
+                    .build());
             plugin.send(sender, "heal.healed-other", TagResolver.builder()
                     .resolver(Placeholder.parsed("player", target.getName()))
                     .build());

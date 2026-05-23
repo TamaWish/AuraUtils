@@ -81,11 +81,13 @@ spawn:
 
 heal:
   healed-self: "<prefix><green>Your health has been restored."
+  healed-by: "<prefix><green>Healed by <yellow><healer></yellow><green>."
   healed-other: "<prefix><green>Restored health for <yellow><player></yellow><green>."
   others-denied: "<prefix><red>You can't heal other players."
 
 feed:
   fed-self: "<prefix><green>Your hunger has been restored."
+  fed-by: "<prefix><green>Fed by <yellow><healer></yellow><green>."
   fed-other: "<prefix><green>Restored hunger for <yellow><player></yellow><green>."
   others-denied: "<prefix><red>You can't feed other players."
 

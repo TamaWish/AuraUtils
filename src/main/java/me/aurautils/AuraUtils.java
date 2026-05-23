@@ -119,10 +119,18 @@ public final class AuraUtils extends JavaPlugin {
             tpaManager.cancelAll();
         }
         if (warpManager != null) {
-            warpManager.save();
+            try {
+                warpManager.save();
+            } catch (Exception exception) {
+                getLogger().severe("Failed to save warps on disable: " + exception.getMessage());
+            }
         }
         if (homeManager != null) {
-            homeManager.save();
+            try {
+                homeManager.save();
+            } catch (Exception exception) {
+                getLogger().severe("Failed to save homes on disable: " + exception.getMessage());
+            }
         }
         if (playerDataManager != null) {
             playerDataManager.flushSave();

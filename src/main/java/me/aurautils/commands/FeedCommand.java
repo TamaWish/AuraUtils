@@ -55,7 +55,9 @@ public class FeedCommand implements CommandExecutor, TabCompleter {
         if (target.equals(sender)) {
             plugin.send(target, "feed.fed-self");
         } else {
-            plugin.send(target, "feed.fed-self");
+            plugin.send(target, "feed.fed-by", TagResolver.builder()
+                    .resolver(Placeholder.parsed("healer", sender.getName()))
+                    .build());
             plugin.send(sender, "feed.fed-other", TagResolver.builder()
                     .resolver(Placeholder.parsed("player", target.getName()))
                     .build());

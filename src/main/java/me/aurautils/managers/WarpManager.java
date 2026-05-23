@@ -44,10 +44,21 @@ public class WarpManager {
 
     public void save() {
         plugin.getDataFolder().mkdirs();
+        YamlConfiguration existing = warpsFile.exists()
+                ? YamlConfiguration.loadConfiguration(warpsFile)
+                : null;
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection warpsSection = config.createSection("warps");
         for (Map.Entry<String, Location> entry : warps.entrySet()) {
-            LocationIO.write(warpsSection.createSection(entry.getKey()), entry.getValue());
+            String fallbackWorld = existing == null
+                    ? null
+                    : existing.getString("warps." + entry.getKey() + ".world");
+            try {
+                LocationIO.write(warpsSection.createSection(entry.getKey()), entry.getValue(), fallbackWorld);
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("Skipping warp '" + entry.getKey()
+                        + "' during save: " + exception.getMessage());
+            }
         }
         try {
             config.save(warpsFile);

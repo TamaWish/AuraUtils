@@ -5,6 +5,8 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
@@ -17,20 +19,34 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
 
     private final Method getChunkAtAsync;
     private final boolean asyncChunkLoadAvailable;
+    private final Method createInventoryWithComponent;
+    private final boolean componentInventoryTitlesAvailable;
 
     public PaperPlatformAdapter(AuraUtils plugin) {
         super(plugin);
-        Method method = null;
+        Method chunkMethod = null;
         try {
-            method = World.class.getMethod(
+            chunkMethod = World.class.getMethod(
                     "getChunkAtAsync",
                     int.class, int.class, boolean.class, boolean.class, Consumer.class);
         } catch (NoSuchMethodException e) {
             plugin.getLogger().log(Level.WARNING,
                     "Paper detected but World.getChunkAtAsync(..., Consumer) is missing; RTP uses conservative Spigot-style search.");
         }
-        this.getChunkAtAsync = method;
-        this.asyncChunkLoadAvailable = method != null;
+        this.getChunkAtAsync = chunkMethod;
+        this.asyncChunkLoadAvailable = chunkMethod != null;
+
+        Method inventoryMethod = null;
+        try {
+            Class<?> componentClass = Class.forName("net.kyori.adventure.text.Component");
+            inventoryMethod = org.bukkit.Bukkit.class.getMethod(
+                    "createInventory", InventoryHolder.class, int.class, componentClass);
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            plugin.getLogger().log(Level.FINE,
+                    "Paper detected but Bukkit.createInventory(..., Component) is missing; menu titles use legacy formatting.");
+        }
+        this.createInventoryWithComponent = inventoryMethod;
+        this.componentInventoryTitlesAvailable = inventoryMethod != null;
     }
 
     @Override
@@ -46,6 +62,21 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
     @Override
     public boolean supportsAsyncChunkLoading() {
         return asyncChunkLoadAvailable;
+    }
+
+    @Override
+    public Inventory createInventory(InventoryHolder owner, int size, net.kyori.adventure.text.Component title) {
+        if (componentInventoryTitlesAvailable) {
+            try {
+                Object serverComponent = plugin.getMessages().toServerComponent(title);
+                if (serverComponent != null) {
+                    return (Inventory) createInventoryWithComponent.invoke(null, owner, size, serverComponent);
+                }
+            } catch (ReflectiveOperationException e) {
+                plugin.getLogger().log(Level.FINE, "Component inventory title failed, falling back to legacy", e);
+            }
+        }
+        return super.createInventory(owner, size, title);
     }
 
     @Override

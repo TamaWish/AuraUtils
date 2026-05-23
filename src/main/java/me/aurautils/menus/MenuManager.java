@@ -3,7 +3,6 @@ package me.aurautils.menus;
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.TpaManager;
 import me.aurautils.util.WarpPermissions;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -18,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/** GUI menus: titles use {@link me.aurautils.util.MessageUtil#toComponent} (gradients on Paper); item text uses legacy {@code &} codes. */
 public class MenuManager {
 
     private static final int MENU_SIZE_SMALL = 27;
@@ -49,7 +49,7 @@ public class MenuManager {
 
     public void openMainMenu(Player player) {
         UtilityMenuHolder holder = new UtilityMenuHolder(MenuType.MAIN, 0);
-        Inventory inventory = Bukkit.createInventory(holder, MENU_SIZE_SMALL, color("&8Aura &7| &bMenu"));
+        Inventory inventory = createMenu(holder, MENU_SIZE_SMALL, "&8Aura &7| &bMenu");
         holder.bind(inventory);
 
         inventory.setItem(MAIN_SLOT_WARPS, menuItem(Material.ENDER_PEARL, "&bWarps", "open_warps", "Open the warp list."));
@@ -82,7 +82,7 @@ public class MenuManager {
 
     public void openTpaMenu(Player player) {
         UtilityMenuHolder holder = new UtilityMenuHolder(MenuType.TPA, 0);
-        Inventory inventory = Bukkit.createInventory(holder, MENU_SIZE_SMALL, color("&8Aura &7| &eTPA"));
+        Inventory inventory = createMenu(holder, MENU_SIZE_SMALL, "&8Aura &7| &eTPA");
         holder.bind(inventory);
 
         UUID requesterId = plugin.getTpaManager().getPendingRequester(player.getUniqueId());
@@ -122,7 +122,7 @@ public class MenuManager {
         int totalPages = Math.max(1, (int) Math.ceil(entries.size() / (double) PAGE_SIZE));
         int safePage = Math.max(0, Math.min(page, totalPages - 1));
         UtilityMenuHolder holder = new UtilityMenuHolder(type, safePage);
-        Inventory inventory = Bukkit.createInventory(holder, MENU_SIZE_LARGE, color(title));
+        Inventory inventory = createMenu(holder, MENU_SIZE_LARGE, title);
         holder.bind(inventory);
 
         if (entries.isEmpty()) {
@@ -214,6 +214,10 @@ public class MenuManager {
 
     private org.bukkit.NamespacedKey pluginKey(String key) {
         return new org.bukkit.NamespacedKey(plugin, key);
+    }
+
+    private Inventory createMenu(UtilityMenuHolder holder, int size, String title) {
+        return plugin.getPlatform().createInventory(holder, size, me.aurautils.util.MessageUtil.toComponent(title));
     }
 
     private String color(String text) {

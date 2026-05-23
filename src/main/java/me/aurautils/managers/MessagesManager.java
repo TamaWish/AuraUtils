@@ -356,7 +356,18 @@ public class MessagesManager {
         return LegacyComponentSerializer.legacySection().serialize(component);
     }
 
-    /** For inventory titles / lore that still expect legacy section codes. */
+    /**
+     * Converts a plugin-shaded Adventure component to the server's Adventure class for reflective API calls.
+     */
+    public Object toServerComponent(Component component) {
+        try {
+            return deserializeOnServer(gson.serialize(component));
+        } catch (ReflectiveOperationException exception) {
+            return null;
+        }
+    }
+
+    /** For item display names / lore that still expect legacy section codes. */
     public String toLegacy(String miniMessageTemplate, CommandSender sender, MessagePlaceholders placeholders) {
         return toLegacyString(componentFromTemplate(miniMessageTemplate, sender, placeholders));
     }
