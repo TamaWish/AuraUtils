@@ -21,6 +21,9 @@ public class KeepInventoryCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!plugin.requireFeature(sender, "keepinventory")) {
+            return true;
+        }
         if (!sender.hasPermission("aura.keepinventory")) {
             plugin.send(sender, "general.no-permission");
             return true;

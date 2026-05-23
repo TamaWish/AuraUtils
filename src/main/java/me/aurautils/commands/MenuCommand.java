@@ -20,7 +20,10 @@ public class MenuCommand implements CommandExecutor {
             sender.sendMessage("Console cannot open the menu.");
             return true;
         }
-        if (!player.hasPermission("aura.use")) {
+        if (!plugin.requireFeature(player, "menu")) {
+            return true;
+        }
+        if (!player.hasPermission("aura.use") && !player.hasPermission("aura.menu")) {
             plugin.send(player, "general.no-permission");
             return true;
         }

@@ -21,6 +21,9 @@ public class SetWarpCommand implements CommandExecutor {
             sender.sendMessage("Console cannot set warps.");
             return true;
         }
+        if (!plugin.requireFeature(player, "warps")) {
+            return true;
+        }
         if (!player.hasPermission("aura.warp.set")) {
             plugin.send(player, "general.no-permission");
             return true;

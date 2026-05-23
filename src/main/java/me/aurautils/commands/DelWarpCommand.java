@@ -21,6 +21,9 @@ public class DelWarpCommand implements CommandExecutor {
             sender.sendMessage("Console cannot delete warps.");
             return true;
         }
+        if (!plugin.requireFeature(player, "warps")) {
+            return true;
+        }
         if (!player.hasPermission("aura.warp.delete")) {
             plugin.send(player, "general.no-permission");
             return true;

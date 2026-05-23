@@ -56,6 +56,10 @@ public class HomeCommand implements CommandExecutor, TabCompleter {
 
         }
 
+        if (!plugin.requireFeature(player, "homes")) {
+            return true;
+        }
+
         if (!player.hasPermission("aura.home")) {
 
             plugin.send(player, "general.no-permission");

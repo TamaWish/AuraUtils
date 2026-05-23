@@ -62,3 +62,19 @@ messages:
   fallback-locale: en
   # When true, uses the client's language on Paper if a matching messages/<locale>.yml exists
   use-client-locale: true
+
+# Feature toggles. Set a feature to false to disable its commands and GUI actions.
+features:
+  menu: true
+  homes: true
+  warps: true
+  spawn: true
+  tpa: true
+  rtp: true
+  fly: true
+  god: true
+  nofall: true
+  nohunger: true
+  heal: true
+  feed: true
+  keepinventory: true

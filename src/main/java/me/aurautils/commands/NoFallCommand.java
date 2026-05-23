@@ -23,6 +23,9 @@ public class NoFallCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (!plugin.requireFeature(sender, "nofall")) {
+            return true;
+        }
         if (!sender.hasPermission("aura.nofall")) {
             plugin.send(sender, "general.no-permission");
             return true;

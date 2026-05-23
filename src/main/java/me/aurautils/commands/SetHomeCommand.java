@@ -26,6 +26,9 @@ public class SetHomeCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("Console cannot set homes.");
             return true;
         }
+        if (!plugin.requireFeature(player, "homes")) {
+            return true;
+        }
         if (!player.hasPermission("aura.home.set")) {
             plugin.send(player, "general.no-permission");
             return true;

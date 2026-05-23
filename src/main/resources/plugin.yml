@@ -10,6 +10,10 @@ commands:
     description: Open the main utility GUI
     usage: /menu
     permission: aura.use
+  spawn:
+    description: Teleport to the current world spawn
+    usage: /spawn
+    permission: aura.spawn
   back:
     description: Return to your last teleport location
     usage: /back
@@ -73,6 +77,14 @@ commands:
     description: Toggle hunger depletion
     usage: /nohunger [player]
     permission: aura.nohunger
+  heal:
+    description: Restore health for yourself or another player
+    usage: /heal [player]
+    permission: aura.heal
+  feed:
+    description: Restore hunger for yourself or another player
+    usage: /feed [player]
+    permission: aura.feed
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
@@ -173,6 +185,21 @@ permissions:
   aura.nohunger.others:
     description: Toggle hunger on others
     default: op
+  aura.heal:
+    description: Heal yourself
+    default: op
+  aura.heal.others:
+    description: Heal other players
+    default: op
+  aura.feed:
+    description: Feed yourself
+    default: op
+  aura.feed.others:
+    description: Feed other players
+    default: op
+  aura.spawn:
+    description: Teleport to spawn
+    default: true
   aura.rtp:
     description: Use random teleport
     default: true
@@ -197,6 +224,11 @@ permissions:
       aura.nofall.others: true
       aura.nohunger: true
       aura.nohunger.others: true
+      aura.heal: true
+      aura.heal.others: true
+      aura.feed: true
+      aura.feed.others: true
+      aura.spawn: true
       
       aura.tpa: true
       aura.tpahere: true

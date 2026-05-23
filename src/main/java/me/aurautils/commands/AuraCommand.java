@@ -74,10 +74,13 @@ public class AuraCommand implements CommandExecutor {
         plugin.send(sender, "aura.help-sethome");
         plugin.send(sender, "aura.help-back");
         plugin.send(sender, "aura.help-menu");
+        plugin.send(sender, "aura.help-spawn");
         plugin.send(sender, "aura.help-god");
         plugin.send(sender, "aura.help-fly");
         plugin.send(sender, "aura.help-nofall");
         plugin.send(sender, "aura.help-nohunger");
+        plugin.send(sender, "aura.help-heal");
+        plugin.send(sender, "aura.help-feed");
         plugin.send(sender, "aura.help-reload");
         plugin.send(sender, "aura.help-locale");
         plugin.send(sender, "aura.help-rtp");

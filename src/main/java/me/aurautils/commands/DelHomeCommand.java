@@ -21,6 +21,9 @@ public class DelHomeCommand implements CommandExecutor {
             sender.sendMessage("Console cannot delete homes.");
             return true;
         }
+        if (!plugin.requireFeature(player, "homes")) {
+            return true;
+        }
         if (!player.hasPermission("aura.home.delete")) {
             plugin.send(player, "general.no-permission");
             return true;

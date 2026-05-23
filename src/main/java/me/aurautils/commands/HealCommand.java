@@ -13,28 +13,28 @@ import org.bukkit.entity.Player;
 import java.util.Collections;
 import java.util.List;
 
-public class NoHungerCommand implements CommandExecutor, TabCompleter {
+public class HealCommand implements CommandExecutor, TabCompleter {
 
     private final AuraUtils plugin;
 
-    public NoHungerCommand(AuraUtils plugin) {
+    public HealCommand(AuraUtils plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!plugin.requireFeature(sender, "nohunger")) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!plugin.requireFeature(sender, "heal")) {
             return true;
         }
-        if (!sender.hasPermission("aura.nohunger")) {
+        if (!sender.hasPermission("aura.heal")) {
             plugin.send(sender, "general.no-permission");
             return true;
         }
 
         Player target;
         if (args.length >= 1) {
-            if (!sender.hasPermission("aura.nohunger.others")) {
-                plugin.send(sender, "nohunger.others-denied");
+            if (!sender.hasPermission("aura.heal.others")) {
+                plugin.send(sender, "heal.others-denied");
                 return true;
             }
             target = plugin.getServer().getPlayer(args[0]);
@@ -44,21 +44,30 @@ public class NoHungerCommand implements CommandExecutor, TabCompleter {
             }
         } else {
             if (!(sender instanceof Player player)) {
-                sender.sendMessage("Console must specify a player.");
+                plugin.send(sender, "console.heal-only-players");
                 return true;
             }
             target = player;
         }
 
-        boolean enabled = plugin.getPlayerDataManager().toggleNoHunger(target.getUniqueId());
-        plugin.sendToggle(target, "nohunger.toggled-self", enabled);
-        if (!target.equals(sender)) {
-            plugin.send(sender, "nohunger.toggled-other", TagResolver.builder()
+        restoreHealth(target);
+
+        if (target.equals(sender)) {
+            plugin.send(target, "heal.healed-self");
+        } else {
+            plugin.send(target, "heal.healed-self");
+            plugin.send(sender, "heal.healed-other", TagResolver.builder()
                     .resolver(Placeholder.parsed("player", target.getName()))
-                    .resolver(Placeholder.component("state", plugin.getMessages().stateComponent(sender, enabled)))
                     .build());
         }
         return true;
+    }
+
+    private void restoreHealth(Player target) {
+        target.setFireTicks(0);
+        target.setFreezeTicks(0);
+        target.setAbsorptionAmount(0.0D);
+        target.setHealth(Math.max(1.0D, target.getMaxHealth()));
     }
 
     @Override
@@ -66,6 +75,6 @@ public class NoHungerCommand implements CommandExecutor, TabCompleter {
         if (args.length != 1) {
             return Collections.emptyList();
         }
-        return CommandUtil.onlinePlayerNames(sender, args[0], "aura.nohunger.others");
+        return CommandUtil.onlinePlayerNames(sender, args[0], "aura.heal.others");
     }
 }

@@ -16,12 +16,16 @@ general:
   player-offline: "<prefix><red>Player <yellow><name></yellow> is not online."
   usage: "<prefix><yellow>Usage: <white><usage></white>"
 
+feature:
+  disabled: "<prefix><red>This feature is currently disabled."
+
 teleport:
   countdown: "<prefix><yellow>Teleporting in <gold><seconds></gold><gray>s</gray>… <hover:show_text:'<gray>Click to cancel'><click:run_command:/auracanceltp><red><bold>✕</bold></red></click></hover>"
   cancelled: "<prefix><red>Teleport cancelled."
   cancelled-movement: "<prefix><red>Teleport cancelled due to movement."
   cancelled-manual: "<prefix><red>Teleport cancelled."
   success-default: "<prefix><green>Teleported."
+  success-spawn: "<prefix><green>Teleported to spawn."
   success-home: "<prefix><green>Teleported to home <yellow><name></yellow><green>."
   success-warp: "<prefix><green>Teleported to warp <yellow><name></yellow><green>."
   success-back: "<prefix><green>Returned to your last teleport location."
@@ -75,6 +79,16 @@ home:
 spawn:
   set: "<prefix><green>Set spawn for world <yellow><world></yellow> <gray>(<white><coords></white><gray>). <dark_gray>Persists across resource-world resets."
 
+heal:
+  healed-self: "<prefix><green>Your health has been restored."
+  healed-other: "<prefix><green>Restored health for <yellow><player></yellow><green>."
+  others-denied: "<prefix><red>You can't heal other players."
+
+feed:
+  fed-self: "<prefix><green>Your hunger has been restored."
+  fed-other: "<prefix><green>Restored hunger for <yellow><player></yellow><green>."
+  others-denied: "<prefix><red>You can't feed other players."
+
 keepinventory:
   usage: "<prefix><yellow>Usage: <white>/keepinventory [on|off|status]</white>"
   toggled: "<prefix>Keep inventory on death is now <state> <gray>for all worlds</gray>."
@@ -120,10 +134,13 @@ aura:
   help-sethome: "<gray>  <yellow>/sethome <dark_gray><name> <gray>- Set a home"
   help-back: "<gray>  <yellow>/back <gray>- Return to your last teleport"
   help-menu: "<gray>  <yellow>/menu <gray>- Open the utility GUI"
+  help-spawn: "<gray>  <yellow>/spawn <gray>- Teleport to the world spawn"
   help-god: "<gray>  <yellow>/god <dark_gray>[player]   <gray>- Toggle god mode"
   help-fly: "<gray>  <yellow>/fly <dark_gray>[player]   <gray>- Toggle fly"
   help-nofall: "<gray>  <yellow>/nofall <dark_gray>[p]     <gray>- Toggle fall damage"
   help-nohunger: "<gray>  <yellow>/nohunger <dark_gray>[p]   <gray>- Toggle hunger"
+  help-heal: "<gray>  <yellow>/heal <dark_gray>[player]   <gray>- Restore health"
+  help-feed: "<gray>  <yellow>/feed <dark_gray>[player]   <gray>- Restore hunger"
   help-reload: "<gray>  <yellow>/aura reload    <gray>- Reload config and messages"
   help-locale: "<gray>  <yellow>/aura locale <code> <gray>- Set your message language"
   help-rtp: "<gray>  <yellow>/rtp <gray>- Random safe teleport"
@@ -133,4 +150,7 @@ aura:
   status-line: "<gray>  God: <god>  Fly: <fly>  NoFall: <nofall>  NoHunger: <nohunger>"
 
 console:
+  spawn-only-players: "Console cannot use /spawn."
+  heal-only-players: "Console must specify a player."
+  feed-only-players: "Console must specify a player."
   rtp-only-players: "Console cannot use /rtp."

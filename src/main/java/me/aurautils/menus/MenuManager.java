@@ -106,6 +106,12 @@ public class MenuManager {
 
         inventory.setItem(MAIN_SLOT_TPA, menuItem(Material.PAPER, "&eTPA", "open_tpa", "Review pending TPA requests."));
 
+        inventory.setItem(13, menuItem(Material.COMPASS, "&aSpawn", "open_spawn", "Teleport to the world spawn."));
+
+        inventory.setItem(16, menuItem(Material.GOLDEN_APPLE, "&cHeal", "open_heal", "Restore your health."));
+
+        inventory.setItem(17, menuItem(Material.COOKED_BEEF, "&6Feed", "open_feed", "Restore your hunger."));
+
         inventory.setItem(MAIN_SLOT_BACK, menuItem(Material.ENDER_EYE, "&6Back", "open_back", "Return to your last teleport location."));
 
         inventory.setItem(MAIN_SLOT_REFRESH, menuItem(Material.COMPASS, "&aRefresh", "refresh_menu", "Rebuild this menu."));

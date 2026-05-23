@@ -23,6 +23,9 @@ public class FlyCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (!plugin.requireFeature(sender, "fly")) {
+            return true;
+        }
         if (!sender.hasPermission("aura.fly")) {
             plugin.send(sender, "general.no-permission");
             return true;

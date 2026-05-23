@@ -52,6 +52,9 @@ public class MenuListener implements Listener {
             case "open_warps" -> plugin.getMenuManager().openWarpsMenu(player, 0);
             case "open_homes" -> plugin.getMenuManager().openHomesMenu(player, 0);
             case "open_tpa" -> plugin.getMenuManager().openTpaMenu(player);
+            case "open_spawn" -> player.performCommand("spawn");
+            case "open_heal" -> player.performCommand("heal");
+            case "open_feed" -> player.performCommand("feed");
             case "open_back" -> {
                 player.closeInventory();
                 BackService.teleportBack(plugin, player);

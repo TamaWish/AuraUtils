@@ -161,6 +161,8 @@ public final class AuraUtils extends JavaPlugin {
 
         registerCommand("menu", new MenuCommand(this));
 
+        registerCommand("spawn", new SpawnCommand(this));
+
         registerCommand("god", new GodCommand(this));
 
         registerCommand("fly", new FlyCommand(this));
@@ -168,6 +170,10 @@ public final class AuraUtils extends JavaPlugin {
         registerCommand("nofall", new NoFallCommand(this));
 
         registerCommand("nohunger", new NoHungerCommand(this));
+
+        registerCommand("heal", new HealCommand(this));
+
+        registerCommand("feed", new FeedCommand(this));
 
         registerCommand("rtp", new RtpCommand(this));
 
@@ -334,6 +340,26 @@ public final class AuraUtils extends JavaPlugin {
     public void send(CommandSender sender, String key, TagResolver additionalResolvers) {
 
         messages.send(sender, key, additionalResolvers);
+
+    }
+
+    public boolean isFeatureEnabled(String featureKey) {
+
+        return getConfig().getBoolean("features." + featureKey, true);
+
+    }
+
+    public boolean requireFeature(CommandSender sender, String featureKey) {
+
+        if (isFeatureEnabled(featureKey)) {
+
+            return true;
+
+        }
+
+        send(sender, "feature.disabled");
+
+        return false;
 
     }
 

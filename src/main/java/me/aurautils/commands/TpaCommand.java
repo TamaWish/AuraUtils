@@ -21,6 +21,9 @@ public class TpaCommand implements CommandExecutor {
             sender.sendMessage("Console cannot use TPA.");
             return true;
         }
+        if (!plugin.requireFeature(player, "tpa")) {
+            return true;
+        }
         if (!player.hasPermission("aura.tpa")) {
             plugin.send(player, "general.no-permission-short");
             return true;

@@ -21,6 +21,9 @@ public class SetSpawnCommand implements CommandExecutor {
             sender.sendMessage("Console cannot set world spawn. Use an in-game operator.");
             return true;
         }
+        if (!plugin.requireFeature(player, "spawn")) {
+            return true;
+        }
         if (!player.hasPermission("aura.setspawn")) {
             plugin.send(player, "general.no-permission");
             return true;

@@ -22,6 +22,9 @@ public class RtpCommand implements CommandExecutor {
             plugin.send(sender, "console.rtp-only-players");
             return true;
         }
+        if (!plugin.requireFeature(player, "rtp")) {
+            return true;
+        }
         if (!player.hasPermission("aura.rtp")) {
             plugin.send(player, "general.no-permission");
             return true;

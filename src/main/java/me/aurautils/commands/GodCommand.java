@@ -23,6 +23,9 @@ public class GodCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (!plugin.requireFeature(sender, "god")) {
+            return true;
+        }
         if (!sender.hasPermission("aura.god")) {
             plugin.send(sender, "general.no-permission");
             return true;
