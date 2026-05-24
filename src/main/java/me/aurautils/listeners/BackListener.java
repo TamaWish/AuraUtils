@@ -18,8 +18,12 @@ public class BackListener implements Listener {
 
     /**
      * Records {@code event.getFrom()} for {@code /back} on every {@link PlayerTeleportEvent}, including
-     * teleports from other plugins. {@link TeleportService} calls {@link BackManager#skipNextRecord}
-     * only when {@link TeleportOptions#skipBackRecord()} is set (e.g. /back, RTP).
+     * teleports from other plugins.
+     * <p>
+     * Skips recording when {@link me.aurautils.managers.BackManager#consumeSkip(UUID)} returns true.
+     * That flag is set by {@link me.aurautils.managers.TeleportService#teleport} via
+     * {@link me.aurautils.managers.BackManager#skipNextRecord(UUID)} when
+     * {@link me.aurautils.managers.TeleportOptions#skipBackRecord()} is enabled (e.g. {@code /back}, RTP).
      * <p>
      * Skip is single-use: if multiple teleports fire for the same player in one tick, only the first
      * event consumes the skip; a later event in that tick may record an intermediate location as back.

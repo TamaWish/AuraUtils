@@ -11,6 +11,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
@@ -55,7 +56,7 @@ public class MessagesManager {
         this.plugin = plugin;
     }
 
-    public void load() {
+    public void load(FileConfiguration raw) {
         File messagesDir = new File(plugin.getDataFolder(), "messages");
         if (!messagesDir.exists()) {
             messagesDir.mkdirs();
@@ -83,33 +84,41 @@ public class MessagesManager {
             }
         }
 
-        AuraConfig auraConfig = plugin.getAuraConfig();
-        if (auraConfig != null) {
-            defaultLocale = auraConfig.messagesDefaultLocale();
-            fallbackLocale = auraConfig.messagesFallbackLocale();
-            useClientLocale = auraConfig.messagesUseClientLocale();
-        } else {
-            defaultLocale = normalizeLocale(plugin.getConfig().getString("messages.default-locale", "en"));
-            fallbackLocale = normalizeLocale(plugin.getConfig().getString("messages.fallback-locale", "en"));
-            useClientLocale = plugin.getConfig().getBoolean("messages.use-client-locale", true);
-        }
+        defaultLocale = normalizeLocale(raw.getString("messages.default-locale", "en"));
+        fallbackLocale = normalizeLocale(raw.getString("messages.fallback-locale", "en"));
+        useClientLocale = raw.getBoolean("messages.use-client-locale", true);
+        reconcileLocaleSettings();
 
+        refreshPrefix();
+
+        plugin.getLogger().info("Loaded message locales: " + String.join(", ", bundles.keySet())
+                + " (default=" + defaultLocale + ", fallback=" + fallbackLocale + ")");
+    }
+
+    public void applyLocaleConfig(AuraConfig auraConfig) {
+        defaultLocale = auraConfig.messagesDefaultLocale();
+        fallbackLocale = auraConfig.messagesFallbackLocale();
+        useClientLocale = auraConfig.messagesUseClientLocale();
+        reconcileLocaleSettings();
+        refreshPrefix();
+    }
+
+    private void reconcileLocaleSettings() {
         if (!bundles.containsKey(defaultLocale)) {
             defaultLocale = "en";
         }
         if (!bundles.containsKey(fallbackLocale)) {
             fallbackLocale = defaultLocale;
         }
+    }
 
-        File defaultFile = new File(messagesDir, defaultLocale + ".yml");
+    private void refreshPrefix() {
+        File defaultFile = new File(new File(plugin.getDataFolder(), "messages"), defaultLocale + ".yml");
         prefixTemplate = YamlConfiguration.loadConfiguration(defaultFile).getString("meta.prefix", "");
         if (prefixTemplate == null || prefixTemplate.isEmpty()) {
             prefixTemplate = "<dark_gray>[<aqua>Aura</aqua>]</dark_gray> ";
         }
         prefixResolver = Placeholder.component("prefix", miniMessage.deserialize(prefixTemplate));
-
-        plugin.getLogger().info("Loaded message locales: " + String.join(", ", bundles.keySet())
-                + " (default=" + defaultLocale + ", fallback=" + fallbackLocale + ")");
     }
 
     /**

@@ -209,7 +209,7 @@ public class WarpManager {
                     continue;
                 }
                 if (warps.containsKey(alias)) {
-                    logger.warning("Warp alias '" + alias + "' conflicts with warp '" + alias + "'; ignored.");
+                    logger.warning("Warp alias '" + alias + "' conflicts with warp '" + canonical + "'; ignored.");
                     continue;
                 }
                 String previous = aliasToCanonical.put(alias, canonical);

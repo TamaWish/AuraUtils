@@ -223,7 +223,7 @@ public class AsyncRtpEngine {
             while (startedThisTick < attemptsPerTick
                     && tried < maxAttempts
                     && pendingLoads < maxPendingLoads
-                    && candidates.size() < maxCandidates
+                    && candidateCount() < maxCandidates
                     && chunkLoads.hasImmediateCapacity(playerId)) {
                 RtpCoordinateSampler.Sample sample = coordinateSampler.next();
                 lastBandIndex = sample.bandIndex();
@@ -250,7 +250,7 @@ public class AsyncRtpEngine {
                 return;
             }
 
-            if (candidates.size() >= maxCandidates && pendingLoads == 0) {
+            if (candidateCount() >= maxCandidates && pendingLoads == 0) {
                 finishSearch(player);
             }
         }
@@ -318,6 +318,10 @@ public class AsyncRtpEngine {
             }
         }
 
+        private synchronized int candidateCount() {
+            return candidates.size();
+        }
+
         private synchronized void offerCandidate(RtpCandidate candidate) {
             if (finished) {
                 return;
@@ -346,7 +350,7 @@ public class AsyncRtpEngine {
             }
         }
 
-        private void finishSearch(Player player) {
+        private synchronized void finishSearch(Player player) {
             if (finished) {
                 return;
             }

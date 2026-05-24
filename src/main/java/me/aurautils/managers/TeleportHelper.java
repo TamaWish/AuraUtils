@@ -432,6 +432,7 @@ public class TeleportHelper {
 
 
 
+        // Only one of timeout, onReady, or onFailed may complete; late callbacks are ignored.
         AtomicBoolean completed = new AtomicBoolean(false);
 
         int timeoutSeconds = plugin.getAuraConfig().teleportChunkLoadTimeoutSeconds();
@@ -504,6 +505,7 @@ public class TeleportHelper {
 
         Runnable onFailed = () -> {
 
+            // Timeout may have already notified the player; ignore this late failure.
             if (!completed.compareAndSet(false, true)) {
 
                 return;

@@ -115,10 +115,11 @@ public class PlayerDataManager {
         if (debounceTask != null) {
             debounceTask.cancel();
         }
-        debounceTask = taskExecutor.runSyncLater(() -> {
+        Cancellable task = taskExecutor.runSyncLater(() -> {
             debounceTask = null;
             requestSaveDrain();
         }, SAVE_DEBOUNCE_TICKS);
+        debounceTask = task;
     }
 
     public void flushSave() {

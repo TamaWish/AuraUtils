@@ -62,9 +62,9 @@ public final class AuraUtils extends JavaPlugin {
         getLogger().info("Platform: " + platform.getPlatformName());
 
         messages = new MessagesManager(this);
-        messages.load();
+        messages.load(getConfig());
         auraConfig = ConfigValidator.validate(this);
-        messages.load();
+        messages.applyLocaleConfig(auraConfig);
         chunkLoadService = new ChunkLoadService(this, platform);
         vanishSupport = new VanishSupport(this);
 
@@ -284,9 +284,9 @@ public final class AuraUtils extends JavaPlugin {
 
     public void reloadPluginConfig() {
         reloadConfig();
-        messages.load();
+        messages.load(getConfig());
         auraConfig = ConfigValidator.validate(this);
-        messages.load();
+        messages.applyLocaleConfig(auraConfig);
         if (vanishSupport != null) {
             vanishSupport.reload();
         }

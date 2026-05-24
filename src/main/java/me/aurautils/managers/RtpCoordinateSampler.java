@@ -59,7 +59,7 @@ public final class RtpCoordinateSampler {
             Sample sample = chunkCentric
                     ? sampleChunkCentric(bandIndex)
                     : (gridJitter ? sampleGridJitter(bandIndex) : samplePolar(bandIndex));
-            if (!session.hasTriedChunk(sample.chunkKey()) || session.markChunkTried(sample.chunkKey())) {
+            if (session.tryMarkChunk(sample.chunkKey())) {
                 if (!gridJitter || chunkCentric || session.markGridCell(gridCellKey(sample.x(), sample.z()))) {
                     return sample;
                 }

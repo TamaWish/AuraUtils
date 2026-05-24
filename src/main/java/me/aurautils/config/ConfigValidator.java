@@ -3,6 +3,7 @@ package me.aurautils.config;
 import me.aurautils.AuraUtils;
 import me.aurautils.managers.MessagesManager;
 import me.aurautils.managers.RtpMode;
+import me.aurautils.util.HomeLimits;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
@@ -197,26 +198,10 @@ public final class ConfigValidator {
 
     private static void validateHomePermissionLimits(FileConfiguration raw, List<String> warnings) {
         for (String node : raw.getStringList("homes.permission-limits")) {
-            if (parseHomeLimit(node) < 0) {
+            if (HomeLimits.parseLimit(node) < 0) {
                 warnings.add("homes.permission-limits entry '" + node
                         + "' does not end with a numeric limit and will be ignored");
             }
-        }
-    }
-
-    private static int parseHomeLimit(String permissionNode) {
-        if (permissionNode == null) {
-            return -1;
-        }
-        String trimmed = permissionNode.trim();
-        int lastDot = trimmed.lastIndexOf('.');
-        if (lastDot < 0 || lastDot == trimmed.length() - 1) {
-            return -1;
-        }
-        try {
-            return Integer.parseInt(trimmed.substring(lastDot + 1));
-        } catch (NumberFormatException ignored) {
-            return -1;
         }
     }
 

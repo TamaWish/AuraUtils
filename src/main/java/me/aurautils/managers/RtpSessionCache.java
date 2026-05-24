@@ -47,12 +47,9 @@ public final class RtpSessionCache {
         return best;
     }
 
-    public boolean markChunkTried(long chunkKey) {
+    /** @return {@code true} if this chunk was not previously tried in this search session */
+    public boolean tryMarkChunk(long chunkKey) {
         return triedChunks.add(chunkKey);
-    }
-
-    public boolean hasTriedChunk(long chunkKey) {
-        return triedChunks.contains(chunkKey);
     }
 
     public boolean markGridCell(long cellKey) {

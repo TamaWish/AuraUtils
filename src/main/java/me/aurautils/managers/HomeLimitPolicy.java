@@ -1,6 +1,7 @@
 package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.util.HomeLimits;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public interface HomeLimitPolicy {
             }
 
             for (String limitNode : limitNodes) {
-                int limit = parseHomeLimit(limitNode);
+                int limit = HomeLimits.parseLimit(limitNode);
                 if (limit < 0) {
                     continue;
                 }
@@ -44,22 +45,6 @@ public interface HomeLimitPolicy {
                 }
             }
             return highestConfiguredLimit;
-        }
-
-        private static int parseHomeLimit(String permissionNode) {
-            if (permissionNode == null) {
-                return -1;
-            }
-            String trimmed = permissionNode.trim();
-            int lastDot = trimmed.lastIndexOf('.');
-            if (lastDot < 0 || lastDot == trimmed.length() - 1) {
-                return -1;
-            }
-            try {
-                return Integer.parseInt(trimmed.substring(lastDot + 1));
-            } catch (NumberFormatException ignored) {
-                return -1;
-            }
         }
     }
 }
