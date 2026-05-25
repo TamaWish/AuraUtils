@@ -20,9 +20,13 @@ import org.bukkit.persistence.PersistentDataType;
 public class MenuListener implements Listener {
 
     private final AuraUtils plugin;
+    private final org.bukkit.NamespacedKey actionKey;
+    private final org.bukkit.NamespacedKey idKey;
 
     public MenuListener(AuraUtils plugin) {
         this.plugin = plugin;
+        this.actionKey = new org.bukkit.NamespacedKey(plugin, "action");
+        this.idKey = new org.bukkit.NamespacedKey(plugin, "id");
     }
 
     @EventHandler
@@ -42,9 +46,9 @@ public class MenuListener implements Listener {
         }
 
         String action = item.getItemMeta().getPersistentDataContainer().get(
-                new org.bukkit.NamespacedKey(plugin, "action"), PersistentDataType.STRING);
+            actionKey, PersistentDataType.STRING);
         String id = item.getItemMeta().getPersistentDataContainer().get(
-                new org.bukkit.NamespacedKey(plugin, "id"), PersistentDataType.STRING);
+            idKey, PersistentDataType.STRING);
 
         if (action == null) {
             return;

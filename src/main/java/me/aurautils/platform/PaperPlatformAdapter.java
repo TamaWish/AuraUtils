@@ -21,6 +21,7 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
     private final boolean asyncChunkLoadAvailable;
     private final Method createInventoryWithComponent;
     private final boolean componentInventoryTitlesAvailable;
+    private final Method hasChangedPosition;
 
     public PaperPlatformAdapter(AuraUtils plugin) {
         super(plugin);
@@ -47,6 +48,13 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
         }
         this.createInventoryWithComponent = inventoryMethod;
         this.componentInventoryTitlesAvailable = inventoryMethod != null;
+
+        Method positionMethod = null;
+        try {
+            positionMethod = PlayerMoveEvent.class.getMethod("hasChangedPosition");
+        } catch (NoSuchMethodException ignored) {
+        }
+        this.hasChangedPosition = positionMethod;
     }
 
     @Override
@@ -131,7 +139,6 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
         if (horizontalOnly) {
             return hasHorizontalBlockChange(event);
         }
-        Method hasChangedPosition = resolveHasChangedPosition();
         if (hasChangedPosition != null) {
             try {
                 return (boolean) hasChangedPosition.invoke(event);
@@ -144,15 +151,7 @@ public class PaperPlatformAdapter extends SpigotPlatformAdapter {
 
     @Override
     public boolean usesEventBasedMovementDetection() {
-        return resolveHasChangedPosition() != null;
-    }
-
-    private Method resolveHasChangedPosition() {
-        try {
-            return PlayerMoveEvent.class.getMethod("hasChangedPosition");
-        } catch (NoSuchMethodException e) {
-            return null;
-        }
+        return hasChangedPosition != null;
     }
 
     private static boolean hasHorizontalBlockChange(PlayerMoveEvent event) {

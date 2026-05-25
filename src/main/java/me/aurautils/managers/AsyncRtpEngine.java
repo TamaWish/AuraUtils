@@ -148,7 +148,7 @@ public class AsyncRtpEngine {
         private int tried;
         private int pendingLoads;
         private int lastBandIndex = -1;
-        private boolean finished;
+        private volatile boolean finished;
         private BukkitTask timerTask;
 
         private SearchTask(UUID playerId, World world, Location from, int centerX, int centerZ,
@@ -272,6 +272,7 @@ public class AsyncRtpEngine {
             Location probe = new Location(world, x + 0.5, from.getY(), z + 0.5);
 
             Runnable onProbeFinished = () -> {
+                // pendingLoads is only touched on the main thread (ChunkLoadService -> PlatformAdapter.runOnMain).
                 pendingLoads--;
                 maybeFinishSearch();
             };
@@ -340,7 +341,7 @@ public class AsyncRtpEngine {
         }
 
         private void maybeFinishSearch() {
-            if (!finished && tried >= maxAttempts && pendingLoads == 0) {
+            if (tried >= maxAttempts && pendingLoads == 0) {
                 Player player = plugin.getServer().getPlayer(playerId);
                 if (player != null && player.isOnline()) {
                     finishSearch(player);
@@ -350,25 +351,33 @@ public class AsyncRtpEngine {
             }
         }
 
-        private synchronized void finishSearch(Player player) {
-            if (finished) {
+        private void finishSearch(Player player) {
+            FinalizeResult result = finalizeSearch();
+            if (!result.claimed()) {
                 return;
+            }
+            if (result.destination() == null) {
+                completeFailure();
+            } else {
+                completeSuccess(player, result.destination());
+            }
+        }
+
+        private record FinalizeResult(boolean claimed, Location destination) {}
+
+        /** Picks the best candidate and marks the search finished; idempotent when already finished. */
+        private synchronized FinalizeResult finalizeSearch() {
+            if (finished) {
+                return new FinalizeResult(false, null);
             }
             RtpCandidate best = candidates.stream()
                     .min(Comparator.comparingInt(RtpCandidate::hazardScore))
                     .orElse(null);
-            if (best != null) {
-                succeed(player, best.location());
-            } else {
-                fail();
-            }
+            finished = true;
+            return new FinalizeResult(true, best != null ? best.location() : null);
         }
 
-        private void succeed(Player player, Location destination) {
-            if (finished) {
-                return;
-            }
-            finished = true;
+        private void completeSuccess(Player player, Location destination) {
             stop();
 
             Runnable complete = () -> finishSuccess(player, from, destination, cooldownSeconds, rtpCountdown, handler);
@@ -387,10 +396,21 @@ public class AsyncRtpEngine {
         }
 
         private void fail() {
-            if (finished) {
+            if (!markFailed()) {
                 return;
             }
+            completeFailure();
+        }
+
+        private synchronized boolean markFailed() {
+            if (finished) {
+                return false;
+            }
             finished = true;
+            return true;
+        }
+
+        private void completeFailure() {
             stop();
             adaptiveState.recordFailure();
             Player player = plugin.getServer().getPlayer(playerId);

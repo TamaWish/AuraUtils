@@ -46,6 +46,7 @@ public class MessagesManager {
     private final GsonComponentSerializer gson = GsonComponentSerializer.gson();
 
     private final Map<String, Map<String, String>> bundles = new HashMap<>();
+    private final Map<String, String> metaPrefixByLocale = new HashMap<>();
     private String defaultLocale = "en";
     private String fallbackLocale = "en";
     private boolean useClientLocale = true;
@@ -70,6 +71,7 @@ public class MessagesManager {
         }
 
         bundles.clear();
+        metaPrefixByLocale.clear();
         File[] files = messagesDir.listFiles((dir, name) -> name.endsWith(".yml"));
         if (files != null) {
             for (File file : files) {
@@ -113,8 +115,7 @@ public class MessagesManager {
     }
 
     private void refreshPrefix() {
-        File defaultFile = new File(new File(plugin.getDataFolder(), "messages"), defaultLocale + ".yml");
-        prefixTemplate = YamlConfiguration.loadConfiguration(defaultFile).getString("meta.prefix", "");
+        prefixTemplate = metaPrefixByLocale.get(defaultLocale);
         if (prefixTemplate == null || prefixTemplate.isEmpty()) {
             prefixTemplate = "<dark_gray>[<aqua>Aura</aqua>]</dark_gray> ";
         }
@@ -128,13 +129,19 @@ public class MessagesManager {
     private void loadBundle(String locale, YamlConfiguration diskOverlay) {
         Map<String, String> flat = new HashMap<>();
         Map<String, String> jarFlat = new HashMap<>();
+        String metaPrefix = null;
         YamlConfiguration bundled = readBundledConfig(locale);
         if (bundled != null) {
             flattenConfig(bundled, jarFlat);
             flat.putAll(jarFlat);
+            metaPrefix = readMetaPrefix(bundled);
         }
         if (diskOverlay != null) {
             flattenConfig(diskOverlay, flat);
+            String diskPrefix = readMetaPrefix(diskOverlay);
+            if (diskPrefix != null && !diskPrefix.isEmpty()) {
+                metaPrefix = diskPrefix;
+            }
         }
         sanitizeStaleToggleTags(flat, jarFlat);
         for (Map.Entry<String, String> builtin : BUILTIN_TOGGLE.entrySet()) {
@@ -142,6 +149,9 @@ public class MessagesManager {
         }
         if (!flat.isEmpty()) {
             bundles.put(locale, flat);
+        }
+        if (metaPrefix != null && !metaPrefix.isEmpty()) {
+            metaPrefixByLocale.put(locale, metaPrefix);
         }
     }
 
@@ -188,6 +198,10 @@ public class MessagesManager {
                 flattenKeys(topKey, section, flat);
             }
         }
+    }
+
+    private String readMetaPrefix(YamlConfiguration config) {
+        return config.getString("meta.prefix", "");
     }
 
     private void flattenKeys(String prefix, ConfigurationSection section, Map<String, String> out) {

@@ -45,9 +45,13 @@ public class MenuManager {
     private static final int TPA_SLOT_MAIN_MENU = 26;
 
     private final AuraUtils plugin;
+    private final org.bukkit.NamespacedKey actionKey;
+    private final org.bukkit.NamespacedKey idKey;
 
     public MenuManager(AuraUtils plugin) {
         this.plugin = plugin;
+        this.actionKey = new org.bukkit.NamespacedKey(plugin, "action");
+        this.idKey = new org.bukkit.NamespacedKey(plugin, "id");
     }
 
     public void openMainMenu(Player player) {
@@ -317,9 +321,9 @@ public class MenuManager {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(color(displayName));
         meta.setLore(List.of(color("&7" + loreLine)));
-        meta.getPersistentDataContainer().set(pluginKey("action"), PersistentDataType.STRING, action);
+        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action);
         if (id != null) {
-            meta.getPersistentDataContainer().set(pluginKey("id"), PersistentDataType.STRING, id);
+            meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, id);
         }
         item.setItemMeta(meta);
         return item;
@@ -330,8 +334,8 @@ public class MenuManager {
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(color("&f" + displayName));
         meta.setLore(loreLines.stream().map(this::color).toList());
-        meta.getPersistentDataContainer().set(pluginKey("action"), PersistentDataType.STRING, action);
-        meta.getPersistentDataContainer().set(pluginKey("id"), PersistentDataType.STRING, id);
+        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action);
+        meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, id);
         item.setItemMeta(meta);
         return item;
     }
@@ -366,14 +370,10 @@ public class MenuManager {
         meta.setDisplayName(color(title));
         meta.setLore(List.of(color(loreLine)));
         meta.setOwningPlayer(plugin.getServer().getOfflinePlayer(ownerId));
-        meta.getPersistentDataContainer().set(pluginKey("action"), PersistentDataType.STRING, "tpa_info");
-        meta.getPersistentDataContainer().set(pluginKey("id"), PersistentDataType.STRING, ownerId.toString());
+        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, "tpa_info");
+        meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, ownerId.toString());
         item.setItemMeta(meta);
         return item;
-    }
-
-    private org.bukkit.NamespacedKey pluginKey(String key) {
-        return new org.bukkit.NamespacedKey(plugin, key);
     }
 
     private Inventory createMenu(UtilityMenuHolder holder, int size, String title) {
