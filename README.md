@@ -4,9 +4,15 @@ Lightweight utility plugin for Spigot and Paper servers.
 
 **Homes · Warps · TPA · Back · RTP · God · Fly · NoFall · NoHunger · GUI menu**
 
-[![bStats](https://img.shields.io/badge/bStats-AuraUtils-00AA00?logo=data:image/svg+xml;base64,)](https://bstats.org/plugin/bukkit/AuraUtils/33574)
-[![Modrinth](https://img.shields.io/badge/Modrinth-AuraUtils-1BD96A?logo=modrinth)](https://modrinth.com/project/aurautils)
-[![GitHub](https://img.shields.io/badge/GitHub-TamaWish%2FAuraUtils-181717?logo=github)](https://github.com/TamaWish/AuraUtils)
+[![Modrinth](https://img.shields.io/modrinth/dt/W2WxC84B?style=flat&logo=modrinth&label=downloads)](https://modrinth.com/project/aurautils)
+[![Spigot](https://img.shields.io/spiget/downloads/138193?style=flat&label=Spigot%20downloads&color=ED8106)](https://www.spigotmc.org/resources/aurautils.138193/)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat)](https://github.com/TamaWish/AuraUtils)
+[![bStats](https://img.shields.io/badge/bStats-AuraUtils-00AA00?style=flat)](https://bstats.org/plugin/bukkit/AuraUtils/33574)
+[![GitHub](https://img.shields.io/badge/GitHub-TamaWish%2FAuraUtils-181717?style=flat&logo=github)](https://github.com/TamaWish/AuraUtils)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord)](https://discord.gg/kbKZzxDETU)
+[![YouTube](https://img.shields.io/badge/YouTube-Showcase-FF0000?style=flat&logo=youtube)](https://youtu.be/fBpYOXKZQlc)
+
+[![Video Title](https://img.youtube.com/vi/fBpYOXKZQlc/0.jpg)](https://youtu.be/fBpYOXKZQlc)
 
 ---
 
