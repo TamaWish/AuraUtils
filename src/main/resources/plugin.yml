@@ -1,0 +1,165 @@
+name: AuraUtils
+version: ${project.version}
+main: me.aurautils.AuraUtils
+api-version: "1.21"
+description: Utility bundle — TPA, God, Fly, and more.
+author: YourName
+
+commands:
+  menu:
+    description: Open the main utility GUI
+    usage: /menu
+    permission: aura.menu
+  back:
+    description: Return to your last teleport location
+    usage: /back
+    permission: aura.back
+  warp:
+    description: Teleport to a warp or open the warp GUI
+    usage: /warp [name|list]
+    aliases: [warplist]
+    permission: aura.warp
+  setwarp:
+    description: Create or update a warp
+    usage: /setwarp <name>
+    permission: aura.warp.set
+  delwarp:
+    description: Delete a warp
+    usage: /delwarp <name>
+    permission: aura.warp.delete
+  home:
+    description: Teleport to a home or open the home GUI
+    usage: /home [name|list]
+    aliases: [homelist]
+    permission: aura.home
+  sethome:
+    description: Create or update a home
+    usage: /sethome <name>
+    permission: aura.home.set
+  delhome:
+    description: Delete a home
+    usage: /delhome <name>
+    permission: aura.home.delete
+  tpa:
+    description: Send a TPA request to a player or open the TPA GUI
+    usage: /tpa <player>|list
+    aliases: [tplist]
+    permission: aura.tpa
+  tpaccept:
+    description: Accept a pending TPA request
+    usage: /tpaccept
+    permission: aura.tpa
+  tpadeny:
+    description: Deny a pending TPA request
+    usage: /tpadeny
+    permission: aura.tpa
+  tpacancel:
+    description: Cancel a pending teleport countdown
+    usage: /tpacancel
+    aliases: [tpcancel, auracancel]
+    permission: aura.use
+  god:
+    description: Toggle god mode (invincibility)
+    usage: /god [player]
+    permission: aura.god
+  fly:
+    description: Toggle fly mode
+    usage: /fly [player]
+    permission: aura.fly
+  nofall:
+    description: Toggle fall damage
+    usage: /nofall [player]
+    permission: aura.nofall
+  nohunger:
+    description: Toggle hunger depletion
+    usage: /nohunger [player]
+    permission: aura.nohunger
+  rtp:
+    description: Randomly teleport to a safe location
+    usage: /rtp
+    permission: aura.rtp
+  aura:
+    description: Show AuraUtils info and commands
+    usage: /aura
+    permission: aura.use
+
+permissions:
+  aura.use:
+    description: Basic access
+    default: true
+  aura.menu:
+    description: Open the utility menu
+    default: true
+  aura.back:
+    description: Return to last teleport location
+    default: true
+  aura.warp:
+    description: Use warp commands
+    default: true
+  aura.warp.set:
+    description: Set warps
+    default: op
+  aura.warp.delete:
+    description: Delete warps
+    default: op
+  aura.home:
+    description: Use home commands
+    default: true
+  aura.home.set:
+    description: Set homes
+    default: true
+  aura.home.delete:
+    description: Delete homes
+    default: true
+  aura.tpa:
+    description: Use TPA commands
+    default: true
+  aura.god:
+    description: Use god mode
+    default: op
+  aura.god.others:
+    description: Toggle god mode on others
+    default: op
+  aura.fly:
+    description: Use fly
+    default: op
+  aura.fly.others:
+    description: Toggle fly on others
+    default: op
+  aura.nofall:
+    description: Toggle fall damage
+    default: op
+  aura.nofall.others:
+    description: Toggle fall damage on others
+    default: op
+  aura.nohunger:
+    description: Toggle hunger
+    default: op
+  aura.nohunger.others:
+    description: Toggle hunger on others
+    default: op
+  aura.rtp:
+    description: Use random teleport
+    default: true
+  aura.admin:
+    description: All AuraUtils permissions
+    default: op
+    children:
+      aura.god: true
+      aura.god.others: true
+      aura.fly: true
+      aura.fly.others: true
+      aura.nofall: true
+      aura.nofall.others: true
+      aura.nohunger: true
+      aura.nohunger.others: true
+      aura.tpa: true
+      aura.menu: true
+      aura.back: true
+      aura.warp: true
+      aura.warp.set: true
+      aura.warp.delete: true
+      aura.home: true
+      aura.home.set: true
+      aura.home.delete: true
+      aura.rtp: true

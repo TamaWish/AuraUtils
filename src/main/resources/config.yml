@@ -1,0 +1,38 @@
+# AuraUtils Configuration
+
+# TPA settings
+tpa:
+  # How long (seconds) a TPA request stays pending before expiring
+  timeout: 60
+
+# Random teleport settings
+rtp:
+  # Search radius around world spawn in blocks
+  radius: 2000
+  # Minimum horizontal distance from your current position
+  minDistance: 250
+  # Number of random attempts before giving up
+  attempts: 30
+  # Number of attempts to try per server tick (spreads load)
+  attemptsPerTick: 5
+  # Countdown (seconds) before executing the teleport; 0 = immediate
+  countdown: 5
+
+# Global teleport settings used by warp / home / back / tpa
+teleport:
+  # Countdown seconds before teleport; 0 = instant
+  countdown: 5
+  # How to show the countdown: chat | actionbar | both | none
+  countdown-display: both
+  # Chat is always shown at the start. Also show chat when these seconds remain.
+  # Empty list = chat every second. Default reduces spam to 3, 2, 1.
+  chat-at: [3, 2, 1]
+  # Cancel the countdown if the player moves
+  cancel-on-move: true
+  # Cancel the countdown if the player takes damage
+  cancel-on-damage: false
+  # Play short sounds on start / success / cancel
+  sound: true
+
+# Messages prefix
+prefix: "&8[&bAura&8] &r"
