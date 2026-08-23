@@ -8,6 +8,7 @@ import me.aurautils.managers.TeleportStoreManager;
 import me.aurautils.managers.TeleportHelper;
 import me.aurautils.managers.TpaManager;
 import me.aurautils.menus.MenuManager;
+import me.aurautils.util.SchedulerHelper;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.AdvancedPie;
 import org.bstats.charts.SimplePie;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public final class AuraUtils extends JavaPlugin {
 
     private static AuraUtils instance;
+    private SchedulerHelper scheduler;
     private PlayerDataManager playerDataManager;
     private TpaManager tpaManager;
     private TeleportStoreManager teleportStoreManager;
@@ -33,6 +35,9 @@ public final class AuraUtils extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+
+        // Cross-platform scheduler (Spigot / Paper / Folia)
+        scheduler = new SchedulerHelper(this);
 
         // bStats metrics (plugin id from https://bstats.org)
         setupMetrics();
@@ -165,10 +170,16 @@ public final class AuraUtils extends JavaPlugin {
             teleportStoreManager.save();
         }
 
+        // Cancel any remaining FoliaLib tasks
+        if (scheduler != null) {
+            scheduler.cancelAllTasks();
+        }
+
         getLogger().info("AuraUtils disabled.");
     }
 
     public static AuraUtils getInstance() { return instance; }
+    public SchedulerHelper getScheduler() { return scheduler; }
     public PlayerDataManager getPlayerDataManager() { return playerDataManager; }
     public TpaManager getTpaManager() { return tpaManager; }
     public TeleportStoreManager getTeleportStoreManager() { return teleportStoreManager; }

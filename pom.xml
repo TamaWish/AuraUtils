@@ -6,11 +6,11 @@
 
     <groupId>me.aurautils</groupId>
     <artifactId>AuraUtils</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>AuraUtils</name>
-    <description>Utility plugin bundle: TPA, God Mode, Fly, and more.</description>
+    <description>Utility plugin bundle: TPA, God Mode, Fly, homes, warps, RTP — Spigot, Paper &amp; Folia.</description>
 
     <properties>
         <!-- Spigot 1.21.x requires Java 21; targeting 25 breaks shade (class file major version 69) -->
@@ -25,6 +25,10 @@
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
+        <repository>
+            <id>tcoded-releases</id>
+            <url>https://repo.tcoded.com/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -38,6 +42,13 @@
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
             <version>3.2.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Cross-platform scheduler: Spigot + Paper + Folia -->
+        <dependency>
+            <groupId>com.tcoded</groupId>
+            <artifactId>FoliaLib</artifactId>
+            <version>0.5.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -59,6 +70,10 @@
                         <relocation>
                             <pattern>org.bstats</pattern>
                             <shadedPattern>me.aurautils.libs.bstats</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.tcoded.folialib</pattern>
+                            <shadedPattern>me.aurautils.libs.folialib</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

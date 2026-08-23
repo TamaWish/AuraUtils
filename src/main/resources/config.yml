@@ -1,11 +1,17 @@
 # AuraUtils Configuration
+# Restart or use /aura reload (if available) after editing.
+# All teleport commands (home, warp, back, TPA, RTP, menu) share the same countdown system.
 
-# TPA settings
+# ---------------------------------------------------------------------------
+# TPA
+# ---------------------------------------------------------------------------
 tpa:
   # How long (seconds) a TPA request stays pending before expiring
   timeout: 60
 
-# Random teleport settings
+# ---------------------------------------------------------------------------
+# Random teleport (/rtp)
+# ---------------------------------------------------------------------------
 rtp:
   # Search radius around world spawn in blocks
   radius: 2000
@@ -16,23 +22,50 @@ rtp:
   # Number of attempts to try per server tick (spreads load)
   attemptsPerTick: 5
   # Countdown (seconds) before executing the teleport; 0 = immediate
+  # Falls back to teleport.countdown when unset
   countdown: 5
 
-# Global teleport settings used by warp / home / back / tpa
+# ---------------------------------------------------------------------------
+# Shared teleport settings (warp / home / back / tpa / rtp / menu)
+# ---------------------------------------------------------------------------
 teleport:
   # Countdown seconds before teleport; 0 = instant
   countdown: 5
-  # How to show the countdown: chat | actionbar | both | none
+
+  # How to show the countdown in chat / action bar:
+  #   chat      – chat messages only
+  #   actionbar – action bar only
+  #   both      – chat + action bar (default)
+  #   none      – no chat or action bar (title can still show)
   countdown-display: both
-  # Chat is always shown at the start. Also show chat when these seconds remain.
-  # Empty list = chat every second. Default reduces spam to 3, 2, 1.
+
+  # Chat is ALWAYS shown at the start of the countdown.
+  # Also show a chat line when these remaining seconds are reached.
+  # Examples:
+  #   [3, 2, 1]     → messages at start (e.g. 5) then 3, 2, 1  (skips 4 – reduces spam)
+  #   [5, 4, 3, 2, 1] → every second when countdown is 5
+  #   []            → chat every second (full spam)
+  # Default reduces spam while still giving clear feedback.
   chat-at: [3, 2, 1]
-  # Cancel the countdown if the player moves
+
+  # Show a large title (remaining seconds) + subtitle (destination) during countdown
+  title: true
+
+  # Cancel the countdown if the player moves more than a tiny amount
   cancel-on-move: true
+
   # Cancel the countdown if the player takes damage
   cancel-on-damage: false
-  # Play short sounds on start / success / cancel
+
+  # Play short sounds on start / each tick / success / cancel
   sound: true
 
-# Messages prefix
+  # When sound is true, raise the note-block pitch as the countdown approaches 0
+  # (starts lower, ends higher – makes the final seconds more noticeable)
+  sound-rising-pitch: true
+
+# ---------------------------------------------------------------------------
+# Messages
+# ---------------------------------------------------------------------------
+# Chat prefix (supports & color codes)
 prefix: "&8[&bAura&8] &r"

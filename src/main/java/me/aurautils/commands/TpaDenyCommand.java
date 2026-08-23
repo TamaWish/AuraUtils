@@ -9,11 +9,21 @@ import org.bukkit.entity.Player;
 public class TpaDenyCommand implements CommandExecutor {
 
     private final AuraUtils plugin;
-    public TpaDenyCommand(AuraUtils plugin) { this.plugin = plugin; }
+
+    public TpaDenyCommand(AuraUtils plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!(sender instanceof Player p)) { sender.sendMessage("Console cannot use TPA."); return true; }
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage("Console cannot use TPA.");
+            return true;
+        }
+        if (!p.hasPermission("aura.tpa")) {
+            p.sendMessage(plugin.prefix("&cYou don't have permission."));
+            return true;
+        }
         if (!plugin.getTpaManager().hasPending(p.getUniqueId())) {
             p.sendMessage(plugin.prefix("&cYou have no pending TPA request."));
             return true;
