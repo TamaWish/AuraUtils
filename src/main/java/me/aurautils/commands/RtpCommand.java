@@ -1,5 +1,6 @@
 package me.aurautils.commands;
 
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 import me.aurautils.AuraUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,7 +12,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -65,58 +65,60 @@ public class RtpCommand implements CommandExecutor {
 
         var teleportHelper = plugin.getTeleportHelper();
 
-        new BukkitRunnable() {
-            final ThreadLocalRandom random = ThreadLocalRandom.current();
-            final WorldBorder border = world.getWorldBorder();
-            int tried = 0;
+        // Run search on the player's entity scheduler so block reads stay region-safe on Folia
+        final int[] tried = { 0 };
+        final ThreadLocalRandom random = ThreadLocalRandom.current();
+        final WorldBorder border = world.getWorldBorder();
 
-            @Override
-            public void run() {
-                if (!plugin.isEnabled()) {
-                    cancel();
-                    return;
+        final WrappedTask[] taskHolder = new WrappedTask[1];
+        taskHolder[0] = plugin.getScheduler().runAtEntityTimer(player, () -> {
+            WrappedTask self = taskHolder[0];
+            if (!plugin.isEnabled()) {
+                if (self != null) self.cancel();
+                return;
+            }
+
+            for (int k = 0; k < attemptsPerTick && tried[0] < attempts; k++, tried[0]++) {
+                int x = world.getSpawnLocation().getBlockX() + random.nextInt(-radius, radius + 1);
+                int z = world.getSpawnLocation().getBlockZ() + random.nextInt(-radius, radius + 1);
+
+                long dx = x - from.getBlockX();
+                long dz = z - from.getBlockZ();
+                if (minDistanceSquared > 0 && (dx * dx + dz * dz) < minDistanceSquared) {
+                    continue;
                 }
 
-                for (int k = 0; k < attemptsPerTick && tried < attempts; k++, tried++) {
-                    int x = world.getSpawnLocation().getBlockX() + random.nextInt(-radius, radius + 1);
-                    int z = world.getSpawnLocation().getBlockZ() + random.nextInt(-radius, radius + 1);
+                Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
+                if (border != null && !border.isInside(borderCheck)) {
+                    continue;
+                }
 
-                    long dx = x - from.getBlockX();
-                    long dz = z - from.getBlockZ();
-                    if (minDistanceSquared > 0 && (dx * dx + dz * dz) < minDistanceSquared) {
-                        continue;
-                    }
-
-                    Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
-                    if (border != null && !border.isInside(borderCheck)) {
-                        continue;
-                    }
-
-                    Block surface = world.getHighestBlockAt(x, z);
-                    Location teleportLocation = buildSafeLocation(surface);
-                    if (teleportLocation != null) {
-                        if (player.isOnline()) {
-                            if (rtpCountdown > 0) {
-                                teleportHelper.scheduleTeleport(player, teleportLocation, rtpCountdown, "a random location");
-                            } else {
-                                if (teleportHelper.teleportExact(player, teleportLocation)) {
-                                    player.sendMessage(plugin.prefix("&aTeleported to &ba random location&a."));
-                                }
+                // Highest-block lookup is performed on the entity thread; on Folia this is
+                // best-effort for distant chunks (region may need to be loaded first).
+                Block surface = world.getHighestBlockAt(x, z);
+                Location teleportLocation = buildSafeLocation(surface);
+                if (teleportLocation != null) {
+                    if (player.isOnline()) {
+                        if (rtpCountdown > 0) {
+                            teleportHelper.scheduleTeleport(player, teleportLocation, rtpCountdown, "a random location");
+                        } else {
+                            if (teleportHelper.teleportExact(player, teleportLocation)) {
+                                player.sendMessage(plugin.prefix("&aTeleported to &ba random location&a."));
                             }
                         }
-                        this.cancel();
-                        return;
                     }
-                }
-
-                if (tried >= attempts) {
-                    if (player.isOnline()) {
-                        player.sendMessage(plugin.prefix("&cCould not find a safe teleport location. Try again."));
-                    }
-                    this.cancel();
+                    if (self != null) self.cancel();
+                    return;
                 }
             }
-        }.runTaskTimer(plugin, 0L, 1L);
+
+            if (tried[0] >= attempts) {
+                if (player.isOnline()) {
+                    player.sendMessage(plugin.prefix("&cCould not find a safe teleport location. Try again."));
+                }
+                if (self != null) self.cancel();
+            }
+        }, 0L, 1L);
 
         return true;
     }

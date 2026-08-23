@@ -5,7 +5,7 @@ import org.bukkit.GameMode;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class PlayerDataManager {
     private volatile boolean shuttingDown = false;
 
     /** Pending deferred save task (cancelled / flushed on shutdown). */
-    private BukkitTask pendingSaveTask = null;
+    private WrappedTask pendingSaveTask = null;
 
     /** Delay before writing to disk after a non-toggle change (ticks). */
     private static final long SAVE_DELAY_TICKS = 40L; // 2 seconds
@@ -132,7 +132,7 @@ public class PlayerDataManager {
             writeToDisk();
             return;
         }
-        pendingSaveTask = plugin.getServer().getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        pendingSaveTask = plugin.getScheduler().runAsyncLater(() -> {
             // If we were disabled while waiting, still write (but do not re-schedule)
             writeToDisk();
             pendingSaveTask = null;
@@ -260,7 +260,7 @@ public class PlayerDataManager {
         scheduleFlyReapply(player);
 
         // God / nohunger: single delayed apply is enough (event-based / soft state)
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        plugin.getScheduler().runAtEntityLater(player, () -> {
             if (!player.isOnline() || !plugin.isEnabled() || shuttingDown) {
                 return;
             }
@@ -305,7 +305,7 @@ public class PlayerDataManager {
         }
         if (!isFly(player.getUniqueId())) {
             // Still push a correct "off" state once in case abilities were left on
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            plugin.getScheduler().runAtEntityLater(player, () -> {
                 if (player.isOnline() && plugin.isEnabled() && !shuttingDown) {
                     reapplyFly(player);
                 }
@@ -313,7 +313,7 @@ public class PlayerDataManager {
             return;
         }
         for (long delay : new long[]{1L, 5L, 20L}) {
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            plugin.getScheduler().runAtEntityLater(player, () -> {
                 if (!plugin.isEnabled() || shuttingDown || !player.isOnline()) {
                     return;
                 }

@@ -2,7 +2,8 @@ name: AuraUtils
 version: ${project.version}
 main: me.aurautils.AuraUtils
 api-version: "1.21"
-description: Utility bundle — TPA, God, Fly, and more.
+folia-supported: true
+description: Utility bundle — TPA, God, Fly, homes, warps, RTP, and more. Spigot, Paper & Folia.
 author: YourName
 
 commands:
@@ -54,7 +55,7 @@ commands:
     usage: /tpadeny
     permission: aura.tpa
   tpacancel:
-    description: Cancel a pending teleport countdown
+    description: Cancel a pending teleport countdown or outgoing TPA request
     usage: /tpacancel
     aliases: [tpcancel, auracancel]
     permission: aura.use
@@ -85,7 +86,7 @@ commands:
 
 permissions:
   aura.use:
-    description: Basic access
+    description: Basic access (info, cancel pending teleport)
     default: true
   aura.menu:
     description: Open the utility menu
@@ -141,19 +142,14 @@ permissions:
   aura.rtp:
     description: Use random teleport
     default: true
+  aura.teleport.bypass:
+    description: Skip teleport countdown (instant teleports for home/warp/back/tpa/rtp)
+    default: op
   aura.admin:
     description: All AuraUtils permissions
     default: op
     children:
-      aura.god: true
-      aura.god.others: true
-      aura.fly: true
-      aura.fly.others: true
-      aura.nofall: true
-      aura.nofall.others: true
-      aura.nohunger: true
-      aura.nohunger.others: true
-      aura.tpa: true
+      aura.use: true
       aura.menu: true
       aura.back: true
       aura.warp: true
@@ -162,4 +158,14 @@ permissions:
       aura.home: true
       aura.home.set: true
       aura.home.delete: true
+      aura.tpa: true
+      aura.god: true
+      aura.god.others: true
+      aura.fly: true
+      aura.fly.others: true
+      aura.nofall: true
+      aura.nofall.others: true
+      aura.nohunger: true
+      aura.nohunger.others: true
       aura.rtp: true
+      aura.teleport.bypass: true

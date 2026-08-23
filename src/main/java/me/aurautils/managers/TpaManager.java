@@ -2,7 +2,7 @@ package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,6 +12,10 @@ import java.util.UUID;
 /**
  * Tracks pending TPA requests and handles automatic expiry.
  * Key = target UUID (who will accept/deny), Value = request details.
+ *
+ * <p>Only one pending request is allowed per target at a time.
+ * Requesters can cancel their own outgoing requests via
+ * {@link #cancelOutgoing(Player)} (wired to /tpacancel).
  */
 public class TpaManager {
 
@@ -20,7 +24,7 @@ public class TpaManager {
     /** target → pending request */
     private final Map<UUID, PendingRequest> pendingRequests = new HashMap<>();
     /** target → expiry task */
-    private final Map<UUID, BukkitTask> expiryTasks = new HashMap<>();
+    private final Map<UUID, WrappedTask> expiryTasks = new HashMap<>();
 
     public TpaManager(AuraUtils plugin) {
         this.plugin = plugin;
@@ -46,8 +50,8 @@ public class TpaManager {
         );
         pendingRequests.put(targetId, request);
 
-        int timeout = plugin.getConfig().getInt("tpa.timeout", 60);
-        BukkitTask task = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        int timeout = Math.max(1, plugin.getConfig().getInt("tpa.timeout", 60));
+        WrappedTask task = plugin.getScheduler().runLater(() -> {
             expire(targetId, request);
         }, timeout * 20L);
 
@@ -67,12 +71,24 @@ public class TpaManager {
         return request != null ? request.requesterName : null;
     }
 
+    /** True if {@code targetId} has an incoming pending request. */
     public boolean hasPending(UUID targetId) {
         return pendingRequests.containsKey(targetId);
     }
 
+    /** True if this player has at least one outgoing request waiting. */
+    public boolean hasOutgoing(UUID requesterId) {
+        for (PendingRequest request : pendingRequests.values()) {
+            if (request.requesterId.equals(requesterId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * Accept: teleport requester to target's current location, then clean up.
+     * Accept: clear the request, notify both sides, then schedule (or run) the teleport
+     * for the requester to the target's current location.
      */
     public void accept(Player target) {
         UUID targetId = target.getUniqueId();
@@ -90,12 +106,14 @@ public class TpaManager {
             return;
         }
 
+        // Explicit accept feedback (countdown messages alone are not always obvious)
+        requester.sendMessage(plugin.prefix("&a" + target.getName() + " &aaccepted your TPA request."));
+        target.sendMessage(plugin.prefix("&aYou accepted &e" + requester.getName() + "&a's TPA request."));
+
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         var helper = plugin.getTeleportHelper();
-        String label = target.getName(); // shown as destination name in countdown
         if (tpCountdown > 0) {
             helper.scheduleTeleport(requester, target.getLocation(), tpCountdown, target.getName());
-            target.sendMessage(plugin.prefix("&e" + requester.getName() + " &ahas a teleport scheduled to you."));
         } else if (helper.teleportExact(requester, target.getLocation())) {
             requester.sendMessage(plugin.prefix("&aTeleported to &b" + target.getName() + "&a!"));
             target.sendMessage(plugin.prefix("&e" + requester.getName() + " &ahas teleported to you."));
@@ -120,6 +138,39 @@ public class TpaManager {
             requester.sendMessage(plugin.prefix("&c" + target.getName() + " &cdeclined your TPA request."));
         }
         target.sendMessage(plugin.prefix("&cYou denied &e" + request.requesterName + "&c's TPA request."));
+    }
+
+    /**
+     * Cancel all outgoing TPA requests from this player (requester side).
+     * Notifies online targets. Does not affect teleport countdowns.
+     *
+     * @return number of requests cancelled
+     */
+    public int cancelOutgoing(Player requester) {
+        if (requester == null) {
+            return 0;
+        }
+        UUID requesterId = requester.getUniqueId();
+        String requesterName = requester.getName();
+        int cancelled = 0;
+
+        Iterator<Map.Entry<UUID, PendingRequest>> it = pendingRequests.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<UUID, PendingRequest> entry = it.next();
+            if (!entry.getValue().requesterId.equals(requesterId)) {
+                continue;
+            }
+            UUID targetId = entry.getKey();
+            it.remove();
+            cancelTask(targetId);
+            cancelled++;
+
+            Player target = plugin.getServer().getPlayer(targetId);
+            if (target != null && target.isOnline()) {
+                target.sendMessage(plugin.prefix("&eTPA request from &b" + requesterName + " &ewas cancelled."));
+            }
+        }
+        return cancelled;
     }
 
     /**
@@ -182,7 +233,7 @@ public class TpaManager {
     }
 
     private void cancelTask(UUID id) {
-        BukkitTask task = expiryTasks.remove(id);
+        WrappedTask task = expiryTasks.remove(id);
         if (task != null) {
             task.cancel();
         }
@@ -195,7 +246,7 @@ public class TpaManager {
 
     /** Cancel all pending tasks on shutdown. Never schedules anything. */
     public void cancelAll() {
-        for (BukkitTask task : expiryTasks.values()) {
+        for (WrappedTask task : expiryTasks.values()) {
             if (task != null) {
                 task.cancel();
             }

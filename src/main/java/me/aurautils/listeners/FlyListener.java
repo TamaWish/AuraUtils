@@ -65,7 +65,7 @@ public class FlyListener implements Listener {
         }
         Player player = event.getPlayer();
         // Delay one tick so the new game mode is applied first
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        plugin.getScheduler().runAtEntityLater(player, () -> {
             if (plugin.isEnabled() && player.isOnline()) {
                 plugin.getPlayerDataManager().reapplyFly(player);
             }
