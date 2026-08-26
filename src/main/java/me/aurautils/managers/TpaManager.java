@@ -4,10 +4,10 @@ import me.aurautils.AuraUtils;
 import org.bukkit.entity.Player;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tracks pending TPA requests and handles automatic expiry.
@@ -21,25 +21,46 @@ public class TpaManager {
 
     private final AuraUtils plugin;
 
-    /** target → pending request */
-    private final Map<UUID, PendingRequest> pendingRequests = new HashMap<>();
+    /** target → pending request (concurrent for Folia cross-region safety) */
+    private final Map<UUID, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
     /** target → expiry task */
-    private final Map<UUID, WrappedTask> expiryTasks = new HashMap<>();
+    private final Map<UUID, WrappedTask> expiryTasks = new ConcurrentHashMap<>();
 
     public TpaManager(AuraUtils plugin) {
         this.plugin = plugin;
     }
 
     /**
-     * Send a TPA request from {@code from} to {@code to}.
-     * Returns false if the target already has a pending request or the plugin is disabled.
+     * Result of attempting to send a TPA (normal pending, trusted instant, or failure).
      */
-    public boolean sendRequest(Player from, Player to) {
+    public enum SendResult {
+        /** Request stored; target must /tpaccept. */
+        PENDING,
+        /** Target trusts the requester — teleport scheduled/executed immediately. */
+        TRUSTED_INSTANT,
+        /** Target already has a pending request. */
+        BUSY,
+        /** Plugin disabled or other hard failure. */
+        FAILED
+    }
+
+    /**
+     * Send a TPA request from {@code from} to {@code to}.
+     * If {@code to} has {@code from} on their trusted list, the request is
+     * auto-accepted (instant trusted TPA) and never enters the pending map.
+     */
+    public SendResult sendRequest(Player from, Player to) {
         if (!plugin.isEnabled()) {
-            return false;
+            return SendResult.FAILED;
         }
         if (pendingRequests.containsKey(to.getUniqueId())) {
-            return false;
+            return SendResult.BUSY;
+        }
+
+        // Trusted / instant TPA: target has added the requester to their list
+        if (plugin.getPlayerDataManager().isTrusted(to.getUniqueId(), from.getUniqueId())) {
+            executeTrustedTeleport(from, to);
+            return SendResult.TRUSTED_INSTANT;
         }
 
         UUID targetId = to.getUniqueId();
@@ -56,7 +77,41 @@ public class TpaManager {
         }, timeout * 20L);
 
         expiryTasks.put(targetId, task);
-        return true;
+        return SendResult.PENDING;
+    }
+
+    /**
+     * Auto-accept path when the target trusts the requester.
+     * Uses the same countdown system as a normal accept (unless countdown is 0
+     * or config forces trusted-instant, or the requester has aura.teleport.bypass).
+     * Runs teleport scheduling on the requester's entity thread for Folia safety.
+     */
+    private void executeTrustedTeleport(Player requester, Player target) {
+        requester.sendMessage(plugin.prefix("&aTrusted TPA: teleported to &e" + target.getName()
+                + " &a(you are on their trusted list)."));
+        target.sendMessage(plugin.prefix("&e" + requester.getName()
+                + " &ateleported to you via trusted TPA."));
+
+        int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        if (plugin.getConfig().getBoolean("tpa.trusted-instant", false)) {
+            tpCountdown = 0;
+        }
+
+        var helper = plugin.getTeleportHelper();
+        final int countdown = tpCountdown;
+        plugin.getScheduler().runAtEntity(requester, () -> {
+            if (!requester.isOnline() || !target.isOnline()) {
+                return;
+            }
+            if (countdown > 0) {
+                helper.scheduleTeleport(requester, target.getLocation(), countdown, target.getName());
+            } else if (helper.teleportExact(requester, target.getLocation())) {
+                requester.sendMessage(plugin.prefix("&aTeleported to &b" + target.getName() + "&a!"));
+                if (target.isOnline()) {
+                    target.sendMessage(plugin.prefix("&e" + requester.getName() + " &ahas teleported to you."));
+                }
+            }
+        });
     }
 
     /** Returns the requester UUID pending for {@code targetId}, or null. */

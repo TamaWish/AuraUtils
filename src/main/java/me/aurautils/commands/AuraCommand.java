@@ -37,6 +37,8 @@ public class AuraCommand implements CommandExecutor {
         sender.sendMessage(AuraUtils.colorize("  &e/tpaccept        &7- Accept TPA"));
         sender.sendMessage(AuraUtils.colorize("  &e/tpadeny         &7- Deny TPA"));
         sender.sendMessage(AuraUtils.colorize("  &e/tpacancel       &7- Cancel pending teleport"));
+        sender.sendMessage(AuraUtils.colorize("  &e/tpatrust &8<player|list> &7- Trusted TPA list"));
+        sender.sendMessage(AuraUtils.colorize("  &e/tpauntrust &8<player> &7- Remove from trusted"));
         sender.sendMessage(AuraUtils.colorize("  &e/warp &8[<name>|list] &7- Teleport to a warp or open GUI"));
         sender.sendMessage(AuraUtils.colorize("  &e/setwarp &8<name> &7- Set a warp"));
         sender.sendMessage(AuraUtils.colorize("  &e/home &8[<name>|list] &7- Teleport to a home or open GUI"));

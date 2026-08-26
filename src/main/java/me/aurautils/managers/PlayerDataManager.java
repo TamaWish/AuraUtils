@@ -2,6 +2,7 @@ package me.aurautils.managers;
 
 import me.aurautils.AuraUtils;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -9,27 +10,43 @@ import com.tcoded.folialib.wrapper.task.WrappedTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Persistent store for all per-player toggles and settings.
  * Toggle changes (god/fly/nofall/nohunger) force a synchronous save so state
  * is never lost on crash. Other changes may use deferred async save.
  * Shutdown always flushes synchronously and never schedules new tasks.
+ *
+ * <p>Trusted TPA lists are also stored here (one-way: owner trusts target →
+ * target may TPA to owner without confirmation). Uses concurrent collections
+ * so reads/writes remain safe across Folia region threads.
  */
 public class PlayerDataManager {
 
     private final AuraUtils plugin;
     private final File dataFile;
 
-    private final Map<UUID, Boolean> godMode = new HashMap<>();
-    private final Map<UUID, Boolean> flyMode = new HashMap<>();
-    private final Map<UUID, Boolean> noFall = new HashMap<>();
-    private final Map<UUID, Boolean> noHunger = new HashMap<>();
+    private final Map<UUID, Boolean> godMode = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> flyMode = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> noFall = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> noHunger = new ConcurrentHashMap<>();
+
+    /**
+     * owner UUID → set of trusted player UUIDs.
+     * When A trusts B, B can /tpa A and the request auto-accepts.
+     */
+    private final Map<UUID, Set<UUID>> trustedPlayers = new ConcurrentHashMap<>();
+
+    /** Last known names for trusted UUIDs (display when offline). */
+    private final Map<UUID, String> knownNames = new ConcurrentHashMap<>();
 
     /** True once onDisable has started — no new tasks may be scheduled. */
     private volatile boolean shuttingDown = false;
@@ -51,6 +68,8 @@ public class PlayerDataManager {
         flyMode.clear();
         noFall.clear();
         noHunger.clear();
+        trustedPlayers.clear();
+        knownNames.clear();
 
         YamlConfiguration config = YamlConfiguration.loadConfiguration(dataFile);
         ConfigurationSection playersSection = config.getConfigurationSection("players");
@@ -82,6 +101,38 @@ public class PlayerDataManager {
             }
             if (playerSection.contains("nohunger")) {
                 noHunger.put(playerId, playerSection.getBoolean("nohunger"));
+            }
+
+            List<String> trustedList = playerSection.getStringList("trusted");
+            if (!trustedList.isEmpty()) {
+                Set<UUID> set = ConcurrentHashMap.newKeySet();
+                for (String entry : trustedList) {
+                    // Format: uuid or uuid:Name
+                    String uuidPart = entry;
+                    String namePart = null;
+                    int colon = entry.indexOf(':');
+                    if (colon > 0) {
+                        uuidPart = entry.substring(0, colon);
+                        namePart = entry.substring(colon + 1);
+                    }
+                    try {
+                        UUID trustedId = UUID.fromString(uuidPart);
+                        set.add(trustedId);
+                        if (namePart != null && !namePart.isBlank()) {
+                            knownNames.put(trustedId, namePart);
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                        // skip bad entry
+                    }
+                }
+                if (!set.isEmpty()) {
+                    trustedPlayers.put(playerId, set);
+                }
+            }
+
+            String lastName = playerSection.getString("name");
+            if (lastName != null && !lastName.isBlank()) {
+                knownNames.put(playerId, lastName);
             }
         }
     }
@@ -160,14 +211,17 @@ public class PlayerDataManager {
         playerIds.addAll(flyMode.keySet());
         playerIds.addAll(noFall.keySet());
         playerIds.addAll(noHunger.keySet());
+        playerIds.addAll(trustedPlayers.keySet());
 
         for (UUID playerId : playerIds) {
             boolean god = godMode.getOrDefault(playerId, false);
             boolean fly = flyMode.getOrDefault(playerId, false);
             boolean noFallEnabled = noFall.getOrDefault(playerId, false);
             boolean noHungerEnabled = noHunger.getOrDefault(playerId, false);
+            Set<UUID> trusted = trustedPlayers.get(playerId);
+            boolean hasTrusted = trusted != null && !trusted.isEmpty();
 
-            if (!god && !fly && !noFallEnabled && !noHungerEnabled) {
+            if (!god && !fly && !noFallEnabled && !noHungerEnabled && !hasTrusted) {
                 continue;
             }
 
@@ -176,6 +230,25 @@ public class PlayerDataManager {
             playerSection.set("fly", fly);
             playerSection.set("nofall", noFallEnabled);
             playerSection.set("nohunger", noHungerEnabled);
+
+            String name = knownNames.get(playerId);
+            if (name != null) {
+                playerSection.set("name", name);
+            }
+
+            if (hasTrusted) {
+                List<String> entries = new ArrayList<>();
+                for (UUID tid : trusted) {
+                    String tName = knownNames.get(tid);
+                    if (tName != null && !tName.isBlank()) {
+                        entries.add(tid.toString() + ":" + tName);
+                    } else {
+                        entries.add(tid.toString());
+                    }
+                }
+                Collections.sort(entries);
+                playerSection.set("trusted", entries);
+            }
         }
 
         try {
@@ -184,6 +257,117 @@ public class PlayerDataManager {
             plugin.getLogger().severe("Failed to save player-states.yml: " + exception.getMessage());
         }
     }
+
+    // ------------------------------------------------------------------
+    // Trusted TPA list
+    // ------------------------------------------------------------------
+
+    /** True if {@code owner} has {@code trusted} on their trusted list. */
+    public boolean isTrusted(UUID owner, UUID trusted) {
+        if (owner == null || trusted == null) {
+            return false;
+        }
+        Set<UUID> set = trustedPlayers.get(owner);
+        return set != null && set.contains(trusted);
+    }
+
+    /**
+     * Add {@code trusted} to {@code owner}'s trusted list.
+     * @return true if newly added, false if already present or limit reached
+     */
+    public boolean addTrusted(UUID owner, UUID trusted, String trustedName) {
+        if (owner == null || trusted == null || owner.equals(trusted)) {
+            return false;
+        }
+        int max = Math.max(0, plugin.getConfig().getInt("tpa.trusted-max", 50));
+        Set<UUID> set = trustedPlayers.computeIfAbsent(owner, k -> ConcurrentHashMap.newKeySet());
+        if (set.contains(trusted)) {
+            if (trustedName != null && !trustedName.isBlank()) {
+                knownNames.put(trusted, trustedName);
+            }
+            return false;
+        }
+        if (max > 0 && set.size() >= max) {
+            return false;
+        }
+        set.add(trusted);
+        if (trustedName != null && !trustedName.isBlank()) {
+            knownNames.put(trusted, trustedName);
+        }
+        save();
+        return true;
+    }
+
+    /**
+     * Remove {@code trusted} from {@code owner}'s list.
+     * @return true if removed
+     */
+    public boolean removeTrusted(UUID owner, UUID trusted) {
+        if (owner == null || trusted == null) {
+            return false;
+        }
+        Set<UUID> set = trustedPlayers.get(owner);
+        if (set == null) {
+            return false;
+        }
+        boolean removed = set.remove(trusted);
+        if (set.isEmpty()) {
+            trustedPlayers.remove(owner, set);
+        }
+        if (removed) {
+            save();
+        }
+        return removed;
+    }
+
+    /** Unmodifiable snapshot of trusted UUIDs for {@code owner}. */
+    public Set<UUID> getTrusted(UUID owner) {
+        Set<UUID> set = trustedPlayers.get(owner);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Collections.unmodifiableSet(new HashSet<>(set));
+    }
+
+    public int getTrustedCount(UUID owner) {
+        Set<UUID> set = trustedPlayers.get(owner);
+        return set == null ? 0 : set.size();
+    }
+
+    /** Best-effort display name for a UUID (online name → knownNames → short UUID). */
+    public String getDisplayName(UUID id) {
+        if (id == null) {
+            return "?";
+        }
+        Player online = plugin.getServer().getPlayer(id);
+        if (online != null) {
+            knownNames.put(id, online.getName());
+            return online.getName();
+        }
+        String known = knownNames.get(id);
+        if (known != null && !known.isBlank()) {
+            return known;
+        }
+        OfflinePlayer off = plugin.getServer().getOfflinePlayer(id);
+        String name = off.getName();
+        if (name != null && !name.isBlank()) {
+            knownNames.put(id, name);
+            return name;
+        }
+        String shortId = id.toString().substring(0, 8);
+        return shortId;
+    }
+
+    /** Remember a player's current name (join / trust add). */
+    public void rememberName(UUID id, String name) {
+        if (id != null && name != null && !name.isBlank()) {
+            knownNames.put(id, name);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Toggles
+    // ------------------------------------------------------------------
 
     public boolean isGod(UUID id) {
         return godMode.getOrDefault(id, false);
@@ -255,6 +439,8 @@ public class PlayerDataManager {
         if (!plugin.isEnabled() || shuttingDown) {
             return;
         }
+
+        rememberName(player.getUniqueId(), player.getName());
 
         // Fly: multi-tick reapply (Spigot-safe)
         scheduleFlyReapply(player);

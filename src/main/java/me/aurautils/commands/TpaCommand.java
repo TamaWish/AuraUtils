@@ -1,6 +1,7 @@
 package me.aurautils.commands;
 
 import me.aurautils.AuraUtils;
+import me.aurautils.managers.TpaManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,15 +34,22 @@ public class TpaCommand implements CommandExecutor {
             p.sendMessage(plugin.prefix("&cYou can't TPA to yourself.")); return true;
         }
 
-        boolean sent = plugin.getTpaManager().sendRequest(p, target);
-        if (!sent) {
-            p.sendMessage(plugin.prefix("&cThat player already has a pending request. Wait for it to expire."));
-            return true;
+        TpaManager.SendResult result = plugin.getTpaManager().sendRequest(p, target);
+        switch (result) {
+            case TRUSTED_INSTANT -> {
+                // Messages already sent inside TpaManager
+            }
+            case PENDING -> {
+                int timeout = plugin.getConfig().getInt("tpa.timeout", 60);
+                p.sendMessage(plugin.prefix("&aTPA request sent to &e" + target.getName()
+                        + "&a. Expires in &b" + timeout + "s&a."));
+                target.sendMessage(plugin.prefix("&e" + p.getName()
+                        + " &awants to teleport to you. Use &b/tpaccept &aor &c/tpadeny&a."));
+            }
+            case BUSY -> p.sendMessage(plugin.prefix(
+                    "&cThat player already has a pending request. Wait for it to expire."));
+            case FAILED -> p.sendMessage(plugin.prefix("&cCould not send TPA request."));
         }
-
-        int timeout = plugin.getConfig().getInt("tpa.timeout", 60);
-        p.sendMessage(plugin.prefix("&aTPA request sent to &e" + target.getName() + "&a. Expires in &b" + timeout + "s&a."));
-        target.sendMessage(plugin.prefix("&e" + p.getName() + " &awants to teleport to you. Use &b/tpaccept &aor &c/tpadeny&a."));
         return true;
     }
 }

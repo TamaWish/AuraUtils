@@ -1,18 +1,12 @@
 # AuraUtils
 
-Lightweight utility plugin for Spigot and Paper servers.
+Lightweight utility plugin for **Spigot**, **Paper**, **Purpur**, and **Folia**.
 
-**Homes · Warps · TPA · Back · RTP · God · Fly · NoFall · NoHunger · GUI menu**
+**Homes · Warps · TPA (trusted/instant) · Back · RTP · God · Fly · NoFall · NoHunger · GUI menu**
 
-[![Modrinth](https://img.shields.io/modrinth/dt/W2WxC84B?style=flat&logo=modrinth&label=downloads)](https://modrinth.com/project/aurautils)
-[![Spigot](https://img.shields.io/spiget/downloads/138193?style=flat&label=Spigot%20downloads&color=ED8106)](https://www.spigotmc.org/resources/aurautils.138193/)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat)](https://github.com/TamaWish/AuraUtils)
-[![bStats](https://img.shields.io/badge/bStats-AuraUtils-00AA00?style=flat)](https://bstats.org/plugin/bukkit/AuraUtils/33574)
-[![GitHub](https://img.shields.io/badge/GitHub-TamaWish%2FAuraUtils-181717?style=flat&logo=github)](https://github.com/TamaWish/AuraUtils)
-[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord)](https://discord.gg/kbKZzxDETU)
-[![YouTube](https://img.shields.io/badge/YouTube-Showcase-FF0000?style=flat&logo=youtube)](https://youtu.be/fBpYOXKZQlc)
-
-[![Video Title](https://img.youtube.com/vi/fBpYOXKZQlc/0.jpg)](https://youtu.be/fBpYOXKZQlc)
+[![bStats](https://img.shields.io/badge/bStats-AuraUtils-00AA00)](https://bstats.org/plugin/bukkit/AuraUtils/33574)
+[![Modrinth](https://img.shields.io/badge/Modrinth-AuraUtils-1BD96A?logo=modrinth)](https://modrinth.com/project/aurautils)
+[![GitHub](https://img.shields.io/badge/GitHub-TamaWish%2FAuraUtils-181717?logo=github)](https://github.com/TamaWish/AuraUtils)
 
 ---
 
@@ -22,7 +16,7 @@ Lightweight utility plugin for Spigot and Paper servers.
 |---------|----------|--------|
 | **Homes** | `/home`, `/sethome`, `/delhome` | Per-player homes with optional GUI |
 | **Warps** | `/warp`, `/setwarp`, `/delwarp` | Server warps with optional GUI |
-| **TPA** | `/tpa`, `/tpaccept`, `/tpadeny`, `/tpacancel` | Timed requests, cancelable countdown |
+| **TPA** | `/tpa`, `/tpaccept`, `/tpadeny`, `/tpacancel`, `/tpatrust`, `/tpauntrust` | Timed requests, **trusted/instant list**, cancelable countdown |
 | **Back** | `/back` | Return to last teleport location |
 | **RTP** | `/rtp` | Safe random teleport (bounded attempts) |
 | **God** | `/god [player]` | Invincibility + heal / clear fire |
@@ -32,7 +26,16 @@ Lightweight utility plugin for Spigot and Paper servers.
 | **Menu** | `/menu` | Simple utility GUI |
 | **Info** | `/aura` | Plugin info and command list |
 
-All teleport actions share a configurable countdown (chat / actionbar / both / none), optional cancel-on-move and cancel-on-damage, and short feedback sounds.
+All teleport actions (home, warp, back, TPA accept, RTP, menu clicks) share one countdown system:
+
+- Display: **chat** / **actionbar** / **both** / **none**
+- Optional **title + subtitle** (large remaining seconds)
+- Configurable chat reminders (`chat-at`)
+- Cancel on move / damage
+- Sounds with optional **rising pitch**
+- Permission **`aura.teleport.bypass`** for instant teleports
+
+Cancel any pending countdown **or outgoing TPA request** with `/tpacancel` (aliases: `/tpcancel`, `/auracancel`).
 
 ---
 
@@ -40,7 +43,7 @@ All teleport actions share a configurable countdown (chat / actionbar / both / n
 
 | | |
 |---|---|
-| **Server** | Spigot or Paper |
+| **Server** | Spigot, Paper, Purpur, or **Folia** |
 | **Minecraft** | **1.21.x** (tested to 1.21.11) **and** **26.1 / 26.2** |
 | **Java** | 21+ (26.1+ servers require Java 25; the plugin itself is compiled for Java 21 and runs on both) |
 
@@ -48,117 +51,114 @@ One JAR covers both the classic `1.21.x` line and the new `26.x` year-based line
 
 ---
 
+
+### Platform notes
+
+- **Folia**: Fully supported. Countdowns, teleports, and fly re-apply use entity/region schedulers so they remain correct across region boundaries.
+- **Geyser / Bedrock**: Works via standard Bukkit APIs; no extra configuration required.
+
 ## Installation
 
 1. Download the latest `AuraUtils-x.y.z.jar`.
 2. Place it in your server’s `plugins/` folder.
-3. Restart (or reload carefully).
-4. Edit `plugins/AuraUtils/config.yml` if desired, then run `/aura` or restart.
+3. Restart the server.
+4. Edit `plugins/AuraUtils/config.yml` if desired.
 
 ---
 
 ## Configuration
 
-Default `config.yml` (key options):
+Key options from `config.yml` (see the file for full comments):
 
 ```yaml
-# TPA
 tpa:
   timeout: 60                 # Seconds before a TPA request expires
+  trusted-max: 50             # Max players on trusted list (0 = unlimited)
+  trusted-instant: false      # true = skip countdown for trusted TPAs
 
-# Random teleport
 rtp:
-  radius: 2000                # Search radius around world spawn
-  minDistance: 250            # Minimum horizontal distance from current position
-  attempts: 30                # Max random location attempts
-  attemptsPerTick: 5          # Attempts spread per tick (reduces lag)
-  countdown: 5                # Seconds before RTP; 0 = immediate
+  radius: 2000
+  minDistance: 250
+  attempts: 30
+  attemptsPerTick: 5
+  countdown: 5                # 0 = immediate
 
-# Shared teleport behaviour (warp / home / back / tpa)
 teleport:
-  countdown: 5                # Seconds before teleport; 0 = instant
+  countdown: 5                # Shared delay for home/warp/back/tpa (0 = instant)
   countdown-display: both     # chat | actionbar | both | none
-  chat-at: [3, 2, 1]          # Extra chat reminders at these seconds
+  chat-at: [3, 2, 1]          # Extra chat lines at these remaining seconds
+                              # Start is always announced; empty list = every second
+  title: true                 # Large title (seconds) + subtitle (destination)
   cancel-on-move: true
   cancel-on-damage: false
   sound: true
+  sound-rising-pitch: true    # Pitch rises as countdown approaches 0
 
-# Chat prefix (& color codes supported)
 prefix: "&8[&bAura&8] &r"
 ```
 
----
+### Why does the chat countdown skip 4?
 
-## Metrics (bStats)
-
-AuraUtils uses [bStats](https://bstats.org) to collect **anonymous** usage statistics (server version, player count range, selected config options, and feature usage counts).
-
-- **No personal data** is collected.
-- Metrics are **enabled by default**.
-- To disable metrics for this plugin (and any other bStats plugins on the server), edit `plugins/bStats/config.yml` and set `enabled: false`, then restart.
-- Full public charts: [https://bstats.org/plugin/bukkit/AuraUtils/33574](https://bstats.org/plugin/bukkit/AuraUtils/33574)
-
-This disclosure satisfies SpigotMC resource guidelines for optional metrics.
+By default `chat-at: [3, 2, 1]`. Chat always shows the **start** value (e.g. 5), then only the listed remaining seconds. This reduces chat spam. Action bar and title still update every second. Set `chat-at: [5, 4, 3, 2, 1]` (or `[]`) if you want a message every second.
 
 ---
 
 ## Permissions
 
 | Permission | Default | Description |
-|------------|---------|-------------|
-| `aura.use` | true | Basic access / `/aura` |
+|---|:---:|---|
+| `aura.use` | true | Basic access / `/tpacancel` |
 | `aura.menu` | true | Open the utility menu |
 | `aura.back` | true | Use `/back` |
 | `aura.warp` | true | Use warp commands |
-| `aura.warp.set` | op | Create / update warps |
+| `aura.warp.set` | op | Create/update warps |
 | `aura.warp.delete` | op | Delete warps |
 | `aura.home` | true | Use home commands |
 | `aura.home.set` | true | Set homes |
 | `aura.home.delete` | true | Delete homes |
-| `aura.tpa` | true | Use TPA commands |
-| `aura.god` | op | Toggle god for self |
-| `aura.god.others` | op | Toggle god for others |
+| `aura.tpa` | true | Use tpa / tpaccept / tpadeny |
+| `aura.tpa.trust` | true | Manage trusted TPA list |
+| `aura.god` | op | Toggle god mode for self |
+| `aura.god.others` | op | Toggle god mode on others |
 | `aura.fly` | op | Toggle fly for self |
 | `aura.fly.others` | op | Toggle fly for others |
-| `aura.nofall` | op | Toggle no-fall for self |
-| `aura.nofall.others` | op | Toggle no-fall for others |
-| `aura.nohunger` | op | Toggle no-hunger for self |
-| `aura.nohunger.others` | op | Toggle no-hunger for others |
-| `aura.rtp` | true | Use `/rtp` |
-| `aura.admin` | op | All AuraUtils permissions (parent node) |
+| `aura.nofall` | op | Toggle fall damage for self |
+| `aura.nofall.others` | op | Toggle fall damage on others |
+| `aura.nohunger` | op | Toggle hunger for self |
+| `aura.nohunger.others` | op | Toggle hunger on others |
+| `aura.rtp` | true | Use random safe teleport |
+| `aura.teleport.bypass` | op | Skip teleport countdown (instant) |
+| `aura.admin` | op | All AuraUtils permissions |
 
-Full authoritative list is in `plugin.yml`.
+For the complete list see `plugin.yml`.
 
 ---
 
-## Building from source
+## Building
 
 ```bash
-git clone https://github.com/TamaWish/AuraUtils.git
-cd AuraUtils
+# Requires Maven and Java 21+
 mvn clean package
 ```
 
-The shaded JAR is produced at `target/AuraUtils-1.0.0.jar` (or the current version).
-
-- **Java 21** toolchain
-- Dependency: Spigot API 1.21.4 (compatible with 1.21.x and 26.x)
-- bStats is shaded and relocated
+The compiled JAR will be in `target/` (shaded artifact includes bStats).
 
 ---
 
-## Links
+## Metrics
 
-| | |
-|---|---|
-| **Source** | [github.com/TamaWish/AuraUtils](https://github.com/TamaWish/AuraUtils) |
-| **Modrinth** | [modrinth.com/project/aurautils](https://modrinth.com/project/aurautils) |
-| **bStats** | [bstats.org/plugin/bukkit/AuraUtils/33574](https://bstats.org/plugin/bukkit/AuraUtils/33574) |
-| **Discord** | [discord.gg/6nD8qF9tKV](https://discord.gg/6nD8qF9tKV) |
-| **Issues / Support** | GitHub Issues or Discord |
+AuraUtils uses [bStats](https://bstats.org/plugin/bukkit/AuraUtils/33574) (anonymous).  
+Disable in `plugins/bStats/config.yml` → `enabled: false`.
 
 ---
 
-## License
+## Development
 
-See the repository for license information.
+Open the `AuraUtils` folder in your IDE — the Maven project is detected automatically.
+
+Contributions welcome. When adding features:
+
+- Register commands in `AuraUtils.java` and `plugin.yml`
+- Prefer routing teleports through `TeleportHelper.scheduleTeleport` so countdown / bypass / display stay consistent
+- Update `config.yml` comments and this README
+#

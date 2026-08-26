@@ -3,7 +3,7 @@ version: ${project.version}
 main: me.aurautils.AuraUtils
 api-version: "1.21"
 folia-supported: true
-description: Utility bundle — TPA, God, Fly, homes, warps, RTP, and more. Spigot, Paper & Folia.
+description: Utility bundle — TPA (with trusted/instant), God, Fly, homes, warps, RTP, and more. Spigot, Paper & Folia.
 author: YourName
 
 commands:
@@ -59,6 +59,16 @@ commands:
     usage: /tpacancel
     aliases: [tpcancel, auracancel]
     permission: aura.use
+  tpatrust:
+    description: Add a player to your trusted TPA list (they can TPA without confirmation)
+    usage: /tpatrust <player>|list|remove <player>
+    aliases: [trusttpa, tptrust]
+    permission: aura.tpa.trust
+  tpauntrust:
+    description: Remove a player from your trusted TPA list
+    usage: /tpauntrust <player>
+    aliases: [untrusttpa, tpuntrust]
+    permission: aura.tpa.trust
   god:
     description: Toggle god mode (invincibility)
     usage: /god [player]
@@ -115,6 +125,9 @@ permissions:
   aura.tpa:
     description: Use TPA commands
     default: true
+  aura.tpa.trust:
+    description: Manage trusted TPA list (/tpatrust, /tpauntrust)
+    default: true
   aura.god:
     description: Use god mode
     default: op
@@ -159,6 +172,7 @@ permissions:
       aura.home.set: true
       aura.home.delete: true
       aura.tpa: true
+      aura.tpa.trust: true
       aura.god: true
       aura.god.others: true
       aura.fly: true
