@@ -71,6 +71,12 @@ public final class AuraUtils extends JavaPlugin {
         getCommand("rtp").setExecutor(new RtpCommand(this));
         getCommand("aura").setExecutor(new AuraCommand(this));
         getCommand("tpacancel").setExecutor(new TpaCancelCommand(this));
+        TpaTrustCommand trustCmd = new TpaTrustCommand(this);
+        getCommand("tpatrust").setExecutor(trustCmd);
+        getCommand("tpatrust").setTabCompleter(trustCmd);
+        TpaTrustCommand untrustCmd = new TpaTrustCommand(this, true);
+        getCommand("tpauntrust").setExecutor(untrustCmd);
+        getCommand("tpauntrust").setTabCompleter(untrustCmd);
 
         // Listeners
         getServer().getPluginManager().registerEvents(new GodModeListener(this), this);

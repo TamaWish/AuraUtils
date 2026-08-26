@@ -15,6 +15,8 @@ import org.bukkit.entity.Player;
 
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RtpCommand implements CommandExecutor {
 
@@ -64,23 +66,39 @@ public class RtpCommand implements CommandExecutor {
         int rtpCountdown = Math.max(0, plugin.getConfig().getInt("rtp.countdown", plugin.getConfig().getInt("teleport.countdown", 5)));
 
         var teleportHelper = plugin.getTeleportHelper();
+        var scheduler = plugin.getScheduler();
 
-        // Run search on the player's entity scheduler so block reads stay region-safe on Folia
-        final int[] tried = { 0 };
+        final AtomicInteger tried = new AtomicInteger(0);
+        final AtomicBoolean found = new AtomicBoolean(false);
+        final AtomicBoolean finished = new AtomicBoolean(false);
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final WorldBorder border = world.getWorldBorder();
+        final int spawnX = world.getSpawnLocation().getBlockX();
+        final int spawnZ = world.getSpawnLocation().getBlockZ();
+        final double spawnY = world.getSpawnLocation().getY();
 
+        // Generator runs on the player entity thread (pacing only). Each candidate is then
+        // evaluated on the region that owns that (x,z) via runAtLocation so getHighestBlockAt
+        // is legal on Folia even when the target chunk is far from the player.
         final WrappedTask[] taskHolder = new WrappedTask[1];
-        taskHolder[0] = plugin.getScheduler().runAtEntityTimer(player, () -> {
+        taskHolder[0] = scheduler.runAtEntityTimer(player, () -> {
             WrappedTask self = taskHolder[0];
-            if (!plugin.isEnabled()) {
+            if (!plugin.isEnabled() || found.get() || finished.get()) {
                 if (self != null) self.cancel();
                 return;
             }
 
-            for (int k = 0; k < attemptsPerTick && tried[0] < attempts; k++, tried[0]++) {
-                int x = world.getSpawnLocation().getBlockX() + random.nextInt(-radius, radius + 1);
-                int z = world.getSpawnLocation().getBlockZ() + random.nextInt(-radius, radius + 1);
+            for (int k = 0; k < attemptsPerTick; k++) {
+                if (found.get() || finished.get()) {
+                    break;
+                }
+                int current = tried.incrementAndGet();
+                if (current > attempts) {
+                    break;
+                }
+
+                int x = spawnX + random.nextInt(-radius, radius + 1);
+                int z = spawnZ + random.nextInt(-radius, radius + 1);
 
                 long dx = x - from.getBlockX();
                 long dz = z - from.getBlockZ();
@@ -88,17 +106,49 @@ public class RtpCommand implements CommandExecutor {
                     continue;
                 }
 
-                Location borderCheck = new Location(world, x + 0.5, world.getSpawnLocation().getY(), z + 0.5);
+                Location borderCheck = new Location(world, x + 0.5, spawnY, z + 0.5);
                 if (border != null && !border.isInside(borderCheck)) {
                     continue;
                 }
 
-                // Highest-block lookup is performed on the entity thread; on Folia this is
-                // best-effort for distant chunks (region may need to be loaded first).
-                Block surface = world.getHighestBlockAt(x, z);
-                Location teleportLocation = buildSafeLocation(surface);
-                if (teleportLocation != null) {
-                    if (player.isOnline()) {
+                // Schedule height + safety check on the region that owns this chunk.
+                // On Spigot/Paper this is simply the main thread; on Folia it is the
+                // correct region thread so getHighestBlockAt is allowed.
+                final int fx = x;
+                final int fz = z;
+                Location regionLoc = new Location(world, fx + 0.5, spawnY, fz + 0.5);
+                scheduler.runAtLocation(regionLoc, () -> {
+                    if (found.get() || finished.get() || !plugin.isEnabled()) {
+                        return;
+                    }
+
+                    Block surface;
+                    try {
+                        surface = world.getHighestBlockAt(fx, fz);
+                    } catch (IllegalStateException ex) {
+                        // Extremely rare: region ownership race. Skip this candidate.
+                        return;
+                    }
+
+                    Location teleportLocation = buildSafeLocation(surface);
+                    if (teleportLocation == null) {
+                        return;
+                    }
+
+                    if (!found.compareAndSet(false, true)) {
+                        return; // another candidate already won
+                    }
+
+                    finished.set(true);
+                    if (self != null) {
+                        self.cancel();
+                    }
+
+                    // Teleport / countdown must run on the player's entity scheduler
+                    scheduler.runAtEntity(player, () -> {
+                        if (!player.isOnline()) {
+                            return;
+                        }
                         if (rtpCountdown > 0) {
                             teleportHelper.scheduleTeleport(player, teleportLocation, rtpCountdown, "a random location");
                         } else {
@@ -106,17 +156,25 @@ public class RtpCommand implements CommandExecutor {
                                 player.sendMessage(plugin.prefix("&aTeleported to &ba random location&a."));
                             }
                         }
-                    }
-                    if (self != null) self.cancel();
-                    return;
-                }
+                    });
+                });
             }
 
-            if (tried[0] >= attempts) {
-                if (player.isOnline()) {
-                    player.sendMessage(plugin.prefix("&cCould not find a safe teleport location. Try again."));
-                }
-                if (self != null) self.cancel();
+            // After the last batch has been dispatched, wait a short grace period for
+            // in-flight region checks, then report failure if nothing succeeded.
+            if (tried.get() >= attempts && !found.get() && !finished.get()) {
+                scheduler.runAtEntityLater(player, () -> {
+                    if (found.get() || finished.get()) {
+                        return;
+                    }
+                    finished.set(true);
+                    if (self != null) {
+                        self.cancel();
+                    }
+                    if (player.isOnline()) {
+                        player.sendMessage(plugin.prefix("&cCould not find a safe teleport location. Try again."));
+                    }
+                }, 40L); // 2 seconds for pending region tasks to finish
             }
         }, 0L, 1L);
 

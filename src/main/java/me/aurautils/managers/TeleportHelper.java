@@ -58,6 +58,20 @@ public class TeleportHelper {
             return false;
         }
 
+        // Record current location for /back BEFORE teleporting.
+        // On Folia, PlayerTeleportEvent does not fire for most teleports (including
+        // PLUGIN / async), so BackListener alone leaves /back empty. Recording here
+        // works on Spigot, Paper, and Folia. Skip no-op teleports to the same spot.
+        Location from = player.getLocation();
+        if (from.getWorld() != null) {
+            boolean sameSpot = exact.getWorld() != null
+                    && from.getWorld().equals(exact.getWorld())
+                    && from.distanceSquared(exact) < 0.01D;
+            if (!sameSpot) {
+                plugin.getBackManager().record(player.getUniqueId(), from);
+            }
+        }
+
         // Prefer platform-aware async teleport (safe on Spigot/Paper/Folia)
         plugin.getScheduler().teleportAsync(player, exact, PlayerTeleportEvent.TeleportCause.PLUGIN, success -> {
             if (Boolean.TRUE.equals(success) && player.isOnline() && soundsEnabled()) {

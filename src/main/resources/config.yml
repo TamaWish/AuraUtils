@@ -8,6 +8,11 @@
 tpa:
   # How long (seconds) a TPA request stays pending before expiring
   timeout: 60
+  # Maximum players on a trusted list (0 = unlimited)
+  trusted-max: 50
+  # When true, trusted TPAs skip the shared teleport countdown entirely
+  # (instant). When false, they still use teleport.countdown / bypass perm.
+  trusted-instant: false
 
 # ---------------------------------------------------------------------------
 # Random teleport (/rtp)
