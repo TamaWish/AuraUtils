@@ -1,5 +1,6 @@
 # AuraUtils Configuration
-# Restart or use /aura reload (if available) after editing.
+# Use /aura reload (aura.admin) after editing, or restart the server.
+# Reload applies config.yml and lang/<language>.yml. Warps and homes stay live (not re-read).
 # All teleport commands (home, warp, back, TPA, RTP, menu) share the same countdown system.
 
 # ---------------------------------------------------------------------------
@@ -15,6 +16,21 @@ tpa:
   trusted-instant: false
 
 # ---------------------------------------------------------------------------
+# Homes
+# ---------------------------------------------------------------------------
+# Maximum homes for players without a matching permission. 0 = unlimited.
+# A configured permission is checked through Bukkit, so LuckPerms groups work
+# without any direct LuckPerms dependency. The highest matching positive value
+# wins; a matching max: 0 grants unlimited homes.
+homes:
+  default-limit: 0
+  limits:
+    # - permission: aura.homes.vip
+    #   max: 5
+    # - permission: aura.homes.unlimited
+    #   max: 0
+
+# ---------------------------------------------------------------------------
 # Random teleport (/rtp)
 # ---------------------------------------------------------------------------
 rtp:
@@ -22,10 +38,15 @@ rtp:
   radius: 2000
   # Minimum horizontal distance from your current position
   minDistance: 250
-  # Number of random attempts before giving up
+  # Number of random column probes before giving up
   attempts: 30
-  # Number of attempts to try per server tick (spreads load)
-  attemptsPerTick: 5
+  # Hard cap on search duration (ticks). Prevents watchdog freezes.
+  max-search-ticks: 200
+  # On Spigot, generating an unloaded chunk is sync and can freeze the server.
+  # Paper/Folia ignore this and use getChunkAtAsync instead.
+  generate-unloaded: true
+  # Maximum sync chunk generations per /rtp on Spigot/CraftBukkit (0 = loaded chunks only)
+  max-sync-generations: 3
   # Countdown (seconds) before executing the teleport; 0 = immediate
   # Falls back to teleport.countdown when unset
   countdown: 5
@@ -72,5 +93,16 @@ teleport:
 # ---------------------------------------------------------------------------
 # Messages
 # ---------------------------------------------------------------------------
+# Language file under plugins/AuraUtils/lang/<code>.yml (jar default: lang/en.yml)
+language: en
 # Chat prefix (supports & color codes)
 prefix: "&8[&bAura&8] &r"
+
+# ---------------------------------------------------------------------------
+# Update checker
+# ---------------------------------------------------------------------------
+# When true, AuraUtils asks GitHub for the latest release (TamaWish/AuraUtils).
+# Console is told if a newer version exists. Players with aura.admin also get a
+# chat notice with a clickable link to the GitHub releases page.
+update-checker:
+  enabled: true

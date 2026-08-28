@@ -1,8 +1,9 @@
-# AuraUtils
+![AU Banner](https://files.catbox.moe/0a2rns.png)
+# AuraUtils 1.3.0
 
 Lightweight utility plugin for **Spigot**, **Paper**, **Purpur**, and **Folia**.
 
-**Homes · Warps · TPA (trusted/instant) · Back · RTP · God · Fly · NoFall · NoHunger · GUI menu**
+**Homes · Warps · TPA (trusted/instant) · Back · RTP · God · Fly · NoFall · NoHunger · GUI menu · Translations**
 
 [![bStats](https://img.shields.io/badge/bStats-AuraUtils-00AA00)](https://bstats.org/plugin/bukkit/AuraUtils/33574)
 [![Modrinth](https://img.shields.io/badge/Modrinth-AuraUtils-1BD96A?logo=modrinth)](https://modrinth.com/project/aurautils)
@@ -10,12 +11,12 @@ Lightweight utility plugin for **Spigot**, **Paper**, **Purpur**, and **Folia**.
 
 ---
 
-## Features
+![FEATURES](https://file.garden/apESCVYBqnKcJ-mg/AU/FEATURES.png)
 
 | Feature | Commands | Notes |
 |---------|----------|--------|
-| **Homes** | `/home`, `/sethome`, `/delhome` | Per-player homes with optional GUI |
-| **Warps** | `/warp`, `/setwarp`, `/delwarp` | Server warps with optional GUI |
+| **Homes** | `/home`, `/sethome`, `/delhome` | Per-player homes, optional GUI, name rules, overwrite confirm, optional limits |
+| **Warps** | `/warp`, `/setwarp`, `/delwarp` | Server warps, optional GUI, name rules, overwrite confirm |
 | **TPA** | `/tpa`, `/tpaccept`, `/tpadeny`, `/tpacancel`, `/tpatrust`, `/tpauntrust` | Timed requests, **trusted/instant list**, cancelable countdown |
 | **Back** | `/back` | Return to last teleport location |
 | **RTP** | `/rtp` | Safe random teleport (bounded attempts) |
@@ -24,7 +25,8 @@ Lightweight utility plugin for **Spigot**, **Paper**, **Purpur**, and **Folia**.
 | **NoFall** | `/nofall [player]` | Toggle fall damage |
 | **NoHunger** | `/nohunger [player]` | Toggle hunger depletion |
 | **Menu** | `/menu` | Simple utility GUI |
-| **Info** | `/aura` | Plugin info and command list |
+| **Info** | `/aura`, `/aura reload` | Command list; reload config + language (`aura.admin`) |
+| **Languages** | `lang/en.yml` | All player-facing messages; extra locales via `language:` |
 
 All teleport actions (home, warp, back, TPA accept, RTP, menu clicks) share one countdown system:
 
@@ -39,7 +41,7 @@ Cancel any pending countdown **or outgoing TPA request** with `/tpacancel` (alia
 
 ---
 
-## Requirements
+![REQUIREMENTS](https://file.garden/apESCVYBqnKcJ-mg/AU/REQUIREMENTS.png)
 
 | | |
 |---|---|
@@ -47,26 +49,27 @@ Cancel any pending countdown **or outgoing TPA request** with `/tpacancel` (alia
 | **Minecraft** | **1.21.x** (tested to 1.21.11) **and** **26.1 / 26.2** |
 | **Java** | 21+ (26.1+ servers require Java 25; the plugin itself is compiled for Java 21 and runs on both) |
 
-One JAR covers both the classic `1.21.x` line and the new `26.x` year-based line. No separate builds required.
+One plugin covers both the classic `1.21.x` line and the new `26.x` year-based line. Download the JAR that matches your **server software**.
 
 ---
 
+![UPGRADE NOTE](https://file.garden/apESCVYBqnKcJ-mg/AU/UPGRADE%20NOTE.png)
 
-### Platform notes
+- **Folia**: Fully supported.
+- **1.3.0**: Use the Spigot artifact on CraftBukkit/Spigot and the Paper/Folia artifact on Paper, Purpur, or Folia. After first start, translate `plugins/AuraUtils/lang/en.yml` or add another `lang/<code>.yml`. Admins are notified of new GitHub releases unless `update-checker.enabled` is false.
 
-- **Folia**: Fully supported. Countdowns, teleports, and fly re-apply use entity/region schedulers so they remain correct across region boundaries.
-- **Geyser / Bedrock**: Works via standard Bukkit APIs; no extra configuration required.
+![INSTALLATION](https://file.garden/apESCVYBqnKcJ-mg/AU/INSTALLATION.png)
 
-## Installation
-
-1. Download the latest `AuraUtils-x.y.z.jar`.
+1. Download the JAR for your platform (`-spigot` or `-paper-folia`).
 2. Place it in your server’s `plugins/` folder.
 3. Restart the server.
 4. Edit `plugins/AuraUtils/config.yml` if desired.
+5. (Optional) Edit `plugins/AuraUtils/lang/en.yml`, or copy it and set `language:` to another code.
+6. Run `/aura reload` (`aura.admin`) after language or config edits.
 
 ---
 
-## Configuration
+![CONFIGURATION](https://files.catbox.moe/pwsw8n.png)
 
 Key options from `config.yml` (see the file for full comments):
 
@@ -76,11 +79,21 @@ tpa:
   trusted-max: 50             # Max players on trusted list (0 = unlimited)
   trusted-instant: false      # true = skip countdown for trusted TPAs
 
+homes:
+  default-limit: 0            # 0 = unlimited
+  limits:
+    - permission: aura.homes.vip
+      max: 5
+    - permission: aura.homes.unlimited
+      max: 0                  # unlimited; works with LuckPerms ranks
+
 rtp:
   radius: 2000
   minDistance: 250
   attempts: 30
-  attemptsPerTick: 5
+  max-search-ticks: 200
+  generate-unloaded: true     # Spigot only; Paper/Folia use async chunks
+  max-sync-generations: 3     # Spigot cap (0 = loaded chunks only)
   countdown: 5                # 0 = immediate
 
 teleport:
@@ -94,8 +107,25 @@ teleport:
   sound: true
   sound-rising-pitch: true    # Pitch rises as countdown approaches 0
 
+language: en                  # plugins/AuraUtils/lang/<code>.yml (default: lang/en.yml)
 prefix: "&8[&bAura&8] &r"
+
+update-checker:
+  enabled: true               # GitHub release notice for aura.admin (clickable link)
 ```
+
+Chat, GUI, titles, action bar, and clickable **[CONFIRM]** / **[CANCEL]** labels live in `plugins/AuraUtils/lang/en.yml` (copied from the jar on first run). Home and warp names are 1–32 letters, numbers, `_`, or `-`. Overwriting an existing name asks for confirmation (expires in 30 seconds).
+
+### Languages
+
+1. Copy `plugins/AuraUtils/lang/en.yml` to `lang/<code>.yml` (letters, numbers, `_`, `-` only — e.g. `zh`).
+2. Translate the **values**. Keep the keys and `%placeholders%` (`%name%`, `%player%`, `%seconds%`, …). Color codes use `&`.
+3. Set `language: zh` (or your code) in `config.yml`.
+4. `/aura reload`.
+
+Missing keys fall back to the jar English defaults. Plugin updates merge new keys into disk `lang/en.yml` without overwriting your edits.
+
+When `update-checker.enabled` is true (default), AuraUtils checks GitHub for a newer release. The console is told if one exists. Players with `aura.admin` also get a chat notice with a **clickable** link to [GitHub releases](https://github.com/TamaWish/AuraUtils/releases). Set `enabled: false` to turn this off.
 
 ### Why does the chat countdown skip 4?
 
@@ -103,7 +133,7 @@ By default `chat-at: [3, 2, 1]`. Chat always shows the **start** value (e.g. 5),
 
 ---
 
-## Permissions
+![PERMISSIONS](https://files.catbox.moe/rc5ojm.png)
 
 | Permission | Default | Description |
 |---|:---:|---|
@@ -128,37 +158,28 @@ By default `chat-at: [3, 2, 1]`. Chat always shows the **start** value (e.g. 5),
 | `aura.nohunger.others` | op | Toggle hunger on others |
 | `aura.rtp` | true | Use random safe teleport |
 | `aura.teleport.bypass` | op | Skip teleport countdown (instant) |
-| `aura.admin` | op | All AuraUtils permissions |
-
-For the complete list see `plugin.yml`.
+| `aura.admin` | op | All AuraUtils permissions, including `/aura reload` |
 
 ---
 
-## Building
+![BUILDING](https://files.catbox.moe/jmhwqm.png)
 
 ```bash
 # Requires Maven and Java 21+
 mvn clean package
 ```
 
-The compiled JAR will be in `target/` (shaded artifact includes bStats).
+The compiled release JARs will be in `target/`:
+
+- `AuraUtils-1.3.0-spigot.jar` for Spigot/CraftBukkit.
+- `AuraUtils-1.3.0-paper-folia.jar` for Paper, Purpur, and Folia.
+
+Both artifacts support Minecraft **1.21.x** and **26.x**. They share the same commands and config.
 
 ---
 
-## Metrics
+![METRICS](https://files.catbox.moe/qlbzjk.png)
 
 AuraUtils uses [bStats](https://bstats.org/plugin/bukkit/AuraUtils/33574) (anonymous).  
 Disable in `plugins/bStats/config.yml` → `enabled: false`.
 
----
-
-## Development
-
-Open the `AuraUtils` folder in your IDE — the Maven project is detected automatically.
-
-Contributions welcome. When adding features:
-
-- Register commands in `AuraUtils.java` and `plugin.yml`
-- Prefer routing teleports through `TeleportHelper.scheduleTeleport` so countdown / bypass / display stay consistent
-- Update `config.yml` comments and this README
-#

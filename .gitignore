@@ -1,27 +1,55 @@
-# Build outputs
+# Maven build
 /target/
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+.flattened-pom.xml
+
+# Bundled Maven (local install / wrapper cache — do not commit)
+.maven/
+.mvn/
+/mvnw
+/mvnw.cmd
 
 # Local tools
 /tools/
 
 # IDEs and editors
-/.idea/
+.idea/
 *.iml
 *.ipr
 *.iws
-/.vscode/
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+*.code-workspace
+.cursor/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Logs
+# Logs and crash dumps
 *.log
+hs_err_pid*
+replay_pid*
 
-# Maven wrapper and metadata
-/mvnw
-/mvnw.cmd
-/.mvn/
-
-# Ignore packaged jars (keep if you want to track releases separately)
+# Build artifacts
 *.jar
+*.war
+*.ear
+*.class
+*.nar
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# Netlify CLI
+.netlify/

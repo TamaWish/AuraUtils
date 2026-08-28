@@ -1,0 +1,152 @@
+[CENTER][IMG]https://files.catbox.moe/0a2rns.png[/IMG]
+
+[URL=https://github.com/TamaWish/AuraUtils/releases][IMG]https://img.shields.io/badge/Release-v1.3.0-brightgreen?style=flat-square[/IMG][/URL]
+[URL=https://www.java.com][IMG]https://img.shields.io/badge/Java-21%2B-orange?style=flat-square&logo=openjdk&logoColor=white[/IMG][/URL]
+[URL=https://www.spigotmc.org/][IMG]https://img.shields.io/badge/Spigot-1.21.x%2B%20%2F%2026.x%2B-yellow?style=flat-square[/IMG][/URL]
+[URL=https://github.com/TamaWish/AuraUtils/blob/main/LICENSE][IMG]https://img.shields.io/badge/license-MIT-blue?style=flat-square[/IMG][/URL]
+
+[URL=https://www.spigotmc.org/resources/aurautils-spigot-paper-folia.138193/][IMG]https://img.shields.io/spiget/downloads/138193?style=flat-square&label=Spigot%20downloads&color=yellow[/IMG][/URL]
+[URL=https://modrinth.com/project/W2WxC84B][IMG]https://img.shields.io/badge/dynamic/json?style=flat-square&color=1bd96a&label=Modrinth&query=downloads&url=https%3A%2F%2Fapi.modrinth.com%2Fv2%2Fproject%2FW2WxC84B&suffix=%20downloads[/IMG][/URL]
+[URL=https://github.com/TamaWish/AuraUtils][IMG]https://img.shields.io/github/stars/TamaWish/AuraUtils?style=flat-square&logo=github[/IMG][/URL]
+
+[URL=https://hangar.papermc.io/Lozaine/AuraUtils][IMG]https://img.shields.io/hangar/dt/AuraUtils?style=flat-square[/IMG][/URL]
+[URL=https://dev.bukkit.org/projects/1669497][IMG]https://img.shields.io/curseforge/dt/1669497?style=flat-square&label=BukkitDev%20downloads[/IMG][/URL]
+[/CENTER]
+
+Lightweight homes, warps, TPA, back, RTP, and player toggles for [B]Spigot[/B].
+
+Players get a shared teleport countdown, a simple GUI, and translatable messages. Operators get warps, home limits, reload, and an optional GitHub update notice.
+
+[IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/INSTALLATION.png[/IMG]
+
+Install [B]AuraUtils-1.3.0-spigot.jar[/B] in [ICODE]plugins/[/ICODE], then restart.
+
+[TABLE]
+[TR][TH]Server[/TH][TH]Install[/TH][/TR]
+[TR][TD]Spigot[/TD][TD][ICODE]AuraUtils-1.3.0-spigot.jar[/ICODE][/TD][/TR]
+[/TABLE]
+
+[LIST]
+[*]Edit [ICODE]plugins/AuraUtils/config.yml[/ICODE] if you want.
+[*]On first start the plugin copies [ICODE]lang/en.yml[/ICODE]. Translate it or add another locale and set [ICODE]language:[/ICODE].
+[*]Run [ICODE]/aura reload[/ICODE] ([ICODE]aura.admin[/ICODE]) after config or language edits.
+[/LIST]
+
+[IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/FEATURES.png[/IMG]
+[LIST]
+[*]Homes with optional GUI, name rules, overwrite confirm, and optional limits
+[*]Server warps with optional GUI and overwrite confirm
+[*]Timed TPA plus a trusted list that auto-accepts requests
+[*][ICODE]/back[/ICODE], safe [ICODE]/rtp[/ICODE], god, fly, nofall, nohunger
+[*][ICODE]/menu[/ICODE] utility GUI
+[*]Shared countdown: chat, action bar, title, cancel on move/damage, rising-pitch sounds
+[*][ICODE]aura.teleport.bypass[/ICODE] for instant teleports
+[*]All player-facing text in [ICODE]lang/en.yml[/ICODE]
+[/LIST]
+
+Trusted TPA: [ICODE]/tpatrust <player>[/ICODE] adds them to your list. They can [ICODE]/tpa[/ICODE] you without [ICODE]/tpaccept[/ICODE]. Manage with [ICODE]/tpatrust list[/ICODE] and [ICODE]/tpauntrust <player>[/ICODE]. Cancel a countdown or an outgoing TPA with [ICODE]/tpacancel[/ICODE] ([ICODE]/tpcancel[/ICODE], [ICODE]/auracancel[/ICODE]).
+
+[B]Commands[/B]
+[TABLE]
+[TR][TH]Command[/TH][TH]Permission[/TH][TH]Description[/TH][/TR]
+[TR][TD][ICODE]/home [name|list][/ICODE][/TD][TD][ICODE]aura.home[/ICODE][/TD][TD]Teleport to a home or open the home GUI[/TD][/TR]
+[TR][TD][ICODE]/sethome <name>[/ICODE][/TD][TD][ICODE]aura.home.set[/ICODE][/TD][TD]Create or update a home[/TD][/TR]
+[TR][TD][ICODE]/delhome <name>[/ICODE][/TD][TD][ICODE]aura.home.delete[/ICODE][/TD][TD]Delete a home[/TD][/TR]
+[TR][TD][ICODE]/warp [name|list][/ICODE][/TD][TD][ICODE]aura.warp[/ICODE][/TD][TD]Teleport to a warp or open the warp GUI[/TD][/TR]
+[TR][TD][ICODE]/setwarp <name>[/ICODE][/TD][TD][ICODE]aura.warp.set[/ICODE][/TD][TD]Create or update a warp[/TD][/TR]
+[TR][TD][ICODE]/delwarp <name>[/ICODE][/TD][TD][ICODE]aura.warp.delete[/ICODE][/TD][TD]Delete a warp[/TD][/TR]
+[TR][TD][ICODE]/tpa <player>|list[/ICODE][/TD][TD][ICODE]aura.tpa[/ICODE][/TD][TD]Send a TPA request or open the TPA GUI[/TD][/TR]
+[TR][TD][ICODE]/tpaccept[/ICODE] / [ICODE]/tpadeny[/ICODE][/TD][TD][ICODE]aura.tpa[/ICODE][/TD][TD]Accept or deny a pending TPA[/TD][/TR]
+[TR][TD][ICODE]/tpacancel[/ICODE][/TD][TD][ICODE]aura.use[/ICODE][/TD][TD]Cancel a countdown or outgoing TPA[/TD][/TR]
+[TR][TD][ICODE]/tpatrust[/ICODE] / [ICODE]/tpauntrust[/ICODE][/TD][TD][ICODE]aura.tpa.trust[/ICODE][/TD][TD]Manage your trusted TPA list[/TD][/TR]
+[TR][TD][ICODE]/back[/ICODE][/TD][TD][ICODE]aura.back[/ICODE][/TD][TD]Return to the last teleport location[/TD][/TR]
+[TR][TD][ICODE]/rtp[/ICODE][/TD][TD][ICODE]aura.rtp[/ICODE][/TD][TD]Random safe teleport[/TD][/TR]
+[TR][TD][ICODE]/god [player][/ICODE][/TD][TD][ICODE]aura.god[/ICODE][/TD][TD]Toggle invincibility[/TD][/TR]
+[TR][TD][ICODE]/fly [player][/ICODE][/TD][TD][ICODE]aura.fly[/ICODE][/TD][TD]Toggle flight[/TD][/TR]
+[TR][TD][ICODE]/nofall [player][/ICODE][/TD][TD][ICODE]aura.nofall[/ICODE][/TD][TD]Toggle fall damage[/TD][/TR]
+[TR][TD][ICODE]/nohunger [player][/ICODE][/TD][TD][ICODE]aura.nohunger[/ICODE][/TD][TD]Toggle hunger depletion[/TD][/TR]
+[TR][TD][ICODE]/menu[/ICODE][/TD][TD][ICODE]aura.menu[/ICODE][/TD][TD]Open the utility GUI[/TD][/TR]
+[TR][TD][ICODE]/aura [reload][/ICODE][/TD][TD][ICODE]aura.use[/ICODE] / [ICODE]aura.admin[/ICODE][/TD][TD]Command list; reload config and language[/TD][/TR]
+[/TABLE]
+
+[IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/REQUIREMENTS.png[/IMG]
+[LIST]
+[*]Java [B]21+[/B] (Minecraft [B]26.1+[/B] servers need Java 25)
+[*]Minecraft [B]1.21.x[/B] and [B]26.1 / 26.2[/B]
+[*]Spigot
+[/LIST]
+
+[IMG]https://files.catbox.moe/pwsw8n.png[/IMG]
+[CODE]
+tpa:
+  timeout: 60
+  trusted-max: 50
+  trusted-instant: false
+
+homes:
+  default-limit: 0
+  limits:
+    - permission: aura.homes.vip
+      max: 5
+
+rtp:
+  radius: 2000
+  minDistance: 250
+  attempts: 30
+  generate-unloaded: true
+  max-sync-generations: 3
+
+teleport:
+  countdown: 5
+  countdown-display: both
+  chat-at: [3, 2, 1]
+  title: true
+  cancel-on-move: true
+  sound: true
+  sound-rising-pitch: true
+
+language: en
+prefix: "&8[&bAura&8] &r"
+
+update-checker:
+  enabled: true
+[/CODE]
+
+Home and warp names are 1–32 letters, numbers, [ICODE]_[/ICODE], or [ICODE]-[/ICODE]. Overwriting an existing name asks for clickable CONFIRM / CANCEL (30 seconds).
+
+[ICODE]chat-at: [3, 2, 1][/ICODE] always announces the start (for example 5), then only those remaining seconds. Action bar and title still update every second.
+
+When [ICODE]update-checker.enabled[/ICODE] is true, operators with [ICODE]aura.admin[/ICODE] get a clickable chat link if a newer GitHub release exists.
+
+[IMG]https://files.catbox.moe/rc5ojm.png[/IMG]
+[TABLE]
+[TR][TH]Permission[/TH][TH]Default[/TH][TH]Description[/TH][/TR]
+[TR][TD][ICODE]aura.use[/ICODE][/TD][TD]true[/TD][TD]Basic access / [ICODE]/tpacancel[/ICODE][/TD][/TR]
+[TR][TD][ICODE]aura.menu[/ICODE][/TD][TD]true[/TD][TD]Open the utility menu[/TD][/TR]
+[TR][TD][ICODE]aura.back[/ICODE][/TD][TD]true[/TD][TD]Use [ICODE]/back[/ICODE][/TD][/TR]
+[TR][TD][ICODE]aura.warp[/ICODE][/TD][TD]true[/TD][TD]Use warp commands[/TD][/TR]
+[TR][TD][ICODE]aura.warp.set[/ICODE][/TD][TD]op[/TD][TD]Create/update warps[/TD][/TR]
+[TR][TD][ICODE]aura.warp.delete[/ICODE][/TD][TD]op[/TD][TD]Delete warps[/TD][/TR]
+[TR][TD][ICODE]aura.home[/ICODE][/TD][TD]true[/TD][TD]Use home commands[/TD][/TR]
+[TR][TD][ICODE]aura.home.set[/ICODE][/TD][TD]true[/TD][TD]Set homes[/TD][/TR]
+[TR][TD][ICODE]aura.home.delete[/ICODE][/TD][TD]true[/TD][TD]Delete homes[/TD][/TR]
+[TR][TD][ICODE]aura.tpa[/ICODE][/TD][TD]true[/TD][TD]Use tpa / tpaccept / tpadeny[/TD][/TR]
+[TR][TD][ICODE]aura.tpa.trust[/ICODE][/TD][TD]true[/TD][TD]Manage trusted TPA list[/TD][/TR]
+[TR][TD][ICODE]aura.god[/ICODE] / [ICODE]aura.god.others[/ICODE][/TD][TD]op[/TD][TD]God mode for self / others[/TD][/TR]
+[TR][TD][ICODE]aura.fly[/ICODE] / [ICODE]aura.fly.others[/ICODE][/TD][TD]op[/TD][TD]Fly for self / others[/TD][/TR]
+[TR][TD][ICODE]aura.nofall[/ICODE] / [ICODE]aura.nofall.others[/ICODE][/TD][TD]op[/TD][TD]Fall damage for self / others[/TD][/TR]
+[TR][TD][ICODE]aura.nohunger[/ICODE] / [ICODE]aura.nohunger.others[/ICODE][/TD][TD]op[/TD][TD]Hunger for self / others[/TD][/TR]
+[TR][TD][ICODE]aura.rtp[/ICODE][/TD][TD]true[/TD][TD]Random safe teleport[/TD][/TR]
+[TR][TD][ICODE]aura.teleport.bypass[/ICODE][/TD][TD]op[/TD][TD]Skip teleport countdown[/TD][/TR]
+[TR][TD][ICODE]aura.admin[/ICODE][/TD][TD]op[/TD][TD]All permissions, including [ICODE]/aura reload[/ICODE][/TD][/TR]
+[/TABLE]
+
+[IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/UPGRADE%20NOTE.png[/IMG]
+Replace the jar with [ICODE]AuraUtils-1.3.0-spigot.jar[/ICODE]. After first start, translate [ICODE]plugins/AuraUtils/lang/en.yml[/ICODE] or add another [ICODE]lang/<code>.yml[/ICODE]. Add [ICODE]language:[/ICODE], [ICODE]homes.default-limit[/ICODE], and [ICODE]update-checker.enabled[/ICODE] to an existing [ICODE]config.yml[/ICODE] if those keys are missing.
+
+[IMG]https://files.catbox.moe/qlbzjk.png[/IMG]
+Anonymous [URL=https://bstats.org/plugin/bukkit/AuraUtils/33574]bStats[/URL]. Disable in [ICODE]plugins/bStats/config.yml[/ICODE] → [ICODE]enabled: false[/ICODE].
+
+[URL=https://github.com/TamaWish/AuraUtils/releases]Downloads[/URL] · [URL=https://github.com/TamaWish/AuraUtils/blob/main/CHANGELOG.md]Changelog[/URL] · [URL=https://discord.gg/kbKZzxDETU]Support[/URL]
+
+Author: [B]Lozaine@Tamawish[/B] · Copyright: [B]TamaWish[/B] · MIT

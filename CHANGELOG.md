@@ -5,6 +5,40 @@ All notable changes for AuraUtils.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-29
+
+### Added
+- **Translatable messages** — chat, GUI titles/lore, countdown title/action bar, and clickable confirm labels load from `lang/en.yml`. Set `language:` in `config.yml` and add `plugins/AuraUtils/lang/<code>.yml` for other locales. Missing keys fall back to jar English. New keys are merged into disk `lang/en.yml` on upgrade.
+- **`/aura reload`** — reloads `config.yml` and the active language file (`aura.admin`). Warps and homes are live-managed and are not re-read from disk.
+- **Home limits** — `homes.default-limit` (0 = unlimited) plus optional `homes.limits` entries keyed by Bukkit permission (LuckPerms groups work with no extra dependency). Highest matching positive max wins; `max: 0` is unlimited.
+- **Overwrite confirmation** — `/sethome` and `/setwarp` prompt with clickable **[CONFIRM]** / **[CANCEL]** when the name already exists (30 second expiry).
+- **Safe destination names** — home and warp names must be 1–32 letters, numbers, `_`, or `-`.
+- **GitHub update checker** — optional (`update-checker.enabled`, default true). Checks [TamaWish/AuraUtils](https://github.com/TamaWish/AuraUtils) for a newer release. Console is informed; players with `aura.admin` get a chat notice with a clickable releases link.
+
+### Fixed
+- Concurrent TPA request lifecycle (requester cancel and player-quit cleanup).
+- Pending teleport and `/back` state under Folia region parallelism.
+- Paper async RTP chunk-load detection inspects the runtime world implementation.
+- Teleport success messages wait for the asynchronous teleport result instead of reporting success when a request is only submitted.
+
+### Changed
+- Java package and Maven groupId moved from `me.aurautils` to `com.lozaine.aurautils`. The plugin main class is `com.lozaine.aurautils.AuraUtils`. Shaded bStats and FoliaLib relocate to `com.lozaine.aurautils.libs.*`.
+- Release builds are two shaded artifacts: `AuraUtils-1.3.0-spigot.jar` (Spigot/CraftBukkit) and `AuraUtils-1.3.0-paper-folia.jar` (Paper, Purpur, Folia). Commands and config stay the same; scheduling and RTP chunk loading adapt per platform.
+
+## [1.2.2] - 2026-08-27
+
+### Fixed
+- **Spigot watchdog on `/rtp`** — `getHighestBlockAt` no longer generates dozens of distant chunks on the main thread.
+  Paper/Folia use `World#getChunkAtAsync` (detected at runtime). Spigot prefers loaded chunks and caps sync generation (`rtp.max-sync-generations`, default 3) plus a hard search timeout (`rtp.max-search-ticks`, default 200).
+- **Folia TPA accept** — `/tpaccept` now snapshots the destination on the target thread and schedules the teleport on the requester's entity thread.
+- **Teleport callbacks** — FoliaLib `teleportAsync` results hop back to the entity scheduler before sounds/messages.
+- **False success** — "Teleported to ..." is sent only after the teleport future succeeds.
+
+### Changed
+- RTP search is one candidate at a time (no parallel `attemptsPerTick` burst).
+- RTP keeps the player's yaw/pitch.
+- Repeat `/rtp` cancels the previous search.
+
 ## [1.2.0] - 2026-08-26
 
 ### Added
