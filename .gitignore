@@ -16,6 +16,9 @@ release.properties
 # Local tools
 /tools/
 
+# Local listing drafts (not published with the repo)
+/local/
+
 # IDEs and editors
 .idea/
 *.iml
