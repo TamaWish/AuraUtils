@@ -41,15 +41,11 @@ public class HomeCommand implements CommandExecutor {
 
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         var helper = plugin.getTeleportHelper();
+        String destination = msg.get("home.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown,
-                    msg.get("home.destination-label", "name", displayName));
+            helper.scheduleTeleport(player, location, tpCountdown, destination);
         } else {
-            helper.teleportExact(player, location, success -> {
-                if (success && player.isOnline()) {
-                    msg.send(player, "home.teleported", "name", displayName);
-                }
-            });
+            helper.teleportExact(player, location, "home.teleported", destination, "name", displayName);
         }
         return true;
     }

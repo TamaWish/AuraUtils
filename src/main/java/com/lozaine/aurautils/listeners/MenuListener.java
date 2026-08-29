@@ -134,14 +134,11 @@ public class MenuListener implements Listener {
         }
 
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        String label = plugin.messages().get("back.label");
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, backLocation, tpCountdown, plugin.messages().get("back.label"));
+            plugin.getTeleportHelper().scheduleTeleport(player, backLocation, tpCountdown, label);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, backLocation, success -> {
-                if (success && player.isOnline()) {
-                    plugin.messages().send(player, "back.success");
-                }
-            });
+            plugin.getTeleportHelper().teleportExact(player, backLocation, "back.success", label);
         }
     }
 
@@ -195,15 +192,12 @@ public class MenuListener implements Listener {
         String displayName = dest.getDisplayName();
         player.closeInventory();
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        String label = plugin.messages().get("warp.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown,
-                    plugin.messages().get("warp.destination-label", "name", displayName));
+            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown, label);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(), success -> {
-                if (success && player.isOnline()) {
-                    plugin.messages().send(player, "warp.teleported", "name", displayName);
-                }
-            });
+            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(),
+                    "warp.teleported", label, "name", displayName);
         }
     }
 
@@ -223,15 +217,12 @@ public class MenuListener implements Listener {
         String displayName = dest.getDisplayName();
         player.closeInventory();
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
+        String label = plugin.messages().get("home.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown,
-                    plugin.messages().get("home.destination-label", "name", displayName));
+            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown, label);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(), success -> {
-                if (success && player.isOnline()) {
-                    plugin.messages().send(player, "home.teleported", "name", displayName);
-                }
-            });
+            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(),
+                    "home.teleported", label, "name", displayName);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.lozaine.aurautils.commands;
 
 import com.lozaine.aurautils.AuraUtils;
 import com.lozaine.aurautils.util.DestinationName;
+import com.lozaine.aurautils.util.HomeLimits;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -81,7 +82,10 @@ public class SetHomeCommand implements CommandExecutor {
             sendConfirmation(player, "/sethome " + homeName);
             return true;
         }
-        int limit = homeLimit(player);
+        int limit = HomeLimits.resolve(
+                plugin.getConfig().getInt("homes.default-limit", 0),
+                plugin.getConfig().getMapList("homes.limits"),
+                player::hasPermission);
         int currentHomes = plugin.getTeleportStoreManager().getHomes(player.getUniqueId()).size();
         if (limit > 0 && currentHomes >= limit) {
             msg.send(player, "home.limit", "limit", String.valueOf(limit));
@@ -89,33 +93,6 @@ public class SetHomeCommand implements CommandExecutor {
         }
         setHome(player, homeName, player.getLocation());
         return true;
-    }
-
-    /**
-     * Returns zero for unlimited. Permission entries are intentionally generic
-     * so LuckPerms (or Bukkit permissions) can assign them to any rank.
-     */
-    private int homeLimit(Player player) {
-        int limit = Math.max(0, plugin.getConfig().getInt("homes.default-limit", 0));
-        for (Map<?, ?> entry : plugin.getConfig().getMapList("homes.limits")) {
-            Object permission = entry.get("permission");
-            Object maximum = entry.get("max");
-            if (!(permission instanceof String node) || node.isBlank() || maximum == null
-                    || !player.hasPermission(node)) {
-                continue;
-            }
-            int value;
-            try {
-                value = Integer.parseInt(String.valueOf(maximum));
-            } catch (NumberFormatException ignored) {
-                continue;
-            }
-            if (value <= 0) {
-                return 0;
-            }
-            limit = Math.max(limit, value);
-        }
-        return limit;
     }
 
     private void setHome(Player player, String name, Location loc) {

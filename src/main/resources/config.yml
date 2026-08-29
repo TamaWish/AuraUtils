@@ -19,9 +19,10 @@ tpa:
 # Homes
 # ---------------------------------------------------------------------------
 # Maximum homes for players without a matching permission. 0 = unlimited.
-# A configured permission is checked through Bukkit, so LuckPerms groups work
-# without any direct LuckPerms dependency. The highest matching positive value
-# wins; a matching max: 0 grants unlimited homes.
+# Rank limits stack upward from default-limit. Set a positive default-limit
+# before adding VIP caps — if default is 0 (unlimited), a matching positive
+# max will cap that player instead of granting extra homes.
+# A matching max: 0 is unlimited. LuckPerms groups work with no extra dependency.
 homes:
   default-limit: 0
   limits:

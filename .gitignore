@@ -13,11 +13,15 @@ release.properties
 /mvnw
 /mvnw.cmd
 
-# Local tools
+# Local-only — not published for public GitHub readers
+#   /local/  listing paste drafts, live-smoke console helpers
+#   /tools/  unpublished helper scripts
+/local/
 /tools/
 
-# Local listing drafts (not published with the repo)
-/local/
+# Cursor canvases if copied into this tree
+*.canvas.tsx
+/canvases/
 
 # IDEs and editors
 .idea/

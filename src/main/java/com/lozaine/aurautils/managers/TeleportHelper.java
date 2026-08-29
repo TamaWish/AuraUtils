@@ -41,6 +41,24 @@ public class TeleportHelper {
         return issued != null;
     }
 
+    /**
+     * Instant teleport that reports success or {@code teleport.failed} after the
+     * platform future completes — never before the request is submitted.
+     */
+    public boolean teleportExact(Player player, Location destination,
+                                 String successKey, String failLabel, String... successPlaceholders) {
+        return teleportExact(player, destination, success -> {
+            if (player == null || !player.isOnline()) {
+                return;
+            }
+            if (Boolean.TRUE.equals(success)) {
+                plugin.messages().send(player, successKey, successPlaceholders);
+            } else {
+                plugin.messages().send(player, "teleport.failed", "label", failLabel);
+            }
+        });
+    }
+
     private CompletableFuture<Boolean> startTeleport(Player player, Location destination, Consumer<Boolean> after) {
         if (player == null || !player.isOnline() || destination == null) {
             if (after != null) {

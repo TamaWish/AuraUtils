@@ -1,5 +1,5 @@
 ![AU Banner](https://files.catbox.moe/0a2rns.png)
-# AuraUtils 1.3.0
+# AuraUtils
 
 Lightweight utility plugin for **Spigot**, **Paper**, **Purpur**, and **Folia**.
 
@@ -45,7 +45,7 @@ Cancel any pending countdown **or outgoing TPA request** with `/tpacancel` (alia
 
 | | |
 |---|---|
-| **Server** | Spigot, Paper, Purpur, or **Folia** |
+| **Server** | Spigot, CraftBukkit, Paper, Purpur, or **Folia** |
 | **Minecraft** | **1.21.x** (tested to 1.21.11) **and** **26.1 / 26.2** |
 | **Java** | 21+ (26.1+ servers require Java 25; the plugin itself is compiled for Java 21 and runs on both) |
 
@@ -56,11 +56,11 @@ One plugin covers both the classic `1.21.x` line and the new `26.x` year-based l
 ![UPGRADE NOTE](https://file.garden/apESCVYBqnKcJ-mg/AU/UPGRADE%20NOTE.png)
 
 - **Folia**: Fully supported.
-- **1.3.0**: Use the Spigot artifact on CraftBukkit/Spigot and the Paper/Folia artifact on Paper, Purpur, or Folia. After first start, translate `plugins/AuraUtils/lang/en.yml` or add another `lang/<code>.yml`. Admins are notified of new GitHub releases unless `update-checker.enabled` is false.
+- Download **one** JAR: `AuraUtils-<version>-spigot.jar` on CraftBukkit / Spigot, or `AuraUtils-<version>-paper-folia.jar` on Paper / Purpur / Folia. Both files are the same bytecode; the server type is detected at runtime. After first start, translate `plugins/AuraUtils/lang/en.yml` or add another `lang/<code>.yml`. Admins are notified of new GitHub releases unless `update-checker.enabled` is false.
 
 ![INSTALLATION](https://file.garden/apESCVYBqnKcJ-mg/AU/INSTALLATION.png)
 
-1. Download the JAR for your platform (`-spigot` or `-paper-folia`).
+1. Download the JAR for your platform (`AuraUtils-<version>-spigot.jar` or `AuraUtils-<version>-paper-folia.jar`).
 2. Place it in your server’s `plugins/` folder.
 3. Restart the server.
 4. Edit `plugins/AuraUtils/config.yml` if desired.
@@ -80,7 +80,7 @@ tpa:
   trusted-instant: false      # true = skip countdown for trusted TPAs
 
 homes:
-  default-limit: 0            # 0 = unlimited
+  default-limit: 3            # players without a matching permission (0 = unlimited)
   limits:
     - permission: aura.homes.vip
       max: 5
@@ -114,7 +114,7 @@ update-checker:
   enabled: true               # GitHub release notice for aura.admin (clickable link)
 ```
 
-Chat, GUI, titles, action bar, and clickable **[CONFIRM]** / **[CANCEL]** labels live in `plugins/AuraUtils/lang/en.yml` (copied from the jar on first run). Home and warp names are 1–32 letters, numbers, `_`, or `-`. Overwriting an existing name asks for confirmation (expires in 30 seconds).
+Chat, GUI, titles, action bar, and clickable **[CONFIRM]** / **[CANCEL]** labels live in `plugins/AuraUtils/lang/en.yml` (copied from the jar on first run). Home and warp names are 1–32 letters, numbers, `_`, or `-`. Overwriting an existing name asks for confirmation (expires in 30 seconds). Rank home limits stack upward from `default-limit` — use a positive default (for example 3) before adding VIP caps.
 
 ### Languages
 
@@ -171,10 +171,10 @@ mvn clean package
 
 The compiled release JARs will be in `target/`:
 
-- `AuraUtils-1.3.0-spigot.jar` for Spigot/CraftBukkit.
-- `AuraUtils-1.3.0-paper-folia.jar` for Paper, Purpur, and Folia.
+- `AuraUtils-<version>-spigot.jar` for Spigot / CraftBukkit / Bukkit listings.
+- `AuraUtils-<version>-paper-folia.jar` for Paper / Purpur / Folia listings.
 
-Both artifacts support Minecraft **1.21.x** and **26.x**. They share the same commands and config.
+The two files are copies of the same shaded JAR. Both support Minecraft **1.21.x** and **26.x** and share the same commands and config. Scheduling and RTP chunk loading adapt at runtime.
 
 ---
 
@@ -182,4 +182,6 @@ Both artifacts support Minecraft **1.21.x** and **26.x**. They share the same co
 
 AuraUtils uses [bStats](https://bstats.org/plugin/bukkit/AuraUtils/33574) (anonymous).  
 Disable in `plugins/bStats/config.yml` → `enabled: false`.
+
+Per-version notes: [CHANGELOG](CHANGELOG.md) · [release notes](docs/release-notes/)
 

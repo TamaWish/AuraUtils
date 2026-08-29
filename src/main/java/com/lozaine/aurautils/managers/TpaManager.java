@@ -101,23 +101,39 @@ public class TpaManager {
         if (tpCountdown > 0) {
             msg.send(requester, "tpa.trusted-countdown-requester", "player", target.getName());
             msg.send(target, "tpa.trusted-countdown-target", "player", requester.getName());
-        } else {
-            msg.send(requester, "tpa.trusted-instant-requester", "player", target.getName());
-            msg.send(target, "tpa.trusted-instant-target", "player", requester.getName());
         }
 
         var helper = plugin.getTeleportHelper();
         final int countdown = tpCountdown;
+        final String targetName = target.getName();
+        final UUID targetId = target.getUniqueId();
+        final String requesterName = requester.getName();
         plugin.getScheduler().runAtEntity(requester, () -> {
-            if (!requester.isOnline() || !target.isOnline()) {
+            if (!requester.isOnline()) {
+                return;
+            }
+            Player liveTarget = plugin.getServer().getPlayer(targetId);
+            if (liveTarget == null || !liveTarget.isOnline()) {
                 return;
             }
             if (countdown > 0) {
-                // scheduleTeleport handles countdown UI and success messages
-                helper.scheduleTeleport(requester, target.getLocation(), countdown, target.getName());
+                helper.scheduleTeleport(requester, liveTarget.getLocation(), countdown, targetName);
             } else {
-                // Instant path: messages already sent above (no extra success spam)
-                helper.teleportExact(requester, target.getLocation());
+                helper.teleportExact(requester, liveTarget.getLocation(), ok -> {
+                    if (!requester.isOnline()) {
+                        return;
+                    }
+                    if (Boolean.TRUE.equals(ok)) {
+                        plugin.messages().send(requester, "tpa.trusted-instant-requester", "player", targetName);
+                        Player stillTarget = plugin.getServer().getPlayer(targetId);
+                        if (stillTarget != null && stillTarget.isOnline()) {
+                            plugin.getScheduler().runAtEntity(stillTarget, () ->
+                                    plugin.messages().send(stillTarget, "tpa.trusted-instant-target", "player", requesterName));
+                        }
+                    } else {
+                        plugin.messages().send(requester, "tpa.failed-to", "player", targetName);
+                    }
+                });
             }
         });
     }

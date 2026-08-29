@@ -116,11 +116,26 @@ public final class MessageService {
     }
 
     public String state(boolean enabled) {
-        return get(enabled ? "common.enabled" : "common.disabled");
+        return withReset(get(enabled ? "common.enabled" : "common.disabled"));
     }
 
     public String onOff(boolean on) {
-        return get(on ? "common.on" : "common.off");
+        return withReset(get(on ? "common.on" : "common.off"));
+    }
+
+    /**
+     * Colored fragments spliced into a larger line must end with {@code &r}
+     * or the next words inherit the last color (e.g. green {@code ON} painting {@code Fly:}).
+     */
+    static String withReset(String value) {
+        if (value == null || value.isEmpty()) {
+            return "&r";
+        }
+        if (value.endsWith("&r") || value.endsWith("&R")
+                || value.endsWith("\u00A7r") || value.endsWith("\u00A7R")) {
+            return value;
+        }
+        return value + "&r";
     }
 
     public void send(CommandSender sender, String key, String... placeholders) {

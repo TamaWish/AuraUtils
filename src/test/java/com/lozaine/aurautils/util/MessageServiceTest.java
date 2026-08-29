@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -102,8 +103,81 @@ class MessageServiceTest {
         assertEquals("a random location", catalog.getString("rtp.label"));
         assertTrue(catalog.isList("aura.help"));
         assertTrue(catalog.getStringList("aura.help").size() > 10);
+        assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/delhome")));
+        assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/delwarp")));
         assertEquals("&8Aura &7| &bMenu", catalog.getString("menu.main-title"));
         assertEquals("&eA new AuraUtils release is available: &b%latest% &7(you have &f%current%&7).",
                 catalog.getString("update.available"));
+        assertTrue(catalog.isString("common.on"), "common.on must stay a string (YAML 1.1 boolean trap)");
+        assertTrue(catalog.isString("common.off"), "common.off must stay a string (YAML 1.1 boolean trap)");
+        assertEquals("&aON&r", catalog.getString("common.on"));
+        assertEquals("&cOFF&r", catalog.getString("common.off"));
+        assertEquals("&aENABLED&r", catalog.getString("common.enabled"));
+        assertEquals("&cDISABLED&r", catalog.getString("common.disabled"));
+        assertTrue(catalog.getString("aura.status-toggles").contains("&7Fly:"));
+        assertTrue(catalog.getString("aura.status-protection").contains("&7NoHunger:"));
+    }
+
+    @Test
+    void unquotedOnOffKeysAreSwallowedByYaml11() {
+        YamlConfiguration broken = YamlConfiguration.loadConfiguration(new StringReader("""
+                common:
+                  on: "&aON"
+                  off: "&cOFF"
+                """));
+        assertTrue(!broken.isString("common.on") || !"&aON".equals(broken.getString("common.on")));
+
+        YamlConfiguration quoted = YamlConfiguration.loadConfiguration(new StringReader("""
+                common:
+                  "on": "&aON"
+                  "off": "&cOFF"
+                """));
+        assertEquals("&aON", quoted.getString("common.on"));
+        assertEquals("&cOFF", quoted.getString("common.off"));
+    }
+
+    @Test
+    void onOffFallsBackWhenDiskLangLostTheYamlBooleanKeys() {
+        YamlConfiguration disk = YamlConfiguration.loadConfiguration(new StringReader("""
+                common:
+                  on: "&aON"
+                  off: "&cOFF"
+                """));
+        YamlConfiguration fallback = YamlConfiguration.loadConfiguration(new StringReader("""
+                common:
+                  "on": "&aON"
+                  "off": "&cOFF"
+                """));
+        MessageService messages = new MessageService(disk, fallback);
+        assertEquals("&aON&r", messages.onOff(true));
+        assertEquals("&cOFF&r", messages.onOff(false));
+    }
+
+    @Test
+    void onOffAndStateAlwaysResetSoFollowingLabelsStayUncolored() {
+        YamlConfiguration fallback = new YamlConfiguration();
+        fallback.set("common.on", "&aON");
+        fallback.set("common.off", "&cOFF");
+        fallback.set("common.enabled", "&aENABLED");
+        fallback.set("common.disabled", "&cDISABLED");
+        fallback.set("aura.status-toggles", "  God: %god%  Fly: %fly%");
+        fallback.set("aura.status-protection", "  NoFall: %nofall%  NoHunger: %nohunger%");
+        MessageService messages = new MessageService(new YamlConfiguration(), fallback);
+
+        assertEquals("&aON&r", messages.onOff(true));
+        assertEquals("&cOFF&r", messages.onOff(false));
+        assertEquals("&aENABLED&r", messages.state(true));
+        assertEquals("&cDISABLED&r", messages.state(false));
+        assertEquals("&aON&r", MessageService.withReset("&aON&r"));
+
+        String toggles = messages.get("aura.status-toggles",
+                "god", messages.onOff(true),
+                "fly", messages.onOff(false));
+        assertEquals("  God: &aON&r  Fly: &cOFF&r", toggles);
+
+        String protection = messages.get("aura.status-protection",
+                "nofall", messages.onOff(true),
+                "nohunger", messages.onOff(false));
+        assertEquals("  NoFall: &aON&r  NoHunger: &cOFF&r", protection);
     }
 }

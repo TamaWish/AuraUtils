@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Translatable messages** — chat, GUI titles/lore, countdown title/action bar, and clickable confirm labels load from `lang/en.yml`. Set `language:` in `config.yml` and add `plugins/AuraUtils/lang/<code>.yml` for other locales. Missing keys fall back to jar English. New keys are merged into disk `lang/en.yml` on upgrade.
 - **`/aura reload`** — reloads `config.yml` and the active language file (`aura.admin`). Warps and homes are live-managed and are not re-read from disk.
-- **Home limits** — `homes.default-limit` (0 = unlimited) plus optional `homes.limits` entries keyed by Bukkit permission (LuckPerms groups work with no extra dependency). Highest matching positive max wins; `max: 0` is unlimited.
+- **Home limits** — `homes.default-limit` (0 = unlimited) plus optional `homes.limits` entries keyed by Bukkit permission (LuckPerms groups work with no extra dependency). Highest matching positive max wins; `max: 0` is unlimited. Set a positive `default-limit` before adding VIP caps — if the default is unlimited, a matching positive max caps that player.
 - **Overwrite confirmation** — `/sethome` and `/setwarp` prompt with clickable **[CONFIRM]** / **[CANCEL]** when the name already exists (30 second expiry).
 - **Safe destination names** — home and warp names must be 1–32 letters, numbers, `_`, or `-`.
 - **GitHub update checker** — optional (`update-checker.enabled`, default true). Checks [TamaWish/AuraUtils](https://github.com/TamaWish/AuraUtils) for a newer release. Console is informed; players with `aura.admin` get a chat notice with a clickable releases link.
@@ -20,10 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pending teleport and `/back` state under Folia region parallelism.
 - Paper async RTP chunk-load detection inspects the runtime world implementation.
 - Teleport success messages wait for the asynchronous teleport result instead of reporting success when a request is only submitted.
+- Trusted instant TPA and countdown-0 `/home`, `/warp`, and `/back` (commands and GUI) report failure when the teleport future does not succeed.
+- `/aura` status showed `common.on` / `common.off` because YAML 1.1 treats unquoted `on`/`off` as booleans. Those keys are now quoted so players see ON/OFF.
+- `/aura` status leaked ON/OFF color onto the next label (`Fly:`, `NoHunger:`). ON/OFF/ENABLED/DISABLED now reset (`&r`) so labels stay gray.
 
 ### Changed
 - Java package and Maven groupId moved from `me.aurautils` to `com.lozaine.aurautils`. The plugin main class is `com.lozaine.aurautils.AuraUtils`. Shaded bStats and FoliaLib relocate to `com.lozaine.aurautils.libs.*`.
-- Release builds are two shaded artifacts: `AuraUtils-1.3.0-spigot.jar` (Spigot/CraftBukkit) and `AuraUtils-1.3.0-paper-folia.jar` (Paper, Purpur, Folia). Commands and config stay the same; scheduling and RTP chunk loading adapt per platform.
+- Release builds copy one shaded payload to two marketplace filenames: `AuraUtils-1.3.0-spigot.jar` and `AuraUtils-1.3.0-paper-folia.jar`. Bytecode is identical; FoliaLib scheduling and Paper async chunk loading are detected at runtime. Use the filename that matches the platform you are listing.
 
 ## [1.2.2] - 2026-08-27
 

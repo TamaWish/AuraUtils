@@ -70,8 +70,14 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.6.2</version>
                 <executions>
+                    <!--
+                      One shaded payload. The paper-folia classifier is a copy of this
+                      JAR (see maven-antrun-plugin below) so marketplace filenames stay
+                      distinct while bytecode stays identical. Paper/Folia vs Spigot is
+                      detected at runtime.
+                    -->
                     <execution>
-                        <id>shade-spigot</id>
+                        <id>shade-release</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
@@ -92,26 +98,25 @@
                             </relocations>
                         </configuration>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
                     <execution>
-                        <id>shade-paper-folia</id>
+                        <id>copy-paper-folia-classifier</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>run</goal>
                         </goals>
                         <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>paper-folia</shadedClassifierName>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <relocations>
-                                <relocation>
-                                    <pattern>org.bstats</pattern>
-                                    <shadedPattern>com.lozaine.aurautils.libs.bstats</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.tcoded.folialib</pattern>
-                                    <shadedPattern>com.lozaine.aurautils.libs.folialib</shadedPattern>
-                                </relocation>
-                            </relocations>
+                            <target>
+                                <copy file="${project.build.directory}/${project.build.finalName}-spigot.jar"
+                                      tofile="${project.build.directory}/${project.build.finalName}-paper-folia.jar"
+                                      overwrite="true"/>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>

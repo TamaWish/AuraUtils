@@ -34,14 +34,11 @@ public class BackCommand implements CommandExecutor {
 
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         var helper = plugin.getTeleportHelper();
+        String destination = msg.get("back.label");
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, backLocation, tpCountdown, msg.get("back.label"));
+            helper.scheduleTeleport(player, backLocation, tpCountdown, destination);
         } else {
-            helper.teleportExact(player, backLocation, success -> {
-                if (success && player.isOnline()) {
-                    msg.send(player, "back.success");
-                }
-            });
+            helper.teleportExact(player, backLocation, "back.success", destination);
         }
         return true;
     }

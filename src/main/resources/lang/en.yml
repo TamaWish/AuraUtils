@@ -10,10 +10,12 @@ common:
   console-players-only: "Console cannot use %command%."
   console-specify-player: "Console must specify a player."
   cannot-toggle-others: "&cYou can't toggle %feature% on others."
-  enabled: "&aENABLED"
-  disabled: "&cDISABLED"
-  on: "&aON"
-  off: "&cOFF"
+  enabled: "&aENABLED&r"
+  disabled: "&cDISABLED&r"
+  # Quote on/off — YAML 1.1 otherwise treats them as booleans and /aura shows "common.on".
+  # Trailing &r stops the color from leaking into the next label on the same line.
+  "on": "&aON&r"
+  "off": "&cOFF&r"
   unknown-world: "unknown"
   unknown: "Unknown"
   coords-unknown: "?, ?, ?"
@@ -36,8 +38,10 @@ aura:
     - "  &e/tpauntrust &8<player> &7- Remove from trusted"
     - "  &e/warp &8[<name>|list] &7- Teleport to a warp or open GUI"
     - "  &e/setwarp &8<name> &7- Set a warp"
+    - "  &e/delwarp &8<name> &7- Delete a warp"
     - "  &e/home &8[<name>|list] &7- Teleport to a home or open GUI"
     - "  &e/sethome &8<name> &7- Set a home"
+    - "  &e/delhome &8<name> &7- Delete a home"
     - "  &e/back &7- Return to your last teleport"
     - "  &e/menu &7- Open the utility GUI"
     - "  &e/god &8[player]   &7- Toggle god mode"
@@ -48,8 +52,8 @@ aura:
     - "  &e/rtp &7- Random safe teleport"
   help-footer: "&8&m------------------------------------"
   status-header: "  &7Your status:"
-  status-toggles: "  God: %god%  Fly: %fly%"
-  status-protection: "  NoFall: %nofall%  NoHunger: %nohunger%"
+  status-toggles: "  &7God: %god%  &7Fly: %fly%"
+  status-protection: "  &7NoFall: %nofall%  &7NoHunger: %nohunger%"
 
 update:
   available: "&eA new AuraUtils release is available: &b%latest% &7(you have &f%current%&7)."

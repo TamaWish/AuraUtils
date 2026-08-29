@@ -4,7 +4,7 @@ main: com.lozaine.aurautils.AuraUtils
 api-version: "1.21"
 folia-supported: true
 description: Utility bundle — TPA (with trusted/instant), God, Fly, homes, warps, RTP, and more. Spigot, Paper & Folia.
-author: YourName
+author: Lozaine
 
 commands:
   menu:

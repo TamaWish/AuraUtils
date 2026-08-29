@@ -1,6 +1,6 @@
 [CENTER][IMG]https://files.catbox.moe/0a2rns.png[/IMG]
 
-[URL=https://github.com/TamaWish/AuraUtils/releases][IMG]https://img.shields.io/badge/Release-v1.3.0-brightgreen?style=flat-square[/IMG][/URL]
+[URL=https://github.com/TamaWish/AuraUtils/releases][IMG]https://img.shields.io/github/v/release/TamaWish/AuraUtils?style=flat-square&label=Release[/IMG][/URL]
 [URL=https://www.java.com][IMG]https://img.shields.io/badge/Java-21%2B-orange?style=flat-square&logo=openjdk&logoColor=white[/IMG][/URL]
 [URL=https://www.spigotmc.org/][IMG]https://img.shields.io/badge/Spigot-1.21.x%2B%20%2F%2026.x%2B-yellow?style=flat-square[/IMG][/URL]
 [URL=https://github.com/TamaWish/AuraUtils/blob/main/LICENSE][IMG]https://img.shields.io/badge/license-MIT-blue?style=flat-square[/IMG][/URL]
@@ -19,11 +19,11 @@ Players get a shared teleport countdown, a simple GUI, and translatable messages
 
 [IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/INSTALLATION.png[/IMG]
 
-Install [B]AuraUtils-1.3.0-spigot.jar[/B] in [ICODE]plugins/[/ICODE], then restart.
+Install [B]AuraUtils-<version>-spigot.jar[/B] in [ICODE]plugins/[/ICODE], then restart.
 
 [TABLE]
 [TR][TH]Server[/TH][TH]Install[/TH][/TR]
-[TR][TD]Spigot[/TD][TD][ICODE]AuraUtils-1.3.0-spigot.jar[/ICODE][/TD][/TR]
+[TR][TD]Spigot[/TD][TD][ICODE]AuraUtils-<version>-spigot.jar[/ICODE][/TD][/TR]
 [/TABLE]
 
 [LIST]
@@ -84,10 +84,12 @@ tpa:
   trusted-instant: false
 
 homes:
-  default-limit: 0
+  default-limit: 3
   limits:
     - permission: aura.homes.vip
       max: 5
+    - permission: aura.homes.unlimited
+      max: 0
 
 rtp:
   radius: 2000
@@ -142,7 +144,64 @@ When [ICODE]update-checker.enabled[/ICODE] is true, operators with [ICODE]aura.a
 [/TABLE]
 
 [IMG]https://file.garden/apESCVYBqnKcJ-mg/AU/UPGRADE%20NOTE.png[/IMG]
-Replace the jar with [ICODE]AuraUtils-1.3.0-spigot.jar[/ICODE]. After first start, translate [ICODE]plugins/AuraUtils/lang/en.yml[/ICODE] or add another [ICODE]lang/<code>.yml[/ICODE]. Add [ICODE]language:[/ICODE], [ICODE]homes.default-limit[/ICODE], and [ICODE]update-checker.enabled[/ICODE] to an existing [ICODE]config.yml[/ICODE] if those keys are missing.
+Replace the jar with [ICODE]AuraUtils-<version>-spigot.jar[/ICODE]. After first start, translate [ICODE]plugins/AuraUtils/lang/en.yml[/ICODE] or add another [ICODE]lang/<code>.yml[/ICODE]. Add [ICODE]language:[/ICODE], [ICODE]homes.default-limit[/ICODE], and [ICODE]update-checker.enabled[/ICODE] to an existing [ICODE]config.yml[/ICODE] if those keys are missing.
+
+[B][SIZE=5]Changelog[/SIZE][/B]
+
+[B]1.3.0[/B]
+[B]Added[/B]
+[LIST]
+[*]Translatable messages in [ICODE]lang/en.yml[/ICODE]; set [ICODE]language:[/ICODE] and add [ICODE]lang/<code>.yml[/ICODE] for extra locales
+[*][ICODE]/aura reload[/ICODE] reloads config and language ([ICODE]aura.admin[/ICODE])
+[*]Home limits: [ICODE]homes.default-limit[/ICODE] and permission-based [ICODE]homes.limits[/ICODE] (set a positive default before VIP caps)
+[*]Safer [ICODE]/sethome[/ICODE] / [ICODE]/setwarp[/ICODE]: 1–32 letter/number/[ICODE]_[/ICODE]/[ICODE]-[/ICODE] names and clickable overwrite confirm
+[*]Optional GitHub update checker ([ICODE]update-checker.enabled[/ICODE]); [ICODE]aura.admin[/ICODE] gets a clickable releases link
+[/LIST]
+[B]Fixed[/B]
+[LIST]
+[*]Concurrent TPA request lifecycle (cancel / player quit)
+[*]Folia-safe pending teleport and [ICODE]/back[/ICODE] state
+[*]Paper async RTP chunk-load detection
+[*]Teleport success waits for the async result (trusted instant TPA and countdown-0 home/warp/back included)
+[*][ICODE]/aura[/ICODE] status shows ON/OFF instead of raw keys, and color no longer leaks onto Fly / NoHunger labels
+[/LIST]
+[B]Changed[/B]
+[LIST]
+[*]Package [ICODE]com.lozaine.aurautils[/ICODE] (main class [ICODE]com.lozaine.aurautils.AuraUtils[/ICODE])
+[*]Marketplace filename: [ICODE]AuraUtils-<version>-spigot.jar[/ICODE] (same bytecode as [ICODE]AuraUtils-<version>-paper-folia.jar[/ICODE])
+[/LIST]
+
+[B]1.2.2 — RTP watchdog / Folia TPA[/B]
+[LIST]
+[*]Spigot [ICODE]/rtp[/ICODE] no longer generates unloaded chunks on the tick thread
+[*]Folia [ICODE]/tpaccept[/ICODE] hops to the requester’s entity thread
+[*]Teleport success only after the teleport future completes
+[/LIST]
+
+[B]1.2.0 — Trusted / instant TPA[/B]
+[LIST]
+[*][ICODE]/tpatrust[/ICODE], [ICODE]/tpauntrust[/ICODE] — personal trusted list; trusted players auto-accept TPA
+[*]Config: [ICODE]tpa.trusted-max[/ICODE], [ICODE]tpa.trusted-instant[/ICODE]
+[*]Permission [ICODE]aura.tpa.trust[/ICODE] (default: true)
+[/LIST]
+
+[B]1.1.1 — Folia fixes[/B]
+[LIST]
+[*]RTP height/surface checks on the target location’s region
+[*][ICODE]/back[/ICODE] records location before teleport (Folia often skips PlayerTeleportEvent)
+[/LIST]
+
+[B]1.1.0 — Folia support[/B]
+[LIST]
+[*]Region-aware scheduling ([ICODE]folia-supported: true[/ICODE])
+[*]Async teleport on Paper / Folia
+[/LIST]
+
+[B]1.0.0 — Initial release[/B]
+[LIST]
+[*]Homes, warps, TPA, back, RTP, god, fly, nofall, nohunger, menu, [ICODE]/aura[/ICODE]
+[*]Shared teleport countdown · Minecraft 1.21.x and 26.1 / 26.2 · Java 21+
+[/LIST]
 
 [IMG]https://files.catbox.moe/qlbzjk.png[/IMG]
 Anonymous [URL=https://bstats.org/plugin/bukkit/AuraUtils/33574]bStats[/URL]. Disable in [ICODE]plugins/bStats/config.yml[/ICODE] → [ICODE]enabled: false[/ICODE].
