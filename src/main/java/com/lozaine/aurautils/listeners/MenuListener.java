@@ -1,6 +1,7 @@
 package com.lozaine.aurautils.listeners;
 
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import com.lozaine.aurautils.menus.MenuType;
 import com.lozaine.aurautils.menus.UtilityMenuHolder;
 import org.bukkit.Material;
@@ -75,6 +76,8 @@ public class MenuListener implements Listener {
                 }
                 plugin.getMenuManager().openTpaMenu(player);
             }
+            case "open_inventories" -> openInventoriesPicker(player);
+            case "open_inventory" -> openStoredInventory(player, id);
             case "open_back" -> handleBack(player);
             case "open_main" -> plugin.getMenuManager().openMainMenu(player);
             case "refresh_menu" -> plugin.getMenuManager().openMainMenu(player);
@@ -120,6 +123,49 @@ public class MenuListener implements Listener {
         // no-op; menus are stateless and reopen on demand
     }
 
+    private void openInventoriesPicker(Player player) {
+        openInventoriesPicker(player, 0);
+    }
+
+    private void openInventoriesPicker(Player player, int page) {
+        if (plugin.getPlayerInventoryManager() == null || !plugin.getPlayerInventoryManager().isEnabled()) {
+            player.sendMessage(plugin.prefix(plugin.messages().get("inventories.disabled")));
+            return;
+        }
+        if (!player.hasPermission("aura.inv")) {
+            player.sendMessage(plugin.prefix(plugin.messages().get("common.no-permission")));
+            return;
+        }
+        plugin.getMenuManager().openInventoriesMenu(player, page);
+    }
+
+    private void openStoredInventory(Player player, String id) {
+        if (plugin.getPlayerInventoryManager() == null || !plugin.getPlayerInventoryManager().isEnabled()) {
+            player.sendMessage(plugin.prefix(plugin.messages().get("inventories.disabled")));
+            return;
+        }
+        if (!player.hasPermission("aura.inv")) {
+            player.sendMessage(plugin.prefix(plugin.messages().get("common.no-permission")));
+            return;
+        }
+        if (id == null) {
+            return;
+        }
+        int number;
+        try {
+            number = Integer.parseInt(id);
+        } catch (NumberFormatException ignored) {
+            return;
+        }
+        if (!plugin.getPlayerInventoryManager().canOpen(player, number)) {
+            plugin.messages().send(player, "inventories.denied",
+                    "number", String.valueOf(number),
+                    "limit", String.valueOf(plugin.getPlayerInventoryManager().resolveLimit(player)));
+            return;
+        }
+        plugin.getMenuManager().openInventoryLater(player, number);
+    }
+
     private void handleBack(Player player) {
         if (!player.hasPermission("aura.back")) {
             player.sendMessage(plugin.prefix(plugin.messages().get("common.no-permission")));
@@ -136,9 +182,9 @@ public class MenuListener implements Listener {
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         String label = plugin.messages().get("back.label");
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, backLocation, tpCountdown, label);
+            plugin.getTeleportHelper().scheduleTeleport(player, backLocation, tpCountdown, label, EconomyAction.BACK);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, backLocation, "back.success", label);
+            plugin.getTeleportHelper().teleportExact(player, backLocation, "back.success", label, EconomyAction.BACK);
         }
     }
 
@@ -156,6 +202,8 @@ public class MenuListener implements Listener {
                 return;
             }
             plugin.getMenuManager().openHomesMenu(player, nextPage);
+        } else if (holder.getType() == MenuType.INVENTORIES) {
+            openInventoriesPicker(player, nextPage);
         }
     }
 
@@ -173,6 +221,8 @@ public class MenuListener implements Listener {
                 return;
             }
             plugin.getMenuManager().openHomesMenu(player, previousPage);
+        } else if (holder.getType() == MenuType.INVENTORIES) {
+            openInventoriesPicker(player, previousPage);
         }
     }
 
@@ -185,8 +235,13 @@ public class MenuListener implements Listener {
             return;
         }
         var dest = plugin.getTeleportStoreManager().getWarpDestination(name);
-        if (dest == null || dest.getLocation() == null) {
+        if (dest == null) {
             plugin.messages().send(player, "warp.not-found", "name", name);
+            return;
+        }
+        var location = dest.getLocation();
+        if (location == null) {
+            plugin.messages().send(player, "teleport.destination-world");
             return;
         }
         String displayName = dest.getDisplayName();
@@ -194,10 +249,10 @@ public class MenuListener implements Listener {
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         String label = plugin.messages().get("warp.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown, label);
+            plugin.getTeleportHelper().scheduleTeleport(player, location, tpCountdown, label, EconomyAction.WARP);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(),
-                    "warp.teleported", label, "name", displayName);
+            plugin.getTeleportHelper().teleportExact(player, location,
+                    "warp.teleported", label, EconomyAction.WARP, "name", displayName);
         }
     }
 
@@ -210,8 +265,13 @@ public class MenuListener implements Listener {
             return;
         }
         var dest = plugin.getTeleportStoreManager().getHomeDestination(player.getUniqueId(), name);
-        if (dest == null || dest.getLocation() == null) {
+        if (dest == null) {
             plugin.messages().send(player, "home.not-found", "name", name);
+            return;
+        }
+        var location = dest.getLocation();
+        if (location == null) {
+            plugin.messages().send(player, "teleport.destination-world");
             return;
         }
         String displayName = dest.getDisplayName();
@@ -219,10 +279,10 @@ public class MenuListener implements Listener {
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         String label = plugin.messages().get("home.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            plugin.getTeleportHelper().scheduleTeleport(player, dest.getLocation(), tpCountdown, label);
+            plugin.getTeleportHelper().scheduleTeleport(player, location, tpCountdown, label, EconomyAction.HOME);
         } else {
-            plugin.getTeleportHelper().teleportExact(player, dest.getLocation(),
-                    "home.teleported", label, "name", displayName);
+            plugin.getTeleportHelper().teleportExact(player, location,
+                    "home.teleported", label, EconomyAction.HOME, "name", displayName);
         }
     }
 }

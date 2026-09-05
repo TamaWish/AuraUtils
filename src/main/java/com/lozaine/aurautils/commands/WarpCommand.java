@@ -1,6 +1,7 @@
 package com.lozaine.aurautils.commands;
 
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -32,20 +33,24 @@ public class WarpCommand implements CommandExecutor {
         }
 
         var dest = plugin.getTeleportStoreManager().getWarpDestination(args[0]);
-        if (dest == null || dest.getLocation() == null) {
+        if (dest == null) {
             msg.send(player, "warp.not-found", "name", args[0]);
             return true;
         }
-        String displayName = dest.getDisplayName();
         var location = dest.getLocation();
+        if (location == null) {
+            msg.send(player, "teleport.destination-world");
+            return true;
+        }
+        String displayName = dest.getDisplayName();
 
         int tpCountdown = Math.max(0, plugin.getConfig().getInt("teleport.countdown", 5));
         var helper = plugin.getTeleportHelper();
         String destination = msg.get("warp.destination-label", "name", displayName);
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, location, tpCountdown, destination);
+            helper.scheduleTeleport(player, location, tpCountdown, destination, EconomyAction.WARP);
         } else {
-            helper.teleportExact(player, location, "warp.teleported", destination, "name", displayName);
+            helper.teleportExact(player, location, "warp.teleported", destination, EconomyAction.WARP, "name", displayName);
         }
         return true;
     }

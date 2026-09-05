@@ -1,6 +1,6 @@
 # AuraUtils Configuration
 # Use /aura reload (aura.admin) after editing, or restart the server.
-# Reload applies config.yml and lang/<language>.yml. Warps and homes stay live (not re-read).
+# Reload applies config.yml, permissions.yml, and lang/<language>.yml. Warps, homes, and inventories stay live (not re-read).
 # All teleport commands (home, warp, back, TPA, RTP, menu) share the same countdown system.
 
 # ---------------------------------------------------------------------------
@@ -22,14 +22,66 @@ tpa:
 # Rank limits stack upward from default-limit. Set a positive default-limit
 # before adding VIP caps — if default is 0 (unlimited), a matching positive
 # max will cap that player instead of granting extra homes.
-# A matching max: 0 is unlimited. LuckPerms groups work with no extra dependency.
+# A matching max: 0 is unlimited.
+#
+# The permission nodes here are ones YOU invent. AuraUtils ships no rank nodes;
+# it only asks your permission plugin whether the player has the node you list.
+# Grant that same node through your permission plugin.
+#
+#   default-limit: 3
+#   limits:
+#     - permission: your.existing.rank.permission
+#       max: 5
+#     - permission: your.existing.staff.permission
+#       max: 0          # unlimited
 homes:
   default-limit: 0
-  limits:
-    # - permission: aura.homes.vip
-    #   max: 5
-    # - permission: aura.homes.unlimited
-    #   max: 0
+  limits: []
+
+# ---------------------------------------------------------------------------
+# Extra inventories (/inv)
+# ---------------------------------------------------------------------------
+# Personal double-chest storage. /inv 1, /inv 2, …  Bare /inv opens inventory 1
+# when the player only has one, or a picker when they have more. /inv list always
+# opens the picker. Master switch: inventories.enabled.
+#
+# How many inventories a player can open (highest wins, then capped by max):
+#   1. inventories.default-limit — everyone with aura.inv (default 1)
+#   2. aura.inv.<n>              — having aura.inv.5 allows inventories 1 through 5
+#   3. inventories.limits        — optional, see below
+#   4. aura.admin                — all inventories up to max
+# 0 in default-limit or a matching limits max means all `max` slots (not infinite).
+#
+# Giving a rank more inventories (LuckPerms shown; any permission plugin works):
+#
+#   Default players already have /inv 1. No permission work needed.
+#
+#   Grant the highest number that rank should reach:
+#     /lp group vip permission set aura.inv.3 true    -> /inv 1, /inv 2, /inv 3
+#     /lp user Steve permission set aura.inv.2 true   -> one extra chest for Steve
+#   You do not need aura.inv.1 and aura.inv.2 as well.
+#
+#   AuraUtils registers aura.inv.1 … aura.inv.<max> above, so aura.inv.* also
+#   works and the nodes tab-complete in /lp.
+#
+# inventories.limits is optional and only for keeping the number in this file
+# instead of in your permission plugin. The node is one YOU invent — AuraUtils
+# does not ship any rank nodes. Uncomment, use your own node, then /aura reload:
+#
+#   limits:
+#     - permission: your.existing.rank.permission
+#       max: 3
+#
+# Full guide: docs/PLAYER_INVENTORIES.md
+inventories:
+  enabled: true
+  # Chest rows (1–6). 6 = double chest (54 slots).
+  rows: 6
+  # Hard cap on numbered inventories (1–54).
+  max: 10
+  default-limit: 1
+  # Optional. Leave empty if you grant aura.inv.<n> in your permission plugin.
+  limits: []
 
 # ---------------------------------------------------------------------------
 # Random teleport (/rtp)
@@ -90,6 +142,48 @@ teleport:
   # When sound is true, raise the note-block pitch as the countdown approaches 0
   # (starts lower, ends higher – makes the final seconds more noticeable)
   sound-rising-pitch: true
+
+# ---------------------------------------------------------------------------
+# Economy (Vault)
+# ---------------------------------------------------------------------------
+# Optional. Requires Vault plus an economy plugin (EssentialsX, CMI, etc.).
+# Recommended companion: PureEconomy (https://github.com/TamaWish/PureEconomy)
+# — balances, pay, bank, baltop. It registers its default currency with Vault;
+# AuraUtils then charges that currency.
+# Costs of 0 are free. If Vault or a provider is missing, every action stays free.
+# aura.economy.bypass skips costs. Money is taken when the action succeeds;
+# a cancelled countdown is not charged. A failed teleport is refunded.
+economy:
+  enabled: true
+  # Chat names the action (/home, /setwarp, …) and the amount spent or refunded
+  notify: true
+  costs:
+    home: 0.0
+    sethome: 0.0
+    warp: 0.0
+    setwarp: 0.0
+    tpa: 0.0
+    rtp: 0.0
+    back: 0.0
+
+# ---------------------------------------------------------------------------
+# Timber (easy tree chopping)
+# ---------------------------------------------------------------------------
+# When enabled, chopping one log with an axe fells the connected tree
+# (same wood type, including stripped logs). Leaves are cleared too.
+# Log buildings without leaves are left alone. Sneak to chop a single log.
+# Players can /timber to turn this off for themselves (default is on).
+timber:
+  enabled: true
+  # Only axes fell trees. Hand / other tools chop a single block.
+  require-axe: true
+  # Sneaking chops only the broken log (useful for precise harvests).
+  sneak-chops-single: true
+  # Also break connected leaves of the same tree (false = vanilla leaf decay).
+  break-leaves: true
+  # Safety caps to avoid lag on oversized connected log clusters.
+  max-logs: 128
+  max-leaves: 256
 
 # ---------------------------------------------------------------------------
 # Messages

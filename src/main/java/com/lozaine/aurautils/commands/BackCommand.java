@@ -1,6 +1,7 @@
 package com.lozaine.aurautils.commands;
 
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,9 +37,9 @@ public class BackCommand implements CommandExecutor {
         var helper = plugin.getTeleportHelper();
         String destination = msg.get("back.label");
         if (tpCountdown > 0) {
-            helper.scheduleTeleport(player, backLocation, tpCountdown, destination);
+            helper.scheduleTeleport(player, backLocation, tpCountdown, destination, EconomyAction.BACK);
         } else {
-            helper.teleportExact(player, backLocation, "back.success", destination);
+            helper.teleportExact(player, backLocation, "back.success", destination, EconomyAction.BACK);
         }
         return true;
     }

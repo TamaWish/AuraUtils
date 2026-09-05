@@ -2,6 +2,7 @@ package com.lozaine.aurautils.commands;
 
 import com.lozaine.aurautils.AuraUtils;
 import com.lozaine.aurautils.util.DestinationName;
+import com.lozaine.aurautils.economy.EconomyAction;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -73,6 +74,9 @@ public class SetWarpCommand implements CommandExecutor {
             return true;
         }
         if (plugin.getTeleportStoreManager().getWarpDestination(warpName) != null) {
+            if (!plugin.economy().ensureCanPay(player, EconomyAction.SET_WARP)) {
+                return true;
+            }
             pendingOverwrites.put(player.getUniqueId(), new PendingWarp(
                     warpName, player.getLocation().clone(), System.currentTimeMillis() + CONFIRMATION_MILLIS));
             msg.send(player, "warp.overwrite-prompt",
@@ -86,9 +90,22 @@ public class SetWarpCommand implements CommandExecutor {
     }
 
     private void setWarp(Player player, String name, Location loc) {
-        plugin.getTeleportStoreManager().setWarp(name, loc, player);
+        boolean charged = !plugin.economy().isFree(player, EconomyAction.SET_WARP);
+        if (!plugin.economy().tryBeginCharge(player, EconomyAction.SET_WARP)) {
+            return;
+        }
+        if (!plugin.getTeleportStoreManager().setWarp(name, loc, player)) {
+            if (charged) {
+                plugin.economy().abortCharge(player, EconomyAction.SET_WARP);
+            }
+            plugin.messages().send(player, "teleport.destination-world");
+            return;
+        }
         plugin.getTeleportStoreManager().save();
         plugin.messages().send(player, "warp.set", "name", name, "coords", formatPos(loc));
+        if (charged) {
+            plugin.economy().announceCharge(player, EconomyAction.SET_WARP);
+        }
     }
 
     private void sendConfirmation(Player player, String commandPrefix) {

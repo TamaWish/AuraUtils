@@ -27,6 +27,16 @@ class MessageServiceTest {
     }
 
     @Test
+    void chargedTemplateNamesAmountAndAction() {
+        String result = MessageService.apply(
+                "&7You spent &e%amount% &7on &b%action%&7. Balance: &e%balance%&7.",
+                "amount", "10.00",
+                "action", "/setwarp",
+                "balance", "90.00");
+        assertEquals("&7You spent &e10.00 &7on &b/setwarp&7. Balance: &e90.00&7.", result);
+    }
+
+    @Test
     void missingKeyFallsBackToEnglishThenToKey() {
         YamlConfiguration lang = new YamlConfiguration();
         lang.set("tpa.self", "&cCustom self message.");
@@ -105,6 +115,8 @@ class MessageServiceTest {
         assertTrue(catalog.getStringList("aura.help").size() > 10);
         assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/delhome")));
         assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/delwarp")));
+        assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/timber")));
+        assertTrue(catalog.getStringList("aura.help").stream().anyMatch(line -> line.contains("/inv")));
         assertEquals("&8Aura &7| &bMenu", catalog.getString("menu.main-title"));
         assertEquals("&eA new AuraUtils release is available: &b%latest% &7(you have &f%current%&7).",
                 catalog.getString("update.available"));
@@ -114,8 +126,28 @@ class MessageServiceTest {
         assertEquals("&cOFF&r", catalog.getString("common.off"));
         assertEquals("&aENABLED&r", catalog.getString("common.enabled"));
         assertEquals("&cDISABLED&r", catalog.getString("common.disabled"));
+        assertEquals("&cYou need &e%amount% &cto use &b%action%&c. You have &e%balance%&c.",
+                catalog.getString("economy.cannot-afford"));
+        assertEquals("&7You spent &e%amount% &7on &b%action%&7. Balance: &e%balance%&7.",
+                catalog.getString("economy.charged"));
+        assertEquals("&7Refunded &e%amount% &7for &b%action%&7. Balance: &e%balance%&7.",
+                catalog.getString("economy.refunded"));
+        assertEquals("/sethome", catalog.getString("economy.action-sethome"));
+        assertEquals("/setwarp", catalog.getString("economy.action-setwarp"));
+        assertEquals("/home", catalog.getString("economy.action-home"));
+        assertEquals("/warp", catalog.getString("economy.action-warp"));
+        assertEquals("/tpa", catalog.getString("economy.action-tpa"));
+        assertEquals("/rtp", catalog.getString("economy.action-rtp"));
+        assertEquals("/back", catalog.getString("economy.action-back"));
+        assertEquals("&7Cost: &e%cost%", catalog.getString("economy.cost-lore"));
         assertTrue(catalog.getString("aura.status-toggles").contains("&7Fly:"));
         assertTrue(catalog.getString("aura.status-protection").contains("&7NoHunger:"));
+        assertTrue(catalog.getString("aura.status-timber").contains("&7Timber:"));
+        assertTrue(catalog.getString("aura.status-inventories").contains("%limit%"));
+        assertEquals("&8Aura &7| &bInventory %number%", catalog.getString("inventories.title"));
+        assertEquals("&bInventories", catalog.getString("menu.inventories-name"));
+        assertEquals("Timber %state%&r.", catalog.getString("toggles.timber-self"));
+        assertTrue(catalog.getString("aura.reload").contains("permissions.yml"));
     }
 
     @Test

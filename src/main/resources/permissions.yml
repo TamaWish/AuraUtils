@@ -1,0 +1,54 @@
+# AuraUtils permission defaults
+# Edit this file, then run /aura reload (aura.admin) or restart.
+#
+# Values:
+#   true  — everyone (including non-ops)
+#   false — nobody, unless LuckPerms (or similar) grants the node
+#   op    — operators only
+#
+# LuckPerms / other permission plugins still override these per player.
+# Missing keys keep the plugin.yml default. Unknown keys are ignored.
+# aura.warp and aura.warp.set are separate keys (both are kept).
+
+defaults:
+  # Basic
+  aura.use: true
+  aura.menu: true
+  aura.admin: op
+
+  # Teleport
+  aura.back: true
+  aura.rtp: true
+  aura.teleport.bypass: op
+
+  # Warps
+  aura.warp: true
+  aura.warp.set: op
+  aura.warp.delete: op
+
+  # Homes
+  aura.home: true
+  aura.home.set: true
+  aura.home.delete: true
+
+  # TPA
+  aura.tpa: true
+  aura.tpa.trust: true
+
+  # Toggles
+  aura.god: op
+  aura.god.others: op
+  aura.fly: op
+  aura.fly.others: op
+  aura.nofall: op
+  aura.nofall.others: op
+  aura.nohunger: op
+  aura.nohunger.others: op
+  aura.timber: true
+  aura.timber.others: op
+
+  # Extra inventories (/inv)
+  aura.inv: true
+
+  # Economy
+  aura.economy.bypass: op

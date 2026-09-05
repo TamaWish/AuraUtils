@@ -42,6 +42,19 @@ public class AuraCommand implements CommandExecutor {
             msg.sendPlain(sender, "aura.status-protection",
                     "nofall", msg.onOff(mgr.isNoFall(id)),
                     "nohunger", msg.onOff(mgr.isNoHunger(id)));
+            msg.sendPlain(sender, "aura.status-timber",
+                    "timber", msg.onOff(mgr.isTimber(id)));
+            if (plugin.getPlayerInventoryManager() != null && plugin.getPlayerInventoryManager().isEnabled()) {
+                msg.sendPlain(sender, "aura.status-inventories",
+                        "limit", String.valueOf(plugin.getPlayerInventoryManager().resolveLimit(p)));
+            }
+            if (p.hasPermission("aura.admin")) {
+                if (plugin.economy() != null && plugin.economy().isHooked()) {
+                    msg.sendPlain(sender, "aura.economy-hooked", "provider", plugin.economy().providerName());
+                } else {
+                    msg.sendPlain(sender, "aura.economy-idle");
+                }
+            }
         }
         msg.sendPlain(sender, "aura.help-footer");
         return true;

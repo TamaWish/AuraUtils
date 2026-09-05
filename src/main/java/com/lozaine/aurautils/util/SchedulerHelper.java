@@ -55,7 +55,7 @@ public final class SchedulerHelper {
     }
 
     public void runAtLocation(Location location, Runnable task) {
-        if (location == null || location.getWorld() == null) {
+        if (location == null || !location.isWorldLoaded()) {
             return;
         }
         foliaLib.getScheduler().runAtLocation(location, wt -> task.run());

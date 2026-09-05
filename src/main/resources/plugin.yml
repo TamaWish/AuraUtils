@@ -3,8 +3,9 @@ version: ${project.version}
 main: com.lozaine.aurautils.AuraUtils
 api-version: "1.21"
 folia-supported: true
-description: Utility bundle — TPA (with trusted/instant), God, Fly, homes, warps, RTP, and more. Spigot, Paper & Folia.
+description: Utility bundle — TPA (with trusted/instant), God, Fly, timber, player inventories, homes, warps, RTP, optional Vault economy, and more. Spigot, Paper & Folia.
 author: Lozaine
+softdepend: [Vault]
 
 commands:
   menu:
@@ -85,12 +86,22 @@ commands:
     description: Toggle hunger depletion
     usage: /nohunger [player]
     permission: aura.nohunger
+  timber:
+    description: Toggle chopping a whole tree from one log
+    usage: /timber [player]
+    aliases: [treefeller, treecapitator]
+    permission: aura.timber
+  inv:
+    description: Open a personal extra inventory
+    usage: /inv [number|list]
+    aliases: [vault, playervault, pv]
+    permission: aura.inv
   rtp:
     description: Randomly teleport to a safe location
     usage: /rtp
     permission: aura.rtp
   aura:
-    description: Show AuraUtils info and commands, or reload config and language files
+    description: Show AuraUtils info and commands, or reload config, permissions, and language files
     usage: /aura [reload]
     permission: aura.use
 
@@ -152,11 +163,23 @@ permissions:
   aura.nohunger.others:
     description: Toggle hunger on others
     default: op
+  aura.timber:
+    description: Chop a whole tree from one log (when timber.enabled is true)
+    default: true
+  aura.timber.others:
+    description: Toggle timber on others
+    default: op
+  aura.inv:
+    description: Open personal extra inventories (/inv 1, /inv 2, …)
+    default: true
   aura.rtp:
     description: Use random teleport
     default: true
   aura.teleport.bypass:
     description: Skip teleport countdown (instant teleports for home/warp/back/tpa/rtp)
+    default: op
+  aura.economy.bypass:
+    description: Skip Vault economy costs for AuraUtils actions
     default: op
   aura.admin:
     description: All AuraUtils permissions, including /aura reload
@@ -181,5 +204,9 @@ permissions:
       aura.nofall.others: true
       aura.nohunger: true
       aura.nohunger.others: true
+      aura.timber: true
+      aura.timber.others: true
+      aura.inv: true
       aura.rtp: true
       aura.teleport.bypass: true
+      aura.economy.bypass: true

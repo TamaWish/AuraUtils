@@ -48,7 +48,7 @@ public class FlyListener implements Listener {
         if (!plugin.isEnabled()) {
             return;
         }
-        if (event.getTo() == null || event.getFrom().getWorld() == null || event.getTo().getWorld() == null) {
+        if (event.getTo() == null || !event.getFrom().isWorldLoaded() || !event.getTo().isWorldLoaded()) {
             return;
         }
         if (event.getFrom().getWorld().equals(event.getTo().getWorld())) {

@@ -3,6 +3,8 @@ package com.lozaine.aurautils.commands;
 import com.lozaine.aurautils.AuraUtils;
 import com.lozaine.aurautils.util.DestinationName;
 import com.lozaine.aurautils.util.HomeLimits;
+import com.lozaine.aurautils.util.PermissionLimits;
+import com.lozaine.aurautils.economy.EconomyAction;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -74,6 +76,9 @@ public class SetHomeCommand implements CommandExecutor {
             return true;
         }
         if (plugin.getTeleportStoreManager().getHomeDestination(player.getUniqueId(), homeName) != null) {
+            if (!plugin.economy().ensureCanPay(player, EconomyAction.SET_HOME)) {
+                return true;
+            }
             pendingOverwrites.put(player.getUniqueId(), new PendingHome(
                     homeName, player.getLocation().clone(), System.currentTimeMillis() + CONFIRMATION_MILLIS));
             msg.send(player, "home.overwrite-prompt",
@@ -84,7 +89,7 @@ public class SetHomeCommand implements CommandExecutor {
         }
         int limit = HomeLimits.resolve(
                 plugin.getConfig().getInt("homes.default-limit", 0),
-                plugin.getConfig().getMapList("homes.limits"),
+                PermissionLimits.readEntries(plugin.getConfig(), "homes.limits"),
                 player::hasPermission);
         int currentHomes = plugin.getTeleportStoreManager().getHomes(player.getUniqueId()).size();
         if (limit > 0 && currentHomes >= limit) {
@@ -96,9 +101,22 @@ public class SetHomeCommand implements CommandExecutor {
     }
 
     private void setHome(Player player, String name, Location loc) {
-        plugin.getTeleportStoreManager().setHome(player.getUniqueId(), name, loc, player);
+        boolean charged = !plugin.economy().isFree(player, EconomyAction.SET_HOME);
+        if (!plugin.economy().tryBeginCharge(player, EconomyAction.SET_HOME)) {
+            return;
+        }
+        if (!plugin.getTeleportStoreManager().setHome(player.getUniqueId(), name, loc, player)) {
+            if (charged) {
+                plugin.economy().abortCharge(player, EconomyAction.SET_HOME);
+            }
+            plugin.messages().send(player, "teleport.destination-world");
+            return;
+        }
         plugin.getTeleportStoreManager().save();
         plugin.messages().send(player, "home.set", "name", name, "coords", formatPos(loc));
+        if (charged) {
+            plugin.economy().announceCharge(player, EconomyAction.SET_HOME);
+        }
     }
 
     private void sendConfirmation(Player player, String commandPrefix) {

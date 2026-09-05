@@ -5,6 +5,70 @@ All notable changes for AuraUtils.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-09-05
+
+### Added
+- **Player inventories** — `/inv 1`, `/inv 2`, … open extra double-chest storage (aliases `/vault`, `/pv`). Default players get inventory **1**. Rank more with one node: `aura.inv.3` allows `/inv 1`–`3`. `aura.inv.1` … `aura.inv.<max>` are registered with the server, so `aura.inv.*` resolves and the nodes tab-complete in permission plugins. `aura.admin` gets all slots up to `inventories.max`. Master switch `inventories.enabled`. Contents persist in `plugins/AuraUtils/inventories/<uuid>.yml`. `/menu` includes an Inventories button. Guide: [docs/PLAYER_INVENTORIES.md](docs/PLAYER_INVENTORIES.md).
+- **Timber** — chop one log with an axe to fell the connected tree (same wood type, including stripped logs). Leaves are cleared. Log buildings without leaves are left alone. Sneak to chop a single log. Master switch `timber.enabled` (`true`/`false`). Players can `/timber` to opt out (default on). Permission `aura.timber` (default true).
+- **permissions.yml** — `plugins/AuraUtils/permissions.yml` sets each node’s default to `true`, `false`, or `op`. Copied on first start. `/aura reload` applies it. LuckPerms still overrides per player. Missing keys keep the `plugin.yml` default.
+- **Vault economy** — optional soft-depend on [Vault](https://github.com/MilkBowl/VaultAPI) plus an economy plugin. **[PureEconomy](https://github.com/TamaWish/PureEconomy)** is the matching lightweight companion (balances, pay, bank, baltop, Vault). EssentialsX, CMI, and other Vault providers also work. Configure per-action costs under `economy.costs` (`home`, `sethome`, `warp`, `setwarp`, `tpa`, `rtp`, `back`). Defaults are `0` (free). Missing Vault or a missing provider leaves every action free.
+- Money is taken when the action succeeds. A cancelled teleport countdown is not charged. A failed teleport is refunded.
+- Charge, refund, and cannot-afford chat name the action (`/home`, `/sethome`, `/warp`, `/setwarp`, `/tpa`, `/rtp`, `/back`) and the amount. `economy.notify` (default true) controls those lines.
+- Permission `aura.economy.bypass` (default op, included in `aura.admin`) skips costs.
+- GUI lore shows the cost when a player would be charged. `/aura` shows the hooked provider for `aura.admin`.
+
+### Fixed
+- **`aura.inv.*` now works** — the numbered nodes were never registered with the server, and permission plugins only expand wildcards over registered nodes (LuckPerms `apply-wildcards`), so `aura.inv.*` granted nothing. `aura.inv.1` … `aura.inv.<max>` are registered on enable and after `/aura reload`.
+- **Permission-limit docs** — examples no longer imply AuraUtils ships rank-specific permission names. Docs now lead with `aura.inv.<n>`, while `inventories.limits` / `homes.limits` are described as mapping an existing server permission. Those lists also accept a single mapping without list dashes, and `node: max` maps.
+- **Paper shutdown crash** — saving warps/homes in `onDisable` no longer calls `Location.getWorld()`. Paper 1.21+ / 26.x unloads worlds before plugins disable and throws `IllegalArgumentException: World unloaded`. Destinations now store world name + coordinates, so `warps.yml` / `homes.yml` still write after unload.
+- `/home` and `/warp` (commands and GUI) report an unloaded destination world instead of “not found”.
+- `/sethome` and `/setwarp` no longer charge if the home or warp cannot be stored.
+
+### Upgrade from 1.3.0
+**Back up `plugins/AuraUtils/` first** (at least `config.yml`, `lang/`, `warps.yml`, `homes.yml`, `player-states.yml`). Do not skip this if you have custom messages, homes, or warps.
+
+**`config.yml` does not auto-update.** The jar only copies `config.yml` when that file is missing (first install). An existing 1.3.0 file is left as-is so your values and comments are not overwritten. New 1.4.0 keys are **not** inserted. Missing keys still use built-in defaults (inventories / timber / economy on, costs `0`), but the options will not appear on disk until you add them.
+
+What *does* update on its own:
+- `lang/en.yml` — new message keys are merged; your edits to existing keys stay. Other locale files (`lang/zh.yml`, …) are not rewritten; missing keys fall back to English.
+- `permissions.yml` — new in 1.4.0; copied on first start if the file is missing.
+
+Steps:
+1. Stop the server.
+2. Copy `plugins/AuraUtils/` somewhere safe.
+3. Replace the jar.
+4. Add the blocks below to `config.yml` if they are missing (keep your old values). **Or**, after the backup, delete `config.yml` so the jar copies a full 1.4.0 file, then re-apply your old settings from the backup.
+5. Start the server (or `/aura reload` if you only edited yaml).
+
+```yaml
+inventories:
+  enabled: true
+  rows: 6
+  max: 10
+  default-limit: 1
+  limits: []
+
+timber:
+  enabled: true
+  require-axe: true
+  sneak-chops-single: true
+  break-leaves: true
+  max-logs: 128
+  max-leaves: 256
+
+economy:
+  enabled: true
+  notify: true
+  costs:
+    home: 0.0
+    sethome: 0.0
+    warp: 0.0
+    setwarp: 0.0
+    tpa: 0.0
+    rtp: 0.0
+    back: 0.0
+```
+
 ## [1.3.0] - 2026-08-29
 
 ### Added

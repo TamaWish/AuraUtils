@@ -1,6 +1,7 @@
 package com.lozaine.aurautils.managers;
 
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
@@ -38,6 +39,8 @@ public class TpaManager {
         PENDING,
         /** Target trusts the requester — teleport scheduled/executed immediately. */
         TRUSTED_INSTANT,
+        /** Requester cannot afford the TPA cost. */
+        CANNOT_AFFORD,
         /** Target already has a pending request. */
         BUSY,
         /** Plugin disabled or other hard failure. */
@@ -52,6 +55,9 @@ public class TpaManager {
     public SendResult sendRequest(Player from, Player to) {
         if (!plugin.isEnabled()) {
             return SendResult.FAILED;
+        }
+        if (!plugin.economy().ensureCanPay(from, EconomyAction.TPA)) {
+            return SendResult.CANNOT_AFFORD;
         }
         // Trusted / instant TPA: target has added the requester to their list
         if (plugin.getPlayerDataManager().isTrusted(to.getUniqueId(), from.getUniqueId())) {
@@ -117,9 +123,9 @@ public class TpaManager {
                 return;
             }
             if (countdown > 0) {
-                helper.scheduleTeleport(requester, liveTarget.getLocation(), countdown, targetName);
+                helper.scheduleTeleport(requester, liveTarget.getLocation(), countdown, targetName, EconomyAction.TPA);
             } else {
-                helper.teleportExact(requester, liveTarget.getLocation(), ok -> {
+                helper.teleportExact(requester, liveTarget.getLocation(), EconomyAction.TPA, ok -> {
                     if (!requester.isOnline()) {
                         return;
                     }
@@ -166,23 +172,31 @@ public class TpaManager {
     }
 
     /**
-     * Accept: clear the request, notify both sides, then schedule (or run) the teleport
-     * for the requester to the target's current location.
+     * Accept: check the requester can pay, then clear the request, notify both sides,
+     * and schedule (or run) the teleport for the requester to the target's location.
      */
     public void accept(Player target) {
         UUID targetId = target.getUniqueId();
-        PendingRequest request = pendingRequests.remove(targetId);
+        PendingRequest request = pendingRequests.get(targetId);
         if (request == null) {
             return;
         }
 
-        cancelTask(targetId);
-
         Player requester = plugin.getServer().getPlayer(request.requesterId);
         if (requester == null || !requester.isOnline()) {
+            pendingRequests.remove(targetId, request);
+            cancelTask(targetId);
             plugin.messages().send(target, "tpa.requester-offline", "player", request.requesterName);
             return;
         }
+        if (!plugin.economy().ensureCanPay(requester, EconomyAction.TPA)) {
+            plugin.messages().send(target, "economy.tpa-requester-cannot-afford", "player", requester.getName());
+            return;
+        }
+        if (!pendingRequests.remove(targetId, request)) {
+            return;
+        }
+        cancelTask(targetId);
 
         // Snapshot dest on the target's thread, then hop to the requester (Folia-safe).
         final Location dest = target.getLocation().clone();
@@ -199,9 +213,9 @@ public class TpaManager {
             }
             plugin.messages().send(requester, "tpa.accepted-requester", "player", targetName);
             if (tpCountdown > 0) {
-                helper.scheduleTeleport(requester, dest, tpCountdown, targetName);
+                helper.scheduleTeleport(requester, dest, tpCountdown, targetName, EconomyAction.TPA);
             } else {
-                helper.teleportExact(requester, dest, ok -> {
+                helper.teleportExact(requester, dest, EconomyAction.TPA, ok -> {
                     if (!requester.isOnline()) {
                         return;
                     }

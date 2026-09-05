@@ -1,14 +1,17 @@
 package com.lozaine.aurautils;
 
 import com.lozaine.aurautils.commands.*;
+import com.lozaine.aurautils.economy.EconomyService;
 import com.lozaine.aurautils.listeners.*;
 import com.lozaine.aurautils.managers.BackManager;
 import com.lozaine.aurautils.managers.PlayerDataManager;
+import com.lozaine.aurautils.managers.PlayerInventoryManager;
 import com.lozaine.aurautils.managers.TeleportStoreManager;
 import com.lozaine.aurautils.managers.TeleportHelper;
 import com.lozaine.aurautils.managers.TpaManager;
 import com.lozaine.aurautils.menus.MenuManager;
 import com.lozaine.aurautils.util.MessageService;
+import com.lozaine.aurautils.util.PermissionDefaultsService;
 import com.lozaine.aurautils.util.SchedulerHelper;
 import com.lozaine.aurautils.util.UpdateChecker;
 import org.bstats.bukkit.Metrics;
@@ -21,18 +24,22 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public final class AuraUtils extends JavaPlugin {
 
     private static AuraUtils instance;
     private SchedulerHelper scheduler;
     private PlayerDataManager playerDataManager;
+    private PlayerInventoryManager playerInventoryManager;
     private TpaManager tpaManager;
     private TeleportStoreManager teleportStoreManager;
     private BackManager backManager;
     private TeleportHelper teleportHelper;
     private MenuManager menuManager;
     private MessageService messageService;
+    private PermissionDefaultsService permissionDefaults;
+    private EconomyService economyService;
     private UpdateChecker updateChecker;
 
     @Override
@@ -43,7 +50,10 @@ public final class AuraUtils extends JavaPlugin {
         // Cross-platform scheduler (Spigot / Paper / Folia)
         scheduler = new SchedulerHelper(this);
         messageService = new MessageService(this);
+        permissionDefaults = new PermissionDefaultsService(this);
+        permissionDefaults.loadAndApply();
         updateChecker = new UpdateChecker(this);
+        economyService = new EconomyService(this);
 
         // bStats metrics (plugin id from https://bstats.org)
         setupMetrics();
@@ -51,6 +61,8 @@ public final class AuraUtils extends JavaPlugin {
         // Managers
         playerDataManager = new PlayerDataManager(this);
         playerDataManager.load();
+        playerInventoryManager = new PlayerInventoryManager(this);
+        playerInventoryManager.registerNumberedPermissions();
         tpaManager = new TpaManager(this);
         teleportStoreManager = new TeleportStoreManager(this);
         teleportStoreManager.load();
@@ -74,9 +86,13 @@ public final class AuraUtils extends JavaPlugin {
         getCommand("fly").setExecutor(new FlyCommand(this));
         getCommand("nofall").setExecutor(new NoFallCommand(this));
         getCommand("nohunger").setExecutor(new NoHungerCommand(this));
+        getCommand("timber").setExecutor(new TimberCommand(this));
         getCommand("rtp").setExecutor(new RtpCommand(this));
         getCommand("aura").setExecutor(new AuraCommand(this));
         getCommand("tpacancel").setExecutor(new TpaCancelCommand(this));
+        InvCommand invCommand = new InvCommand(this);
+        getCommand("inv").setExecutor(invCommand);
+        getCommand("inv").setTabCompleter(invCommand);
         TpaTrustCommand trustCmd = new TpaTrustCommand(this);
         getCommand("tpatrust").setExecutor(trustCmd);
         getCommand("tpatrust").setTabCompleter(trustCmd);
@@ -89,10 +105,12 @@ public final class AuraUtils extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new FlyListener(this), this);
         getServer().getPluginManager().registerEvents(new NoFallListener(this), this);
         getServer().getPluginManager().registerEvents(new NoHungerListener(this), this);
+        getServer().getPluginManager().registerEvents(new TimberListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerSessionListener(this), this);
         getServer().getPluginManager().registerEvents(new BackListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportDamageListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerInventoryListener(this), this);
 
         for (Player player : getServer().getOnlinePlayers()) {
             playerDataManager.applyTo(player);
@@ -131,6 +149,19 @@ public final class AuraUtils extends JavaPlugin {
 
         metrics.addCustomChart(new SimplePie("tpa_timeout", () ->
                 String.valueOf(getConfig().getInt("tpa.timeout", 60))));
+
+        metrics.addCustomChart(new SimplePie("timber_enabled", () ->
+                String.valueOf(getConfig().getBoolean("timber.enabled", true))));
+
+        metrics.addCustomChart(new SimplePie("player_inventories", () ->
+                String.valueOf(getConfig().getBoolean("inventories.enabled", true))));
+
+        metrics.addCustomChart(new SimplePie("vault_economy", () -> {
+            if (economyService == null || !getConfig().getBoolean("economy.enabled", true)) {
+                return "disabled";
+            }
+            return economyService.isHooked() ? "hooked" : "unhooked";
+        }));
 
         // --- Online feature usage: AdvancedPie (counts per category) ---
         metrics.addCustomChart(new AdvancedPie("online_feature_toggles", () -> {
@@ -177,10 +208,17 @@ public final class AuraUtils extends JavaPlugin {
         if (playerDataManager != null) {
             playerDataManager.prepareShutdown();
         }
+        if (playerInventoryManager != null) {
+            playerInventoryManager.prepareShutdown();
+        }
 
         // Teleport store is already synchronous
         if (teleportStoreManager != null) {
-            teleportStoreManager.save();
+            try {
+                teleportStoreManager.save();
+            } catch (RuntimeException exception) {
+                getLogger().log(Level.SEVERE, "Failed to save warps and homes on disable", exception);
+            }
         }
 
         // Cancel any remaining FoliaLib tasks
@@ -194,12 +232,14 @@ public final class AuraUtils extends JavaPlugin {
     public static AuraUtils getInstance() { return instance; }
     public SchedulerHelper getScheduler() { return scheduler; }
     public PlayerDataManager getPlayerDataManager() { return playerDataManager; }
+    public PlayerInventoryManager getPlayerInventoryManager() { return playerInventoryManager; }
     public TpaManager getTpaManager() { return tpaManager; }
     public TeleportStoreManager getTeleportStoreManager() { return teleportStoreManager; }
     public BackManager getBackManager() { return backManager; }
     public MenuManager getMenuManager() { return menuManager; }
     public TeleportHelper getTeleportHelper() { return teleportHelper; }
     public MessageService messages() { return messageService; }
+    public EconomyService economy() { return economyService; }
     public UpdateChecker updateChecker() { return updateChecker; }
 
     public void reloadPluginConfig() {
@@ -212,6 +252,16 @@ public final class AuraUtils extends JavaPlugin {
         if (updateChecker == null) {
             updateChecker = new UpdateChecker(this);
         }
+        if (economyService != null) {
+            economyService.reload();
+        }
+        if (playerInventoryManager != null) {
+            playerInventoryManager.registerNumberedPermissions();
+        }
+        if (permissionDefaults == null) {
+            permissionDefaults = new PermissionDefaultsService(this);
+        }
+        permissionDefaults.loadAndApply();
         updateChecker.checkAsync();
     }
 

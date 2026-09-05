@@ -2,6 +2,7 @@ package com.lozaine.aurautils.commands;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import com.lozaine.aurautils.util.Platform;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -57,6 +58,9 @@ public class RtpCommand implements CommandExecutor {
         }
         if (!player.hasPermission("aura.rtp")) {
             msg.send(player, "common.no-permission");
+            return true;
+        }
+        if (!plugin.economy().ensureCanPay(player, EconomyAction.RTP)) {
             return true;
         }
 
@@ -219,9 +223,10 @@ public class RtpCommand implements CommandExecutor {
                 return;
             }
             if (countdown > 0) {
-                helper.scheduleTeleport(player, teleportLocation, countdown, plugin.messages().get("rtp.label"));
+                helper.scheduleTeleport(player, teleportLocation, countdown, plugin.messages().get("rtp.label"),
+                        EconomyAction.RTP);
             } else {
-                helper.teleportExact(player, teleportLocation, ok -> {
+                helper.teleportExact(player, teleportLocation, EconomyAction.RTP, ok -> {
                     if (player.isOnline() && Boolean.TRUE.equals(ok)) {
                         plugin.messages().send(player, "teleport.success",
                                 "label", plugin.messages().get("rtp.label"));

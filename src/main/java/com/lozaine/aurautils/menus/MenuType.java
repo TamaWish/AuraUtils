@@ -4,5 +4,6 @@ public enum MenuType {
     MAIN,
     WARPS,
     HOMES,
-    TPA
+    TPA,
+    INVENTORIES
 }

@@ -2,6 +2,7 @@ package com.lozaine.aurautils.managers;
 
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import com.lozaine.aurautils.AuraUtils;
+import com.lozaine.aurautils.economy.EconomyAction;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -33,10 +34,50 @@ public class TeleportHelper {
     }
 
     public boolean teleportExact(Player player, Location destination) {
-        return teleportExact(player, destination, null);
+        return teleportExact(player, destination, (EconomyAction) null, null);
     }
 
     public boolean teleportExact(Player player, Location destination, Consumer<Boolean> after) {
+        return teleportExact(player, destination, null, after);
+    }
+
+    /**
+     * Instant teleport. When {@code action} has a cost, money is taken after the
+     * destination is known to be usable, and refunded if the teleport does not succeed.
+     */
+    public boolean teleportExact(Player player, Location destination, EconomyAction action, Consumer<Boolean> after) {
+        if (action != null && plugin.economy() != null) {
+            if (player == null || !player.isOnline()) {
+                if (after != null) {
+                    after.accept(false);
+                }
+                return false;
+            }
+            if (resolveExact(destination) == null) {
+                plugin.messages().send(player, "teleport.destination-world");
+                if (after != null) {
+                    after.accept(false);
+                }
+                return false;
+            }
+            boolean charged = !plugin.economy().isFree(player, action);
+            if (!plugin.economy().tryBeginCharge(player, action)) {
+                return false;
+            }
+            CompletableFuture<Boolean> issued = startTeleport(player, destination, success -> {
+                boolean ok = Boolean.TRUE.equals(success);
+                if (charged && !ok) {
+                    plugin.economy().abortCharge(player, action);
+                }
+                if (after != null) {
+                    after.accept(ok);
+                }
+                if (charged && ok) {
+                    plugin.economy().announceCharge(player, action);
+                }
+            });
+            return issued != null;
+        }
         CompletableFuture<Boolean> issued = startTeleport(player, destination, after);
         return issued != null;
     }
@@ -47,7 +88,13 @@ public class TeleportHelper {
      */
     public boolean teleportExact(Player player, Location destination,
                                  String successKey, String failLabel, String... successPlaceholders) {
-        return teleportExact(player, destination, success -> {
+        return teleportExact(player, destination, successKey, failLabel, null, successPlaceholders);
+    }
+
+    public boolean teleportExact(Player player, Location destination,
+                                 String successKey, String failLabel, EconomyAction action,
+                                 String... successPlaceholders) {
+        return teleportExact(player, destination, action, success -> {
             if (player == null || !player.isOnline()) {
                 return;
             }
@@ -77,8 +124,8 @@ public class TeleportHelper {
         }
 
         Location from = player.getLocation();
-        if (from.getWorld() != null) {
-            boolean sameSpot = exact.getWorld() != null
+        if (from.isWorldLoaded()) {
+            boolean sameSpot = exact.isWorldLoaded()
                     && from.getWorld().equals(exact.getWorld())
                     && from.distanceSquared(exact) < 0.01D;
             if (!sameSpot) {
@@ -97,13 +144,10 @@ public class TeleportHelper {
     }
 
     public static Location resolveExact(Location source) {
-        if (source == null) {
+        if (source == null || !source.isWorldLoaded()) {
             return null;
         }
         World world = source.getWorld();
-        if (world == null) {
-            return null;
-        }
         World live = org.bukkit.Bukkit.getWorld(world.getName());
         if (live == null) {
             return null;
@@ -119,6 +163,11 @@ public class TeleportHelper {
     }
 
     public void scheduleTeleport(Player player, Location destination, int seconds, String destinationLabel) {
+        scheduleTeleport(player, destination, seconds, destinationLabel, null);
+    }
+
+    public void scheduleTeleport(Player player, Location destination, int seconds, String destinationLabel,
+                                 EconomyAction action) {
         if (player == null || !player.isOnline()) {
             return;
         }
@@ -133,8 +182,12 @@ public class TeleportHelper {
                 ? plugin.messages().get("teleport.default-label")
                 : destinationLabel.trim();
 
+        if (action != null && plugin.economy() != null && !plugin.economy().ensureCanPay(player, action)) {
+            return;
+        }
+
         if (player.hasPermission("aura.teleport.bypass") || !plugin.isEnabled() || seconds <= 0) {
-            finishTeleport(player, dest, label);
+            finishTeleport(player, dest, label, action);
             return;
         }
 
@@ -175,14 +228,14 @@ public class TeleportHelper {
             if (remaining[0] <= 0) {
                 cleanup(playerId);
                 clearDisplays(p);
-                finishTeleport(p, dest, label);
+                finishTeleport(p, dest, label, action);
                 if (self != null) self.cancel();
                 return;
             }
 
             if (cancelOnMove) {
                 Location now = p.getLocation();
-                if (now.getWorld() == null || start.getWorld() == null
+                if (!now.isWorldLoaded() || !start.isWorldLoaded()
                         || !now.getWorld().equals(start.getWorld())) {
                     abortMove(p, playerId, label, self, false);
                     return;
@@ -247,8 +300,8 @@ public class TeleportHelper {
         scheduleTeleport(player, destination, seconds, plugin.messages().get("teleport.default-label"));
     }
 
-    private void finishTeleport(Player player, Location dest, String label) {
-        teleportExact(player, dest, success -> {
+    private void finishTeleport(Player player, Location dest, String label, EconomyAction action) {
+        teleportExact(player, dest, action, success -> {
             if (!player.isOnline()) {
                 return;
             }

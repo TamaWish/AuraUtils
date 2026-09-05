@@ -44,6 +44,9 @@ public class TpaCommand implements CommandExecutor {
             case TRUSTED_INSTANT -> {
                 // Messages already sent inside TpaManager
             }
+            case CANNOT_AFFORD -> {
+                // economy.cannot-afford already sent
+            }
             case PENDING -> {
                 int timeout = plugin.getConfig().getInt("tpa.timeout", 60);
                 msg.send(p, "tpa.sent", "player", target.getName(), "seconds", String.valueOf(timeout));

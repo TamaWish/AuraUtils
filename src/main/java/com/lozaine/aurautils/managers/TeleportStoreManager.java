@@ -3,7 +3,6 @@ package com.lozaine.aurautils.managers;
 import com.lozaine.aurautils.AuraUtils;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -13,12 +12,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class TeleportStoreManager {
 
@@ -27,9 +26,9 @@ public class TeleportStoreManager {
     private final File homesFile;
 
     /** key (lowercase) -> destination */
-    private final Map<String, StoredDestination> warps = new TreeMap<>();
+    private final Map<String, StoredDestination> warps = new ConcurrentHashMap<>();
     /** player UUID -> (key -> destination) */
-    private final Map<UUID, Map<String, StoredDestination>> homes = new HashMap<>();
+    private final Map<UUID, Map<String, StoredDestination>> homes = new ConcurrentHashMap<>();
 
     public TeleportStoreManager(AuraUtils plugin) {
         this.plugin = plugin;
@@ -46,7 +45,8 @@ public class TeleportStoreManager {
         ConfigurationSection warpsSection = warpsConfig.getConfigurationSection("warps");
         if (warpsSection != null) {
             for (String name : warpsSection.getKeys(false)) {
-                StoredDestination dest = readDestination(warpsSection.getConfigurationSection(name), name);
+                StoredDestination dest = StoredDestination.fromSection(warpsSection.getConfigurationSection(name), name);
+                dest = completeLoaded(dest);
                 if (dest != null) {
                     warps.put(dest.getKey(), dest);
                 }
@@ -69,20 +69,14 @@ public class TeleportStoreManager {
                     continue;
                 }
 
-                Map<String, StoredDestination> playerMap = new TreeMap<>();
+                Map<String, StoredDestination> playerMap = new ConcurrentHashMap<>();
                 for (String homeName : playerHomes.getKeys(false)) {
-                    StoredDestination dest = readDestination(playerHomes.getConfigurationSection(homeName), homeName);
+                    StoredDestination dest = StoredDestination.fromSection(playerHomes.getConfigurationSection(homeName), homeName);
+                    dest = completeLoaded(dest);
                     if (dest != null) {
                         // Homes belong to the player folder; default set-by to that player if missing
                         if (dest.getSetBy() == null) {
-                            String ownerName = resolveName(playerId, null);
-                            dest = new StoredDestination(
-                                    dest.getKey(),
-                                    dest.getDisplayName(),
-                                    dest.getLocation(),
-                                    playerId,
-                                    ownerName
-                            );
+                            dest = dest.withSetBy(playerId, resolveName(playerId, null));
                         }
                         playerMap.put(dest.getKey(), dest);
                     }
@@ -96,8 +90,16 @@ public class TeleportStoreManager {
 
     public void save() {
         plugin.getDataFolder().mkdirs();
-        saveWarps();
-        saveHomes();
+        try {
+            saveWarps();
+        } catch (RuntimeException exception) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save warps.yml", exception);
+        }
+        try {
+            saveHomes();
+        } catch (RuntimeException exception) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to save homes.yml", exception);
+        }
     }
 
     public List<String> getWarpNames() {
@@ -124,22 +126,22 @@ public class TeleportStoreManager {
         return warps.get(normalize(name));
     }
 
-    public void setWarp(String name, Location location, Player setter) {
-        Location exact = snapshot(location);
-        if (exact == null || name == null || name.isBlank()) {
-            return;
+    public boolean setWarp(String name, Location location, Player setter) {
+        if (location == null || !location.isWorldLoaded() || name == null || name.isBlank()) {
+            return false;
         }
         String key = normalize(name);
         String display = name.trim();
         UUID setterId = setter != null ? setter.getUniqueId() : null;
         String setterName = setter != null ? setter.getName() : "Unknown";
-        warps.put(key, new StoredDestination(key, display, exact, setterId, setterName));
+        warps.put(key, new StoredDestination(key, display, location, setterId, setterName));
+        return true;
     }
 
     /** @deprecated use setWarp(name, location, setter) */
     @Deprecated
-    public void setWarp(String name, Location location) {
-        setWarp(name, location, null);
+    public boolean setWarp(String name, Location location) {
+        return setWarp(name, location, null);
     }
 
     public boolean deleteWarp(String name) {
@@ -182,23 +184,23 @@ public class TeleportStoreManager {
         return playerHomes.get(normalize(name));
     }
 
-    public void setHome(UUID playerId, String name, Location location, Player setter) {
-        Location exact = snapshot(location);
-        if (exact == null || name == null || name.isBlank()) {
-            return;
+    public boolean setHome(UUID playerId, String name, Location location, Player setter) {
+        if (location == null || !location.isWorldLoaded() || name == null || name.isBlank()) {
+            return false;
         }
         String key = normalize(name);
         String display = name.trim();
         UUID setterId = setter != null ? setter.getUniqueId() : playerId;
         String setterName = setter != null ? setter.getName() : resolveName(playerId, null);
-        homes.computeIfAbsent(playerId, ignored -> new TreeMap<>())
-                .put(key, new StoredDestination(key, display, exact, setterId, setterName));
+        homes.computeIfAbsent(playerId, ignored -> new ConcurrentHashMap<>())
+                .put(key, new StoredDestination(key, display, location, setterId, setterName));
+        return true;
     }
 
     /** @deprecated use setHome(..., setter) */
     @Deprecated
-    public void setHome(UUID playerId, String name, Location location) {
-        setHome(playerId, name, location, null);
+    public boolean setHome(UUID playerId, String name, Location location) {
+        return setHome(playerId, name, location, null);
     }
 
     public boolean deleteHome(UUID playerId, String name) {
@@ -217,7 +219,7 @@ public class TeleportStoreManager {
         YamlConfiguration config = new YamlConfiguration();
         ConfigurationSection warpsSection = config.createSection("warps");
         for (StoredDestination dest : warps.values()) {
-            writeDestination(warpsSection.createSection(dest.getKey()), dest);
+            dest.writeTo(warpsSection.createSection(dest.getKey()));
         }
         try {
             config.save(warpsFile);
@@ -232,7 +234,7 @@ public class TeleportStoreManager {
         for (Map.Entry<UUID, Map<String, StoredDestination>> entry : homes.entrySet()) {
             ConfigurationSection playerSection = homesSection.createSection(entry.getKey().toString());
             for (StoredDestination dest : entry.getValue().values()) {
-                writeDestination(playerSection.createSection(dest.getKey()), dest);
+                dest.writeTo(playerSection.createSection(dest.getKey()));
             }
         }
         try {
@@ -242,97 +244,14 @@ public class TeleportStoreManager {
         }
     }
 
-    private void writeDestination(ConfigurationSection section, StoredDestination dest) {
-        section.set("display-name", dest.getDisplayName());
-        Location location = dest.getLocation();
-        if (location != null && location.getWorld() != null) {
-            section.set("world", location.getWorld().getName());
-            section.set("x", Double.valueOf(location.getX()));
-            section.set("y", Double.valueOf(location.getY()));
-            section.set("z", Double.valueOf(location.getZ()));
-            section.set("yaw", Float.valueOf(location.getYaw()));
-            section.set("pitch", Float.valueOf(location.getPitch()));
-        }
-        if (dest.getSetBy() != null) {
-            section.set("set-by", dest.getSetBy().toString());
-        }
-        section.set("set-by-name", dest.getSetByName());
-    }
-
-    private StoredDestination readDestination(ConfigurationSection section, String fallbackKey) {
-        if (section == null) {
+    private StoredDestination completeLoaded(StoredDestination dest) {
+        if (dest == null) {
             return null;
         }
-
-        Location location = readLocation(section);
-        // Legacy format: location fields at section root; also support nested "location" if ever used
-        if (location == null) {
-            return null;
+        if (dest.getSetBy() != null && "Unknown".equals(dest.getSetByName())) {
+            return dest.withSetBy(dest.getSetBy(), resolveName(dest.getSetBy(), "Unknown"));
         }
-
-        String key = normalize(fallbackKey);
-        String displayName = section.getString("display-name");
-        if (displayName == null || displayName.isEmpty()) {
-            // Legacy: section key may be lowercase only; keep as-is
-            displayName = fallbackKey;
-        }
-
-        UUID setBy = null;
-        String setByRaw = section.getString("set-by");
-        if (setByRaw != null && !setByRaw.isEmpty()) {
-            try {
-                setBy = UUID.fromString(setByRaw);
-            } catch (IllegalArgumentException ignored) {
-                // ignore invalid uuid
-            }
-        }
-        String setByName = section.getString("set-by-name");
-        if (setByName == null || setByName.isEmpty()) {
-            setByName = resolveName(setBy, "Unknown");
-        }
-
-        return new StoredDestination(key, displayName, location, setBy, setByName);
-    }
-
-    private Location readLocation(ConfigurationSection section) {
-        if (section == null) {
-            return null;
-        }
-
-        String worldName = section.getString("world");
-        if (worldName == null || worldName.isEmpty()) {
-            return null;
-        }
-        World world = plugin.getServer().getWorld(worldName);
-        if (world == null) {
-            return null;
-        }
-
-        if (!section.contains("x") || !section.contains("y") || !section.contains("z")) {
-            return null;
-        }
-
-        double x = section.getDouble("x");
-        double y = section.getDouble("y");
-        double z = section.getDouble("z");
-        float yaw = (float) section.getDouble("yaw", 0.0D);
-        float pitch = (float) section.getDouble("pitch", 0.0D);
-
-        return new Location(world, x, y, z, yaw, pitch);
-    }
-
-    private static Location snapshot(Location location) {
-        if (location == null || location.getWorld() == null) {
-            return null;
-        }
-        return new Location(
-                location.getWorld(),
-                location.getX(),
-                location.getY(),
-                location.getZ(),
-                location.getYaw(),
-                location.getPitch()
-        );
+        return dest;
     }
 
     private String resolveName(UUID id, String fallback) {

@@ -27,7 +27,7 @@ public class BackListener implements Listener {
     public void onTeleport(PlayerTeleportEvent event) {
         // Only record successful, non-cancelled teleports from causes that still
         // fire this event. Plugin teleports are recorded in TeleportHelper.
-        if (event.getFrom() == null || event.getFrom().getWorld() == null) {
+        if (event.getFrom() == null || !event.getFrom().isWorldLoaded()) {
             return;
         }
         plugin.getBackManager().record(event.getPlayer().getUniqueId(), event.getFrom());

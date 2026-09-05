@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Persistent store for all per-player toggles and settings.
- * Toggle changes (god/fly/nofall/nohunger) force a synchronous save so state
+ * Toggle changes (god/fly/nofall/nohunger/timber) force a synchronous save so state
  * is never lost on crash. Other changes may use deferred async save.
  * Shutdown always flushes synchronously and never schedules new tasks.
  *
@@ -38,6 +38,8 @@ public class PlayerDataManager {
     private final Map<UUID, Boolean> flyMode = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> noFall = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> noHunger = new ConcurrentHashMap<>();
+    /** Present only when timber is opted off. Missing key / default is on. */
+    private final Map<UUID, Boolean> timberOff = new ConcurrentHashMap<>();
 
     /**
      * owner UUID → set of trusted player UUIDs.
@@ -68,6 +70,7 @@ public class PlayerDataManager {
         flyMode.clear();
         noFall.clear();
         noHunger.clear();
+        timberOff.clear();
         trustedPlayers.clear();
         knownNames.clear();
 
@@ -101,6 +104,9 @@ public class PlayerDataManager {
             }
             if (playerSection.contains("nohunger")) {
                 noHunger.put(playerId, playerSection.getBoolean("nohunger"));
+            }
+            if (playerSection.contains("timber") && !playerSection.getBoolean("timber")) {
+                timberOff.put(playerId, true);
             }
 
             List<String> trustedList = playerSection.getStringList("trusted");
@@ -151,7 +157,7 @@ public class PlayerDataManager {
 
     /**
      * Force an immediate synchronous write. Used by all toggle setters so a
-     * crash cannot lose the latest god/fly/nofall/nohunger state.
+     * crash cannot lose the latest god/fly/nofall/nohunger/timber state.
      */
     public void saveSync() {
         flushSave();
@@ -211,6 +217,7 @@ public class PlayerDataManager {
         playerIds.addAll(flyMode.keySet());
         playerIds.addAll(noFall.keySet());
         playerIds.addAll(noHunger.keySet());
+        playerIds.addAll(timberOff.keySet());
         playerIds.addAll(trustedPlayers.keySet());
 
         for (UUID playerId : playerIds) {
@@ -218,10 +225,11 @@ public class PlayerDataManager {
             boolean fly = flyMode.getOrDefault(playerId, false);
             boolean noFallEnabled = noFall.getOrDefault(playerId, false);
             boolean noHungerEnabled = noHunger.getOrDefault(playerId, false);
+            boolean timberDisabled = timberOff.containsKey(playerId);
             Set<UUID> trusted = trustedPlayers.get(playerId);
             boolean hasTrusted = trusted != null && !trusted.isEmpty();
 
-            if (!god && !fly && !noFallEnabled && !noHungerEnabled && !hasTrusted) {
+            if (!god && !fly && !noFallEnabled && !noHungerEnabled && !hasTrusted && !timberDisabled) {
                 continue;
             }
 
@@ -230,6 +238,9 @@ public class PlayerDataManager {
             playerSection.set("fly", fly);
             playerSection.set("nofall", noFallEnabled);
             playerSection.set("nohunger", noHungerEnabled);
+            if (timberDisabled) {
+                playerSection.set("timber", false);
+            }
 
             String name = knownNames.get(playerId);
             if (name != null) {
@@ -426,6 +437,29 @@ public class PlayerDataManager {
 
     public void setNoHunger(UUID id, boolean value) {
         updateBoolean(noHunger, id, value);
+        saveSync();
+    }
+
+    /**
+     * Timber defaults to on so chopping a tree works as soon as
+     * {@code timber.enabled} is true. Players can {@code /timber} to opt out.
+     */
+    public boolean isTimber(UUID id) {
+        return !timberOff.containsKey(id);
+    }
+
+    public boolean toggleTimber(UUID id) {
+        boolean value = !isTimber(id);
+        setTimber(id, value);
+        return value;
+    }
+
+    public void setTimber(UUID id, boolean value) {
+        if (value) {
+            timberOff.remove(id);
+        } else {
+            timberOff.put(id, true);
+        }
         saveSync();
     }
 

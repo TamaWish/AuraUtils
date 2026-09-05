@@ -50,7 +50,7 @@ public class BackManager {
      * Ignores null locations or locations with no loaded world.
      */
     public void record(UUID playerId, Location location) {
-        if (playerId == null || location == null || location.getWorld() == null) {
+        if (playerId == null || location == null || !location.isWorldLoaded()) {
             return;
         }
         lastLocations.put(playerId, new StoredBack(location));
