@@ -16,8 +16,10 @@ release.properties
 # Local-only — not published for public GitHub readers
 #   /local/  listing paste drafts, live-smoke console helpers
 #   /tools/  unpublished helper scripts
+#   /docs/marketplace/  marketplace listing drafts
 /local/
 /tools/
+/docs/marketplace/
 
 # Cursor canvases if copied into this tree
 *.canvas.tsx
